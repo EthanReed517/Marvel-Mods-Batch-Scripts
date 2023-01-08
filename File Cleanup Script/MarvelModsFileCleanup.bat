@@ -1,6 +1,9 @@
 @ECHO OFF
 REM This file is a collaboration between ak2yny, BaconWizard17, and Rampage.
 
+title Marvel Mods File Cleanup
+color 0b
+
 REM Define game (MUA; XML2; choice)
 set game=choice
 REM Define file formats to remove (use spaces to separate):
@@ -15,6 +18,7 @@ if %game%==choice (
 	CHOICE /C 12 /M "Which game are you using? "
 	IF ERRORLEVEL 1	SET game=MUA
 	IF ERRORLEVEL 2 SET game=XML2
+	echo.
 )
 
 goto %game% 
@@ -22,7 +26,6 @@ goto %game%
 
 :main
 title %gamename% File Cleanup
-color 0b
 
 REM Define variables:
 set lf=eng ita fre ger spa pol rus 
@@ -93,34 +96,31 @@ EXIT /b
 REM Game display name:
 set gamename=X-Men Legends 2
 
+REM execute the main file deletion script
+call :main "%gamename%" XMen2
+
 REM ask if file extensions should be changed to lowercase
 echo.
 CHOICE /M "Do you want to change file extensions to lowercase?"
 SET lowercaseFiles=%ERRORLEVEL%
-echo.
-
 REM ask if folder names should be changed to lowercase
 CHOICE /M "Do you want to change folder names to lowercase?"
 SET lowercaseFolders=%ERRORLEVEL%
-echo.
-
-REM execute the main file deletion script
-call :main "%gamename%" XMen2
 
 echo.
 REM make the files lowercase if the user chooses
 if %lowercaseFiles%==1 (
-	echo Renaming file extensions to lowercase. This operation will take several minutes...
-    for %%B in (BOYB CHRB IGB NAVB PKGB PKGB PY XMLB) do call :FEtoLower %%B
+	echo Renaming file extensions to lowercase. This operation will take several minutes . . .
+    for %%B in (BOYB CHRB IGB NAVB PKGB PY XMLB) do call :FEtoLower %%B
 	echo All files are now lowercase.
 	echo.
 )
 
 REM Make the folders lowercase if the user chooses
 if %lowercaseFolders%==1 (
-	echo Renaming all folders to lowercase...
+	echo Renaming all folders to lowercase . . .
     for /f "delims=" %%i in ('dir /b /ad /s 2^>nul') do set "f=%%~i" & call :FOtoLower %%~ni
-	echo All folders are now lowercase
+	echo All folders are now lowercase.
 	echo.
 )
 
