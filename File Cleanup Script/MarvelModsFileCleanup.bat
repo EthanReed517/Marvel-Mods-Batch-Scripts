@@ -78,12 +78,12 @@ goto End
 :FEtoLower
 call :toLower %*
 echo .%1 to .%o%
-forfiles /S /M *.%1 /C "cmd /c ren @file @fname.%o%"
+forfiles /S /M *.%1 /C "cmd /c ren @file @fname.%o%" >nul 2>nul
 EXIT /b
 
 :FOtoLower
 call :toLower %*
-echo ren "%f%" "%o%"
+ren "%f%" "%o%"
 EXIT /b
 
 :toLower
