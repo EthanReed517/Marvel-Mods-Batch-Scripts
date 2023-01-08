@@ -1,6 +1,5 @@
-REM This file is a collaboration between ak2yny, BaconWizard17, and Rampage.
-
 @ECHO OFF
+REM This file is a collaboration between ak2yny, BaconWizard17, and Rampage.
 
 REM Define game (MUA; XML2; choice)
 set game=choice
@@ -14,8 +13,8 @@ if %game%==choice (
 	echo [1] Marvel: Ultimate Alliance
 	echo [2] X-Men Legends II
 	CHOICE /C 12 /M "Which game are you using? "
-	IF ERRORLEVEL 2 SET game=XML2 & goto XML2
-	IF ERRORLEVEL 1	SET game=MUA & goto MUA
+	IF ERRORLEVEL 1	SET game=MUA
+	IF ERRORLEVEL 2 SET game=XML2
 )
 
 goto %game% 
@@ -73,6 +72,23 @@ del >nul actors\fightstyle_finesse1.igb /s
 goto End
 
 
+:FEtoLower
+call :toLower %*
+echo .%1 to .%o%
+forfiles /S /M *.%1 /C "cmd /c ren @file @fname.%o%"
+EXIT /b
+
+:FOtoLower
+call :toLower %*
+echo ren "%f%" "%o%"
+EXIT /b
+
+:toLower
+set "o=%*"
+for %%g in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do call set "o=%%o:%%g=%%g%%"
+EXIT /b
+
+
 :XML2
 REM Game display name:
 set gamename=X-Men Legends 2
@@ -80,78 +96,30 @@ set gamename=X-Men Legends 2
 REM ask if file extensions should be changed to lowercase
 echo.
 CHOICE /M "Do you want to change file extensions to lowercase?"
-IF ERRORLEVEL 1 SET lowercaseFiles=Y
-IF ERRORLEVEL 2 SET lowercaseFiles=N
+SET lowercaseFiles=%ERRORLEVEL%
 echo.
 
 REM ask if folder names should be changed to lowercase
 CHOICE /M "Do you want to change folder names to lowercase?"
-IF ERRORLEVEL 1 SET lowercaseFolders=Y
-IF ERRORLEVEL 2 SET lowercaseFolders=N
+SET lowercaseFolders=%ERRORLEVEL%
 echo.
 
 REM execute the main file deletion script
 call :main "%gamename%" XMen2
 
+echo.
 REM make the files lowercase if the user chooses
-if %lowercaseFiles%==Y (
-	echo.
+if %lowercaseFiles%==1 (
 	echo Renaming file extensions to lowercase. This operation will take several minutes...
-	echo .BOYB to .boyb
-	forfiles /S /M *.BOYB /C "cmd /c rename @file @fname.boyb"
-	echo .CHRB to .chrb
-	forfiles /S /M *.CHRB /C "cmd /c rename @file @fname.chrb"
-	echo .IGB to .igb
-	forfiles /S /M *.IGB /C "cmd /c rename @file @fname.igb"
-	echo .NAVB to .navb
-	forfiles /S /M *.NAVB /C "cmd /c rename @file @fname.navb"
-	echo .PKGB to .pkgb
-	forfiles /S /M *.PKGB /C "cmd /c rename @file @fname.pkgb"
-	echo .PY to .py
-	forfiles /S /M *.PY /C "cmd /c rename @file @fname.py"
-	echo .XMLB to .xmlb
-	forfiles /S /M *.XMLB /C "cmd /c rename @file @fname.xmlb"
+    for %%B in (BOYB CHRB IGB NAVB PKGB PKGB PY XMLB) do call :FEtoLower %%B
 	echo All files are now lowercase.
 	echo.
 )
 
 REM Make the folders lowercase if the user chooses
-if %lowercaseFolders%==Y (
-	echo Renaming folders to lowercase...
-	ren "Actors" "actors"
-	ren "Automaps" "automaps"
-	ren "Conversations" "conversations"
-	ren "Data" "data"
-	ren "Dialogs" "dialogs"
-	ren "Docs" "docs"
-	ren "Effects" "effects"
-	ren "HUD" "hud"
-	ren "Maps" "maps"
-	ren "maps/Act0" "act0"
-	ren "maps/Act1" "act1"
-	ren "maps/Act2" "act2"
-	ren "maps/Act3" "act3"
-	ren "maps/Act4" "act4"
-	ren "maps/Act5" "act5"
-	ren "maps/Bonus" "bonus"
-	ren "maps/Briefing" "briefing"
-	ren "maps/Menu" "menu"
-	ren "maps/Package" "package"
-	ren "maps/Svs" "svs"
-	ren "Models" "models"
-	ren "MotionPaths" "motionpaths"
-	ren "Movies" "movies"
-	ren "Packages" "packages"
-	ren "Plugins" "plugins"
-	if exist "Save" ren "Save" "save"
-	if exist "Screenshots" ren "Screenshots" "screenshots"
-	ren "Scripts" "scripts"
-	ren "Skybox" "skybox"
-	ren "Sounds" "sounds"
-	ren "Subtitles" "subtitles"
-	ren "Texs" "texs"
-	ren "Textures" "textures"
-	ren "UI" "ui"
+if %lowercaseFolders%==1 (
+	echo Renaming all folders to lowercase...
+    for /f "delims=" %%i in ('dir /b /ad /s 2^>nul') do set "f=%%~i" & call :FOtoLower %%~ni
 	echo All folders are now lowercase
 	echo.
 )
