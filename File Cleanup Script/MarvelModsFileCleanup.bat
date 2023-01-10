@@ -12,9 +12,9 @@ REM Define languages to keep (use spaces to separate):
 set lk=eng
 
 if %game%==choice (
-	echo Game not selected. 
+	echo Game not selected. Please select from the list. 
 	echo [1] Marvel: Ultimate Alliance
-	echo [2] X-Men Legends II
+	echo [2] X-Men Legends 2
 	CHOICE /C 12 /M "Which game are you using? "
 	IF ERRORLEVEL 1	SET game=MUA
 	IF ERRORLEVEL 2 SET game=XML2
@@ -110,7 +110,7 @@ SET lowercaseFolders=%ERRORLEVEL%
 echo.
 REM make the files lowercase if the user chooses
 if %lowercaseFiles%==1 (
-	echo Renaming file extensions to lowercase. This operation will take several minutes . . .
+	echo Renaming file extensions to lowercase. This will take a few minutes . . .
     for %%B in (BOYB CHRB IGB NAVB PKGB PY XMLB) do call :FEtoLower %%B
 	echo All files are now lowercase.
 	echo.
@@ -118,10 +118,9 @@ if %lowercaseFiles%==1 (
 
 REM Make the folders lowercase if the user chooses
 if %lowercaseFolders%==1 (
-	echo Renaming all folders to lowercase . . .
+	echo Renaming all folders to lowercase. This will take a few seconds . . .
     for /f "delims=" %%i in ('dir /b /ad /s 2^>nul') do set "f=%%~i" & call :FOtoLower %%~ni
 	echo All folders are now lowercase.
-	echo.
 )
 
 :End
