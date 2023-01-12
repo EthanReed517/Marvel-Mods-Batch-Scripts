@@ -1,4 +1,4 @@
-# Installation:
+## Installation:
 - Raven Formats (RF) by nikita488: Install [Python 3.8 or newer](https://www.python.org/downloads/), incl. [PATH variable](https://cloudacademy.com/wp-content/uploads/2020/01/Python-Windows-installer.png), then enter `pip install raven-formats` in command ([RF](https://pypi.org/project/raven-formats/)).
 - xmlb-compile (XC) by NBA2Kstuff: Install it by moving, copying, or extracting [Raven-Formats Scripts/xmlb-compile.exe](https://github.com/ak2yny/Marvel-Mods-Batch-Scripts/blob/915a9c745d7c79d08a0b3dfee78163d1c56bd966/Raven-Formats%20Scripts/xmlb-compile.exe) to "C:\Windows".
 
@@ -9,7 +9,7 @@ Use the .BAT files from this pack next to "json2xmlb.exe" and "xml2json.exe".
 
  
 
-# Information about each .BAT file:
+## Information about each .BAT file:
 
 `(RF)Compile.bat`:          Compile .txt, .xml, and .json files to the format of your choice.
 
@@ -66,7 +66,7 @@ Drag & Drop has a limit of roughly 75 files and folders at a time. ***
 
  
 
-# Expert tips:
+## Expert tips:
 
 - If you open a .BAT file with a text editor, you can change the settings at the top.
   All .BAT files are actually identical, except for the settings at the top. Explore the settings ;).
