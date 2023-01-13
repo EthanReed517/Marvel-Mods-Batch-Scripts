@@ -636,11 +636,10 @@ goto Optimizer
 :getSkinName
 set "igSS=%temp%\igStatisticsSkin.ini"
 if not exist "%igSS%" (call :OptHead 1 & call :OptSkinStats 1)>"%igSS%"
-( %sgOptimizer% "%fullpath%" "%outfile%" "%igSS%" )>"%~dp0%nameonly%.txt"
+( %sgOptimizer% "%fullpath%" "%outfile%" "%igSS%" )>"%temp%\%nameonly%.txt"
 set targetName=
-for /f "delims=:" %%a in ('findstr /n /c:"Skin name" ^<"%~dp0%nameonly%.txt"') do set skipt=%%a
-for /f "usebackq skip=%skipt% tokens=1 delims=| " %%a in ("%~dp0%nameonly%.txt") do if not defined targetName set "targetName=%%a"
-del "%~dp0%nameonly%.txt"
+for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\%nameonly%.txt"') do set targetName=%%a
+del "%temp%\%nameonly%.txt"
 EXIT /b
 
 :genGColorFix
@@ -1343,7 +1342,7 @@ echo [OPTIMIZATION%1]
 echo name = igStatisticsSkin
 echo separatorString = ^|
 echo columnMaxWidth = -1
-echo showColumnsMask = 0x00000002
+echo showColumnsMask = 0x00000006
 echo sortColumn = -1
 EXIT /b
 

@@ -6,7 +6,7 @@ REM ----------------------------------------------------------------------------
 REM Settings:
 
 REM What operation should be made? (=decompile; =compile; =edit; =convert; =ask; =detect)
-REM (Operations for Zsnd: =extract; =combine; =update; =editZSSZSM; =editJSON; add sound files =addWAV; convert WAV files for old versions of Zsnd =convertW; convert multi-channel sounds =ravenAudio; =PackageCloner; =Herostat-Skin-Editor)
+REM (Operations for Zsnd: =extract; =combine; =update; =editZSSZSM; =editJSON; add sound files =addWAV; convert WAV files for old versions of Zsnd =convertW; convert multi-channel sounds =ravenAudio; =PackageCloner; =ModCloner; =Herostat-Skin-Editor)
 set operation=detect
 REM Set the decompile/convert format: (JSON =json; true XML =xml; NBA2kStuff's XML =lxml)
 set decformat=json
@@ -84,6 +84,7 @@ if ""=="%temp%" set "temp=%~dp0"
 set "tem=%temp%\%operation%.tmp"
 set "rfo=%temp%\RFoutput.log"
 set "xco=%temp%\XCoutput.log"
+set optSet="%temp%\%operation%.ini"
 set "erl=%~dp0error.log"
 if ""=="%customext%" set customext=%decformat:lxml=xml%
 if "%operation%" == "ask" call :askop
@@ -164,6 +165,7 @@ for %%i in ("%fullpath%") do (
  set nameonly=%%~ni
  set namextns=%%~nxi
  set xtnsonly=%%~xi
+ set infile=%%~fi
 )
 EXIT /b
 :VAR
@@ -277,9 +279,15 @@ set inext=.pkgb
 set minindx=0
 set maxindx=99
 goto xml
-:startCloneMod
+:startModCloner
 set minindx=0
 set maxindx=255
+del "%erl%" "%xco%" "%rfo%" "%tem%"
+call :xml
+for %%p in (%*) do call :convCCL ccl
+for %%p in (%ccl%) do 2>nul pushd "%%~p" && cd /d "%%~p" && call :ModCloner
+if defined ccl GOTO End
+goto ModCloner
 :startHerostat-Skin-Editor
 set inext=.%rf: =b, .%b, .xml, .txt, .json
 set minindx=0
@@ -295,6 +303,10 @@ set xm=xmlb&if %decformat%==lxml set xm=xmlb-compile
 call :checkTools %xm% && EXIT /b
 echo %xm% not found. Check the Readme.
 goto Errors
+:sgO
+call :checkAlchemy sgOptimizer && EXIT /b 0
+echo "%IG_ROOT%\bin\sgOptimizer.exe" must exist. Please check your Alchemy 5 installation.
+goto Errors
 
 :detect
 for %%e in (.txt, .xml, .json) do if /i "%xtnsonly%" == "%%e" goto compile
@@ -305,40 +317,41 @@ for %%e in (.json) do if /i "%xtnsonly%" == "%%e" goto combine
 EXIT /b
 
 :convert
-call :checkVersion
-if ""=="%XC%" goto convertRF
-if %decformat%==lxml set XC=& EXIT /b
-call :checkExist json || EXIT /b 1
+set XC=%deletedec%
+call :checkVersion && goto convertRF
+if %decformat%==lxml EXIT /b 0
+call :checkExist json
 if ""=="%conv%" call :checkConv
 %conv% "%fullpath%" 2>"%rfo%"
 for /f %%e in ("%rfo%") do if %%~ze GTR 0 call :writerror RF & EXIT /b 1
-if %deletedec%==true del "%fullpath%"
+if %XC%==true del "%fullpath%"
 set "fullpath=%pathname%.json"
+call :filesetup
+set XC=true
+set version=json
 :convertRF
 call :fixExt %version%
-if "%operation%" == "compile" EXIT /b 0
-call :filesetup
-if ".%decformat%" == "%xtnsonly%" EXIT /b 0
-if %deletedec%==true set XC=d
-set decformat=json& call :xml & set decformat=%decformat%
-call :RUNxmlb .temp "" "" %xtnsonly% && if defined XC del "%fullpath%"
+if "%operation%"=="compile" EXIT /b 0
+if "%decformat%"=="%version%" EXIT /b 0
+set "d=%pathname%.%dex%" & call :numberedBKP d
+set decformat=xml& call :xml & set decformat=%decformat%
+call :RUNxmlb .temp && if %XC%==true del "%fullpath%"
 call :xml
-set "NB=%pathname%.%dex%" & call :numberedBKP NB
-call :RUNxmlb .%dex% .temp -d
-del "%fullpath%.temp"
-set "fullpath=%NB%"
+set "fullpath=%pathname%.temp"
+call :RUNxmlb .%dex% "" -d
+del "%fullpath%"
+set "fullpath=%d%"
 EXIT /b 0
 :checkVersion
-set XC=
 set /p version=<"%fullpath%"
 set "version=%version%"
 if "%version:~0,1%" == "<" ( set version=xml
 ) else if "%version:~0,1%" == "{" ( set version=json
-) else set XC=convert
+) else EXIT /b 1
 EXIT /b 0
 :fixExt
 if /i "%xtnsonly%" == ".%1" EXIT /b
-call :checkExist %1 || EXIT /b
+call :checkExist %1
 move /y "%fullpath%" "%pathname%.%1" >nul
 set "fullpath=%pathname%.%1"
 EXIT /b
@@ -346,8 +359,7 @@ EXIT /b
 :compile
 call :convert || EXIT /b
 call :setup
-call :RUNxmlb .%extension% && if %deletedec%==true del "%fullpath%"
-if defined XC del "%fullpath%" & set XC=
+call :RUNxmlb .%extension% && if %XC%==true del "%fullpath%"
 EXIT /b 0
 
 :decompile
@@ -359,11 +371,11 @@ EXIT /b
 call :decompile
 notepad "%fullpath%.%customext%"
 move /y "%fullpath%.%customext%" "%fullpath%.%dex%" >nul
-call :RUNxmlb %xtnsonly% .%dex% && if %deletedec%==true for %%e in ("%dex%" "bak") do del "%fullpath%.%%e"
+call :RUNxmlb %xtnsonly% .%dex% && if %deletedec%==true del "%fullpath%.%dex%" "%fullpath%.bak"
 EXIT /b 0
 
 :setup
-for %%e in (xmlb engb freb gerb itab polb rusb spab pkgb boyb chrb navb) do if /i ".%%e"=="%nameonly:~-5%" set "extension=%%e" & set "pathname=%pathname:~,-5%" & EXIT /b
+for %%e in (%rf: =b %b) do if /i ".%%e"=="%nameonly:~-5%" set "extension=%%e" & set "pathname=%pathname:~,-5%" & EXIT /b
 if defined extALL set "extension=%extALL%" & EXIT /b
 call :Formats
 if %x% GTR 1 (
@@ -487,6 +499,17 @@ call :checkNC && call :numberedBKP nps && call :VAR decompile NCpkg
 for /f usebackq %%n in ("%tem%") do call :clonePKG %%n
 if %deletedec%==true del "%ps%" "%nps%"
 EXIT /b
+:checkNC
+if defined NC EXIT /b 1
+for /f %%p in ('findstr /eil "%NCpkg%" ^<"%tpc%" 2^>nul') do EXIT /b 1
+call :NC%cloneNC%
+EXIT /b
+:NCtrue
+if exist "%NCpkg%" EXIT /b 0
+EXIT /b 1
+:NCfalse
+call :trimTailRF hud_head_%pkgn% ps PKG >"%nps%"
+EXIT /b 2
 
 :readNumber
 set NC=
@@ -514,7 +537,6 @@ set z=%pkgn:~,-2%%z:~-2%
 if %pkgn% NEQ %z% call :cPKG
 call :checkNC
 if %errorlevel%==1 EXIT /b
-if errorlevel 2 call :trimTailRF hud_head_%pkgn% ps PKG >"%nps%"
 set p=_nc
 :cPKG
 set "pkgtgt=%po%%npkgn%%p%.pkgb.%customext%"
@@ -522,16 +544,6 @@ call :numberedBKP pkgtgt
 PowerShell "(gc '%po%%pkgnm%%NC%%p%.pkgb.%customext%') -replace '%pkgn%', '%z%' | Out-File -encoding ASCII '%pkgtgt%'"
 call :VAR compile pkgtgt
 EXIT /b
-:checkNC
-if defined NC EXIT /b 1
-for /f %%p in ('findstr /eil "%NCpkg%" ^<"%tpc%" 2^>nul') do EXIT /b 1
-call :NC%cloneNC%
-EXIT /b
-:NCtrue
-if exist "%NCpkg%" EXIT /b 0
-EXIT /b 1
-:NCfalse
-EXIT /b 2
 
 :trimTailRF
 call set "RF=%%%2%%"
@@ -549,45 +561,48 @@ EXIT /b
 echo ^</packagedef^>
 EXIT /b
 
-:SkinEditorD
-call :checkVersion
-set decformat=%version%
-if defined XC set decformat=lxml
-goto SkinEditor2
+:SkinsHelper
+set sn=
+set nn=
+set "ch=%nameonly%"
+call :isNumber %ch:&=_% && set sn=%ch%
+call :trimmer %ch:&=;;%
+set "ch=%trim:;;=&%"
+set "ch=%ch:_= %"
+if %EditStat%==false goto copySkins
+call :HSSetup name in
+(if only 1 character, sets charactername only
+
 :Herostat-Skin-Editor
 set "h=%fullpath%"
 :SkinEditor charactername skinnumber
-for %%i in ("%h%") do echo %%~xi|findstr /eil ".xml .txt .json" >nul && goto SkinEditorD
-if "%xmlb%"=="" call :xml
-call :VAR decompile h || goto SkinEditorD
-set "h=%h%.%customext%"
-:SkinEditor2
 set "ch=%~1"
 set "sn=%~2"
-set p=%sn%
-if defined sn call :readHsn && goto SkinEditor3
-if "%ch%"=="" call :readHS charactername ch || EXIT /b
+set p=$p = %sn%
+if defined sn call :readHsn && goto SkinEditor2
+if "%ch%"=="" ( call :readHS charactername ch || EXIT /b
+) else call :HScheck
 call :PSparseHS skin psc psc charactername match ch
 set "p=%psc%"
-:SkinEditor3
-set "psc=$p = %p%; $p = 'skin[\s="":]{2,4}' + -join $p; try {$h = (dir '%h%' | select-string -Pattern $p)[0]} catch {exit 1}; $h.path; "
-if %decformat% NEQ xml set "psc=%psc%$s = ((gc $h.path) -replace '\s;$' | select -skip ($h.linenumber-1)) -join ""`n"" -replace '(?=\n.*sounddir(\s=|"":))[\s\S]+'; "
-if %decformat%==lxml set "psc=%psc%$s"
-if %decformat%==json set "psc=%psc%$s = $s -split '\n'; $s[-1] = $s[-1] -replace '.$'; '{' + $s + '}' | ConvertFrom-Json"
-if %decformat%==xml set "psc=%psc%([xml]($h.line -replace '(.*(?=skin=))(.*)((?= sounddir=).*)','<skins $2 />')).skins"
+:SkinEditor2
+set "psc=%p%; $p = 'skin[\s="":]{2,4}' + -join $p; try {$h = (dir '%h%' | select-string -Pattern $p)[0]} catch {exit 1}; $h.path; "
+if %hdf% NEQ xml set "psc=%psc%$s = ((gc $h.path) -replace '\s;$' | select -skip ($h.linenumber-1)) -join ""`n"" -replace '(?=\n.*sounddir(\s=|"":))[\s\S]+'; "
+if %hdf%==lxml set "psc=%psc%$s"
+if %hdf%==json set "psc=%psc%$s = $s -split '\n'; $s[-1] = $s[-1] -replace '.$'; '{' + $s + '}' | ConvertFrom-Json"
+if %hdf%==xml set "psc=%psc%([xml]($h.line -replace '(.*(?=skin=))(.*)((?= sounddir=).*)','<skins $2 />')).skins"
 CLS
 echo Reading "%h%" . . .
 for /f "usebackq tokens=1* delims=:= " %%r in (`Powershell "%psc:"=""%"`) do set "s=%%s" & call :SE3count && set "h=%%r:%%s"
 if ""=="%skin_01%" echo "%h%" not correctly formatted. & goto Errors
 set cn=%skin_01:~,-2%
 set p=%skin_01%
-:SkinEditor4
+:SkinEditor3
 CLS
 call :listSkins
 echo.
 choice /c A%options% /m "Edit a skin by pressing its number (will be added, if not listed). Press 'A' to accept and continue."
 set /a n=%errorlevel%-1
-if %n%==0 goto SkinEditor5
+if %n%==0 goto SkinEditor4
 set nn=
 echo.
 echo Skin %n% of %cn% %ch%
@@ -595,14 +610,14 @@ call :asknum nn
 set /p skin_0%n%_name=Enter a skin name :               || goto SE4clear
 set nn=0%nn%
 set skin_0%n%=%nn:~-2%
-if exist "%MUAOHSpath%\actors\%cn%%nn:~-2%.igb" goto SkinEditor4
+if exist "%MUAOHSpath%\actors\%cn%%nn:~-2%.igb" goto SkinEditor3
 echo WARNING: %cn%%nn:~-2%.igb not found. Make sure it's in the game^'s actors folder.
 pause
-goto SkinEditor4
+goto SkinEditor3
 :SE4clear
 set skin_0%n%=
 set skin_0%n%_name=
-goto SkinEditor4
+goto SkinEditor3
 :listSkins
 set o=0
 echo ^#   File       Name
@@ -617,42 +632,148 @@ if defined ns ( set /a si+=1 & set ns=
 ) else set ns=_name
 set "skin_0%si%%ns%=%s%"
 EXIT /b 1
-:SkinEditor5
-if "%skin_01%"=="" goto SkinEditor4
+:SkinEditor4
+if "%skin_01%"=="" goto SkinEditor3
 for /l %%n in (1,1,6) do if defined skin_0%%n call :SE5 %%n
-set "psc=$h = gc '%h%'; $m = ($h | select-string -Pattern 'skin[\s="":]{2,4}%p%')[0]; $s = $h | select -skip ($m.linenumber-1); try {$e = ($s | select-string -Pattern 'sounddir[\s="":]{2,4}')[0].linenumber-1} catch {exit 1}; $s = $s | select -first $e; "
-if %decformat%==lxml set "psc=%psc%$n = New-Object PSObject; ($s -replace '\s;$') | ConvertFrom-StringData | %% {$n | Add-Member NoteProperty $_.keys $_.values}; %pcs%$s = $n.psobject.properties.name | %% {$_ + ' = ' + $n.$_ + ' ;'}; "
-if %decformat%==json set "psc=%psc%$s[-1] = $s[-1] -replace '.$'; $n = '{' + $s + '}' | ConvertFrom-Json; %pcs%$n = $n | ConvertTo-Json; $s = $n.substring(3,$n.length-6) + ','; "
-if %decformat%==xml set "psc=%psc%$n = ([xml]($m.line -replace '.$','/>')); %pcs%($n.stats.Attributes | Sort-Object { $_.Name }) | %% {$n.stats.Attributes.Append($_)}; $s = $n.outerxml -replace '/>$','>'; $e = 1; "
-set "psc=%psc%$h = ($h | select -first ($m.linenumber-1)) + $s + ($h | select -skip ($e+$m.linenumber-1)); [System.IO.File]::WriteAllLines('%h%', $h, (New-Object System.Text.UTF8Encoding $False))"
+set "psc=$h = gc '%h%'; $m = ($h | select-string -Pattern 'skin[\s="":]{2,4}%p%')[0]; $s = $h | select -skip ($m.linenumber-1); try {$e = ($s | select-string -Pattern 'sounddir[\s="":]{2,4}')[0].linenumber-1} catch {exit 1}; $s = $s | select -first $e"
+if %hdf%==lxml set "pcr=$n = New-Object PSObject; ($s -replace '\s;$') | ConvertFrom-StringData | %% {$n | Add-Member NoteProperty $_.keys $_.values}; %pcs%$s = $n.psobject.properties.name | %% {$_ + ' = ' + $n.$_ + ' ;'}"
+if %hdf%==json set "pcr=$s[-1] = $s[-1] -replace '.$'; $n = '{' + $s + '}' | ConvertFrom-Json; %pcs%$s = $n | ConvertTo-Json; $s = $s.substring(3,$s.length-6) + ','"
+if %hdf%==xml set "pcr=$n = ([xml]($m.line -replace '.$','/>')); %pcs%($n.stats.Attributes | Sort-Object { $_.Name }) | %% {$n.stats.Attributes.Append($_)}; $s = $n.outerxml -replace '/>$','>'; $e = 1"
+set "pco=$h = ($h | select -first ($m.linenumber-1)) + $s + ($h | select -skip ($e+$m.linenumber-1)); $hp = '%h%'; %ho%"
 CLS
 echo Writing new skin information to "%h%" . . .
-Powershell "%psc:"=""%"
+Powershell "%psc:"=""%; %pcr%; %pco%"
+if defined xmlbd call :VAR compile h
 EXIT /b
 :SE5
 set s=skin
 if %1 GTR 1 set s=skin_0%1
-call :SE5%decformat% skin_0%1 %s%
-call :SE5%decformat% skin_0%1_name skin_0%1_name
+call :SE5%hdf% skin_0%1 %s%
+call :SE5%hdf% skin_0%1_name skin_0%1_name
 EXIT /b
 :SE5lxml
 :SE5json
+REM instead of try/catch, use "Add-Member..." with "-Force" (but that moves to the end)
 call set "pcs=%pcs%try {$n.%2 = '%%%1%%'} catch {$n | Add-Member NoteProperty %2 '%%%1%%'}; "
 EXIT /b
 :SE5xml
 call set "pcs=%pcs%$n.stats.SetAttribute('%2','%%%1%%'); "
 EXIT /b
 
+:HScheck
+set "ho=[System.IO.File]::WriteAllLines($hp, $h, (New-Object System.Text.UTF8Encoding $False))"
+for %%i in ("%h%") do echo %%~xi|findstr /eil ".xml .txt .json" >nul && goto HScheckD
+if [%xmlb%]==[] call :xml
+call :VAR decompile h || goto HScheckD
+set "h=%h%.%customext%"
+set xmlbd=true
+set hdf=%decformat%
+EXIT /b
+:HScheckD
+set xmlbd=
+set hdf=lxml
+call :checkVersion || EXIT /b 
+set hdf=%version%
+EXIT /b
+
 :readHsn
-set src=skin sn
+call :HScheck
 CLS
 call :PSparseHS skin print sn && EXIT /b || set /p sn=Choose a skin number from the list above by entering the full number: || EXIT /b
 call :isNumber %sn% && call :PSparseHS skin set sn skin eq sn && EXIT /b
 goto readHsn
-:SEgetLN
-for /f "usebackq tokens=1* delims=|" %%t in (`PowerShell "dir '%h%' | select-string -Pattern '%1[\s="":]{1,4}%~2' | %% { $_.path + '|' + $_.linenumber }"`) do set "h=%%~t" & set x=%%u & EXIT /b 0
-echo %1 "%~2" not found in "%h%"
+
+:ModCloner
+for /f "delims=" %%h in ('where herostat.txt data\:*.txt data\:herostat.engb .\:*.txt 2^>nul') do set "h=%%~fh" & goto ModClonerH
+:MChsError
+CLS
+echo No herostat found. Mod re-numbering will be incomplete.
+pause
+for %%i in (actors\*.igb) do set "ig=%%~ni" & call :isNumber %%~ni || call :MC1af && goto MC1cfm
+echo.
+echo No skin numbers detected. Please enter the old mod number.
+:ModCloner1
+call :asknum on
+if "%on:~1%"=="" set on=0%on%
+set ig=%on:~-3%00
+:MC1cfm
+set on=%ig:~,-2%
+echo.
+choice /m "Old mod number: %on%. Confrm"
+if errorlevel 2 goto ModCloner1
+set h=
+set psc=$null
+set "pcv=$on = '%on%'; $sn = $on + '*'; $ca = '$'"
+:ModCloner2
+set "pcl=$a = '%cd%\actors\'; $l = '%cd%\textures\loading\' + $on + '*.igb'; $m = '%cd%\ui\models\mannequin\' + $on + '01.igb*'; $hu = '%cd%\hud\hud_head_'; $pk = '%cd%\packages\generated\*.pkgb'; $ps = '%cd%\data\powerstyles\' + $p.powerstyle + '.engb'; $xd = '%tem%.%dex%'"
+set xd=$xd
+if %decformat%==lxml set "xd='%xco%'"
+CLS
+echo Enter a new mod number.
+call :asknum nn
+if "%nn:~1%"=="" set nn=0%nn%
+set nn=%nn:~-3%
+if %decformat%==json if %nn% LSS 10 set "rd=-replace'(?<=(skin_filter|filename)[\s="":]{2,4})\s(\d{4,5})',' ""$2""'"
+REM Setup PowerShell:
+set "pct=if ($on -eq '%nn%') {exit 2}; $p.charactername + ': From ' + $on + ' to %nn%'"
+set "pcd=| Select-String $on).path | %% {if ($_) {%xmlb% -d $_ $xd 2>>'%erl%' 1>'%xco%'"
+set "xdc=(gc %xd%) %rd% -replace $rd,'%nn%' | Out-File -encoding ASCII $xd; %xmlb% $xd"
+set "f=dir $f | ren -NewName {$_.name -replace $r,'%nn%'}"
+set "pcr=$r = '^' + $on; $f = ($a + $ca + '.igb*'), ($a + $ca + '_4_combat.igb*'), ($a + $sn + '.igb*'), $l, $m; 2..6 | %% {$x = 'skin_0' + $_; if ($p.$x) {$f += $a + $on + $p.$x + '.igb*'}}; %f%; 'characteranims','skin' | %% {$p.$_ = $p.$_ -replace $r,'%nn%'}"
+set "pch=$r = '(?<=^hud_head_)' + $on; [array]$f = $hu + $sn + '.igb*'; 2..6 | %% {$x = 'skin_0' + $_; if ($p.$x) {$f += $hu + $on + $p.$x + '.igb*'}}; %f%"
+REM Old packages are currently not deleted
+set "pcp=$r = '(?=' + $on + '\d\d(_nc)?\.pkgb$)' + $on; $rd = '(?<=filename[\s="":]{2,4}(.*\/(hud_head_)?)?)' + $on; (dir -s $pk %pcd%; $xds = ($_ -split '\\'); $xdo = ($xds[0..($xds.length-2)] + ($xds[-1] -replace $r,'%nn%')) -join '\'; %xdc% $xdo}}"
+set "pcf=$rd = '(?<=skin_filter[\s="":]{2,4})' + $on; (dir $ps %pcd%; %xdc% $ps; $e = (gc %xd% -raw | Select-String 'ents_') -replace '[\s\S]+filename[\s="":]{2,4}(ents_.*?)(""|\s)[\s\S]+','$1'; if ($e) {$e = '%cd%\data\entities\' + $e + '.xmlb'; (dir $e %pcd%; %xdc% $e}}}}}"
+if %hdf%==lxml set "pcs=$l = $p.psobject.properties.name | %% {$_ + ' = ' + $p.$_ + ' ;'}"
+if %hdf%==json set "pcs=$l = $p | Select -Property * -ExcludeProperty talent,Multipart,StatEffect,BoltOn | ConvertTo-Json; $l = $l.substring(3,$l.length-6) + ','; "
+if %hdf%==xml set "pcs=$l = ($p.outerxml -split '(?=<.*?>)')[1]; "
+set "pcs=$r = 'charactername[\s="":]{2,4}' + $p.charactername; try {$hp = (dir '%h%' | select-string -Pattern $r)[0].path} catch {exit 3}; $hs = $h -split '\r?\n'; $m = ($hs | select-string -Pattern $r)[0].linenumber; try {$b = ($hs | select -first $m | select-string -Pattern '^\s*""?stats')[-1].linenumber} catch {$b = $m - 1}; try {$e = ($hs | select -skip $b | select-string -Pattern '{$')[0].linenumber-1} catch {$e = 1}; %pcs%; [array]$h = ($hs | select -first $b); $h += $l + ($hs | select -skip ($b+$e)); %ho%"
+if ""=="%h%" set pcs=$null
+CLS
+PowerShell "%psc%; %pcv%; %pct%; %pcl%; %pcr%; %pch%; %pcp:"=""%; %pcf:"=""%; %pcs:"=""%" || goto MC2Error
+if defined xmlbd call :VAR compile h
+call :sgO
+for %%i in (actors\*.igb) do set "fullpath=%%~fi" & call :MChexed
+set "outfile=%temp%\temp.igb"
+for %%e in ("%erl%") do if %%~ze LSS 8 del %%e
+if defined ccl EXIT /b
+GOTO End
+:MChexed
+set "outfile=%temp%\temp.igb"
+call :filesetup
+call :getSkinName
+set "newName=%nameonly%"
+(call :OptHead 1 & call :OptRen 1)>%optSet%
+set "outfile=%fullpath%"
+goto Optimizer
+:ModClonerH
+call :readHS charactername ch || goto MChsError
+call :PSparseHS . psc psc charactername match ch
+if %hdf%==lxml set "psc=%psc%; $n = New-Object PSObject; $p.GetEnumerator() | sort -Property name | %% {$n | Add-Member NoteProperty $_.name $_.value}; $p = $n"
+set "pcv=[string]$sn = $p.skin; $ca = $p.characteranims; $on = $sn.substring(0,$sn.length-2); if ($on -ne ($ca -replace '_.*')) {exit 1}"
+goto ModCloner2
+:MC2Error
+if errorlevel 3 echo Herostat problem. Skins are not hex-edited and herostat is not updated. & goto Errors
+if errorlevel 2 echo Old and new number are identical & goto Errors
+echo Skin and animation numbers don't match
 goto Errors
+EXIT /b
+:MC1af
+set "ca=%ig:*_=%"
+call set "ig=%%ig:%ca%=%%"
+set "ig=%ig:~,-1%00"
+call :isNumber %ig%
+EXIT /b
+
+:getSkinName
+set "igSS=%temp%\igStatisticsSkin.ini"
+if not exist "%igSS%" (call :OptHead 1 & call :OptSkinStats 1)>"%igSS%"
+( %sgOptimizer% "%fullpath%" "%outfile%" "%igSS%" )>"%temp%\%nameonly%.txt"
+set targetName=
+for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\%nameonly%.txt"') do set targetName=%%a
+del "%temp%\%nameonly%.txt"
+EXIT /b
+
 
 
 :askSR
@@ -947,35 +1068,33 @@ set /p hash=Enter or paste a hash for "%namextns%", or press enter to use "%hash
 EXIT /b
 :x_voiceHash
 if defined ch EXIT /b 0
-if ""=="%MUAOHSpath%" set /p "MUAOHSpath=Please paste or enter the path to the MUA installation, or a MUA MO2 mod folder, or OpenHeroSelect here: " || goto askIntName
-set hash=0
-if exist "%MUAOHSpath%\mua\xml\" ( call :OHSherostats name hash
-) else if exist "%MUAOHSpath%\data\herostat.engb" call :MUAherostats name hash
-if errorlevel 1 goto askIntName
-if "%hash%"=="0" goto askIntName
-:calloutORbreak
+call :HSSetup name in || set in=0
+set "hash=%in%"
 set hp=COMMON/MENUS/CHARACTER/
 choice /c CBX /m "Is '%nameonly%' a name [c]allout or a [b]reak line (press [X] if it's something else)"
 if ERRORLEVEL 3 EXIT /b
 if ERRORLEVEL 1 set cp=AN_
 if ERRORLEVEL 2 set cp=BREAK_
-set "hash=%hp%%cp%%hash%"
+set "hash=%hp%%cp%%in%"
 choice /m "Do you want to use '%hash%' for the hash of all remaining input files"
 if ERRORLEVEL 2 set ch=
 EXIT /b
-:askIntName
-set /p hash=Enter the internal name for "%nameonly%": || set "hash=0" & EXIT /b
-goto calloutORbreak
-:MUAherostats
-call :xml
-set "h=%MUAOHSpath%\data\herostat"
-%xmlb% -d "%h%.engb" "%h%.%dex%" 2>"%rfo%" 1>"%xco%" || call :writerror
-if %decformat%==lxml (set "h=%xco%") else set "h=%h%.%dex%"
-goto readHS
-:OHSherostats
-set decformat=lxml
-set "h=%MUAOHSpath%\mua\xml\*.xml"
+:HSSetup
+if ""=="%MUAOHSpath%" set /p "MUAOHSpath=Please paste or enter the path to the MUA installation, or a MUA MO2 mod folder, or OpenHeroSelect here: " || goto HSSE
+set %2=
+set "h=%MUAOHSpath%\data\herostat.engb"
+if exist "%MUAOHSpath%\mua\xml\" ( set "h=%MUAOHSpath%\mua\xml\*.xml"
+) else if not exist "%h%" EXIT /b 1
+call :readHS %1 %2 || goto HSSE
+if defined %2 EXIT /b 0
+:HSSE
+if not %1==name EXIT b 1
+set %2=
+set /p %2=Enter the internal name for "%nameonly%": || EXIT /b
+EXIT /b 0
 :readHS
+REM For other uses: If the herostat has 1 char, charactername will always be set, regardless of the argument
+call :HScheck || EXIT /b
 CLS
 call :PSparseHS charactername print %2 && EXIT /b || set /p ch=Choose a character from the list above by entering the name exactly as printed: || EXIT /b
 call :PSparseHS %1 set %2 charactername match ch && EXIT /b
@@ -1347,33 +1466,66 @@ powershell "('%cd%' -split ('\\'))[-1]"
 EXIT /b
 :PSparseHS
 REM var h must one or multiple herostat files (multi only tested with lxml)
-set hs=).%1
-if not "%4"=="" call set "hs=| ? %4 -%5 '%%%6%%'%hs%"
-if %decformat%==lxml set "psc=((gc -raw '%h%') -split '(?=stats\s{\r?\n[\S\s]*)' | %% {(($_ -split '[a-zA-Z]*\s{\r?\n')[1] -split '\s;\r' -split '\s*}\r') -join '' | ConvertFrom-StringData} %hs%"
-if %decformat%==xml set "psc=((Select-Xml -Path '%h%' -XPath  /characters/stats).Node %hs%"
-if %decformat%==json set "psc=((gc -raw '%h%') -replace '{\r?\n\s*\"characters\":\s{','' -replace '\s*}\s*}\r','' -split '(?=\"stats\":[\S\s]*},?)') | %% {(('{' + $_.Trim().Trim(',') + '}' | ConvertFrom-Json).stats %hs%}"
+set "psc=$h = (gc -raw '%h%'); $d = "
+if %hdf%==lxml set "psc=%psc%$h -split '(?=stats\s{\r?\n[\S\s]*)' | %% {(($_ -split '[a-zA-Z]*\s{\r?\n')[1] -split '\s;\r' -split '\s*}\r') -join '' | ConvertFrom-StringData}"
+if %hdf%==xml set "psc=%psc%([xml]$h).characters.stats"
+if %hdf%==json set "psc=%psc%($h -replace '{\r?\n\s*\"characters\":\s{','' -replace '\s*}\s*}\r','' -split '(?=\"stats\":[\S\s]*},?)') | %% {(('{' + $_.Trim().Trim(',') + '}' | ConvertFrom-Json).stats)}"
+set "d=.%1"
+if "%1"=="." set d=
+set "e=$p = $d"
+if not "%4"=="" call set "e=$p = ($d | ? %4 -%5 '%%%6%%')"
+set "psc=%psc%; %e%%d%"
 if %2==psc EXIT /b 0
-for /f "useback delims=" %%h in (`PowerShell "%psc%"`) do set "%3=%%~h" & goto PSpH%2
+for /f "useback delims=" %%h in (`PowerShell "%psc%; $p"`) do set "%3=%%~h" & goto PSpH%2
 EXIT /b 1
 :PSpHset
 EXIT /b 0
 :PSpHprint
-PowerShell "$t=%psc%; $t; if ($t.count -ne 1) { exit 1 } else { exit 0 }"
+PowerShell "%psc%; $p; if ($p.count -ne 1) { exit 1 } else { exit 0 }"
 EXIT /b
 REM Tried to parse lxml with powershell, but there's an issue because of non-indexed identical properties (stats{}, stats{}, etc.)
 REM Powershell index (eg. [0]) does not work with property paths, because it's required to be part in the path.
 REM (((gc -raw '%h%') -split '(?=stats\s{\r[\S\s]*)')[5] -split '\n') | %% {if ($_ -match '^[{\r]') {$t=$_.trim().trim('{ '); if ($p) {$l+='.'}; $l+=$t; if ($m) {if (!$m.$l) {$m.$p+=@{$t=@{}}}} else {$m=@{$t=@{}}}; $p=$l} elseif ($_ -match '}\r') {$p = $p -replace '\.(\w+)$',''} else {$m.$p+=($_.trim().trim('; ') | ConvertFrom-StringData)}}
 
 
+:Optimizer
+%sgOptimizer% "%infile%" "%outfile%" %optSet% || goto Errors
+EXIT /b
+
+:optHead
+echo [OPTIMIZE]
+echo optimizationCount = %1
+echo hierarchyCheck = true
+EXIT /b
+
+:OptSkinStats
+echo [OPTIMIZATION%1]
+echo name = igStatisticsSkin
+echo separatorString = ^|
+echo columnMaxWidth = -1
+echo showColumnsMask = 0x00000006
+echo sortColumn = -1
+EXIT /b
+
+:OptRen
+echo [OPTIMIZATION%1]
+echo name = igChangeObjectName
+echo objectTypeName = igNamedObject
+echo targetName = %targetName%
+echo newName = %newName%
+EXIT /b
+
+
 :isNumber string
 for /f "delims=0123456789" %%i in ("%*") do EXIT /b 1
 EXIT /b 0
 
-
-REM Unused code
 :trimmer
 set "trim=%*"
 EXIT /b
+
+
+REM Unused code
 :addVar var string
 call set "%1=%%%1%%%2" & EXIT /b
 :replaceVar var org.string replace.string
@@ -1408,9 +1560,12 @@ set %~1=%trim%
 EXIT /b
 
 
+:checkAlchemy program
+if not defined IG_ROOT echo The IG_ROOT variable is not defined. Please check your Alchemy 5 installation. & goto Errors
+if exist "%IG_ROOT%\bin\%1.exe" set %1="%IG_ROOT%\bin\%1.exe"
 :checkTools program
 if exist "%~dp0%1.exe" set %1="%~dp0%1.exe"
-%1 for /f "delims=" %%a in ('where %1 2^>nul') do set %1=%1
+if not defined %1 for /f "delims=" %%a in ('where %1 2^>nul') do set %1=%1
 echo %1 | find /i "XMLB" >nul && goto check%decformat%
 if defined %1 EXIT /b 0
 EXIT /b 1
@@ -1475,5 +1630,5 @@ if exist "%erl%" (
 )
 pause
 :cleanup
-del "%xco%" "%rfo%" "%tem%" "%tem%l" "%tem%c" "%tem%m"
+del "%xco%" "%rfo%" "%tem%" "%tem%l" "%tem%c" "%tem%m" "%outfile%" %optSet%
 EXIT
