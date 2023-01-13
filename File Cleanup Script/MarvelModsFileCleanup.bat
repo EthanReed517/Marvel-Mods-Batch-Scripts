@@ -74,24 +74,6 @@ del >nul actors\fightstyle_finesse1.igb /s
 
 goto End
 
-
-:FEtoLower
-call :toLower %*
-echo .%1 to .%o%
-forfiles /S /M *.%1 /C "cmd /c ren @file @fname.%o%" >nul 2>nul
-EXIT /b
-
-:FOtoLower
-call :toLower %*
-ren "%f%" "%o%"
-EXIT /b
-
-:toLower
-set "o=%*"
-for %%g in (a b c d e f g h i j k l m n o p q r s t u v w x y z) do call set "o=%%o:%%g=%%g%%"
-EXIT /b
-
-
 :XML2
 REM Game display name:
 set gamename=X-Men Legends 2
@@ -111,7 +93,7 @@ echo.
 REM make the files lowercase if the user chooses
 if %lowercaseFiles%==1 (
 	echo Renaming file extensions to lowercase. This will take a few minutes . . .
-    for %%B in (BOYB CHRB IGB NAVB PKGB PY XMLB) do call :FEtoLower %%B
+    for %%B in (BOYB CHRB IGB NAVB PKGB PY XMLB) do echo .%%B to lowercase & for /f "delims=" %%F in ('dir /b /a-d /s /l *%%B 2^>nul') do for %%E in ("_%%~F") do ren "%%~F" "%%~nF%%~xE"
 	echo All files are now lowercase.
 	echo.
 )
@@ -119,7 +101,7 @@ if %lowercaseFiles%==1 (
 REM Make the folders lowercase if the user chooses
 if %lowercaseFolders%==1 (
 	echo Renaming all folders to lowercase. This will take a few seconds . . .
-    for /f "delims=" %%i in ('dir /b /ad /s 2^>nul') do set "f=%%~i" & call :FOtoLower %%~ni
+    for /f "delims=" %%i in ('dir /b /ad /s /l 2^>nul') do for %%t in ("a%%~i") do ren "%%~i" "%%~nt"
 	echo All folders are now lowercase.
 )
 
