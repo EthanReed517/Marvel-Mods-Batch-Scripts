@@ -643,9 +643,9 @@ del "%temp%\%nameonly%.txt"
 EXIT /b
 
 :genGColorFix
-set "igGGG=%temp%\igGenerateGlobalColor.ini"
-if not exist "%igGGG%" (call :OptHead 1 & call :optGGC 1)>"%igGGG%"
-%sgOptimizer% "%fullpath%" "%fullpath%" "%igGGG%"
+set "igGGC=%temp%\igGenerateGlobalColor.ini"
+if not exist "%igGGC%" (call :OptHead 1 & call :optGGC 1)>"%igGGC%"
+%sgOptimizer% "%fullpath%" "%fullpath%" "%igGGC%"
 EXIT /b
 
 :convert_to_igGeometryAttr2
@@ -1527,5 +1527,5 @@ del %tem% %optSet% %optSetT% "%outfile%" "%TC%T.txt" "%TC%N.txt"
 if %delOptSets%==false EXIT
 del %optSet% %optSetT%
 if %delOptSets%==true EXIT
-del "%igGGG%" "%igSS%"
+del "%igGGC%" "%igSS%"
 EXIT

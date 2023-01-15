@@ -89,6 +89,10 @@ set "erl=%~dp0error.log"
 if ""=="%customext%" set customext=%decformat:lxml=xml%
 if "%operation%" == "ask" call :askop
 if defined sr if defined channels if defined loop set predefined=true
+REM Powershell commands
+set PSout=[System.IO.File]::WriteAllLines($varp, $var, (New-Object System.Text.UTF8Encoding $False))
+set PSbkp=$var ^| %% {if (Test-Path $_) {$b = $_; $i = 1; while ($true) {if (Test-Path $b) {$b = $_ + '.' + $i + '.bak'; $i++} else {Break}}; copy $_ $b}}
+if %askbackup%==replace set PSbkp=$null
 REM Zsnd formats:
 set unk=Unknown (information required, contact ak2yny if you know more)
 set .wav=PC 106 WAV 16bit
@@ -451,13 +455,13 @@ findstr /eil "%pkgnm%.pkgb %pkgnm%_nc.pkgb" <"%tpc%" >nul 2>nul || set /a x+=1
 for %%a in ("%fullpath%") do echo %%~a>>"%tpc%"
 EXIT /b
 :PackageClonerPost
-set rPKG=findstr /eil "%pkgn%.pkgb %pkgn%_nc.pkgb" ^<"%tpc%"
 call :srcNum
+set rPKG=findstr /eil "%pkgn%.pkgb %pkgn%_nc.pkgb" ^<"%tpc%"
 for /f "delims=" %%c in ('%rPKG:<=^<% 2^>nul ^| find /c /v ""') do set m=%%c
 for /f "delims=" %%p in ('%rPKG:<=^<% 2^>nul') do (
  set "fullpath=%%~fp"
  call :filesetup
- call :newpackage
+ call :clonePKG
 )
 del "%tpc%"
 EXIT /b
@@ -472,11 +476,11 @@ echo The package you want to clone needs to exist and the numbers inside need to
 echo.
 if "%pkgn%"=="na" (echo Package not found. Please try again.) else (echo.)
 set /p pkgn=Enter the number of the package to clone: || set pkgn=
-%rPKG% >nul 2>nul && EXIT /b
+findstr /eil "%pkgn%.pkgb %pkgn%_nc.pkgb" <"%tpc%" >nul 2>nul && EXIT /b
 set pkgn=na
 goto srcNum
 
-:newpackage
+:clonePKG
 call :readNumber || EXIT /b
 REM To only clone one number even if they are named differently, use %pkgn%
 echo %cmplt% | find "-%pkgnm%%NC%-" && EXIT /b
@@ -489,26 +493,37 @@ echo Clone "%namextns%". Press enter to skip.
 call :AskIrange %i% || EXIT /b
 if "%newPKGn%"=="all" set "newPKGn=%i%"
 call :askpkg
-set "po=%pathonly%"
+REM CMD path variables
 set "NCpkg=%pathname%_nc.pkgb"
 set "ps=%fullpath%.%customext%"
 set "nps=%NCpkg%.%customext%"
+REM PS variables
+REM PS package number regex: (?=_\d+(?!.*_\d))
+set e=$e = '        }','','    }','','}'
+if %decformat%==lxml set e=%e%; $e = $e[2..4]
+if %decformat%==xml set "e=$e = '</packagedef>'"
+set r=-replace '%pkgn%',$nn
+set "psc=$x = '%NC%.pkgb'; $pn = '%pathonly%%pkgnm:~,-2%'; $ps = gc -raw '%ps%'"
+set "pcr=gc '%tem%' | %% {$cn = $_.PadLeft(2,'0'); $nn = '%pkgn:~,-2%' + $cn; $pc = $pn + $cn + $x; $ncc =  $pn + $cn + '_nc' + $x; $pp=$ncp = '%tem%.%dex%'; $nc = $null; if ($nn -eq '%pkgn%') {if ($e) {$nc = $psn}} else {if ($psn) {$nc = $psn %r%}; $p = $ps %r%; %PSbkp:var=pc%; %PSout:var=p%; %xmlb% $pp $pc}; if ($nc) {%PSbkp:var=ncc%; %PSout:var=nc%; %xmlb% $pp $ncc}}"
+set pcn=$null
 call :numberedBKP ps
 call :decompile
-call :checkNC && call :numberedBKP nps && call :VAR decompile NCpkg
-for /f usebackq %%n in ("%tem%") do call :clonePKG %%n
+if ""=="%NC%" findstr /eilc:"%NCpkg%" <"%tpc%" >nul 2>nul || call :NCcheck %cloneNC%
+Powershell "%psc%; %pcn:"=""%; %pcr%" || goto Errors
 if %deletedec%==true del "%ps%" "%nps%"
 EXIT /b
-:checkNC
-if defined NC EXIT /b 1
-for /f %%p in ('findstr /eil "%NCpkg%" ^<"%tpc%" 2^>nul') do EXIT /b 1
-call :NC%cloneNC%
-EXIT /b
+:NCcheck
+call :NC%1
+if %errorlevel%==1 EXIT /b
+call :numberedBKP nps
+if %1==true call :VAR decompile NCpkg
+EXIT /b 0
 :NCtrue
-if exist "%NCpkg%" EXIT /b 0
-EXIT /b 1
+if not exist "%NCpkg%" EXIT /b 1
+set "pcn=$psn = gc -raw '%nps%'"
+EXIT /b 0
 :NCfalse
-call :trimTailRF hud_head_%pkgn% ps PKG >"%nps%"
+set "pcn=%e%; $psn = ($ps -split '(?<=hud_head_%pkgn%.*\r?\n)')[0] + ($e -join ""`n"")"
 EXIT /b 2
 
 :readNumber
@@ -527,38 +542,6 @@ echo.
 choice /c NVY /m "Do you want to clone all remaining input packages to '%i%' - [N]o, Ne[v]er, [Y]es"
 if ERRORLEVEL 2 set m=0
 if ERRORLEVEL 3 set "newPKGn=%i%"
-EXIT /b
-
-:clonePKG
-set p=
-set z=00%1
-set "npkgn=%pkgnm:~,-2%%z:~-2%%NC%"
-set z=%pkgn:~,-2%%z:~-2%
-if %pkgn% NEQ %z% call :cPKG
-call :checkNC
-if %errorlevel%==1 EXIT /b
-set p=_nc
-:cPKG
-set "pkgtgt=%po%%npkgn%%p%.pkgb.%customext%"
-call :numberedBKP pkgtgt
-PowerShell "(gc '%po%%pkgnm%%NC%%p%.pkgb.%customext%') -replace '%pkgn%', '%z%' | Out-File -encoding ASCII '%pkgtgt%'"
-call :VAR compile pkgtgt
-EXIT /b
-
-:trimTailRF
-call set "RF=%%%2%%"
-for /f "delims=:" %%a in ('findstr /n "%~1" ^<"%RF%"') do set l=%%a
-PowerShell "gc '%RF%' -First %l%"
-goto t%3%decformat%
-:tPKGjson
-echo         }
-:tPKGlxml
-echo    }
-echo.
-echo }
-EXIT /b
-:tPKGxml
-echo ^</packagedef^>
 EXIT /b
 
 :SkinsHelper
@@ -639,7 +622,7 @@ set "psc=$h = gc '%h%'; $m = ($h | select-string -Pattern 'skin[\s="":]{2,4}%p%'
 if %hdf%==lxml set "pcr=$n = New-Object PSObject; ($s -replace '\s;$') | ConvertFrom-StringData | %% {$n | Add-Member NoteProperty $_.keys $_.values}; %pcs%$s = $n.psobject.properties.name | %% {$_ + ' = ' + $n.$_ + ' ;'}"
 if %hdf%==json set "pcr=$s[-1] = $s[-1] -replace '.$'; $n = '{' + $s + '}' | ConvertFrom-Json; %pcs%$s = $n | ConvertTo-Json; $s = $s.substring(3,$s.length-6) + ','"
 if %hdf%==xml set "pcr=$n = ([xml]($m.line -replace '.$','/>')); %pcs%($n.stats.Attributes | Sort-Object { $_.Name }) | %% {$n.stats.Attributes.Append($_)}; $s = $n.outerxml -replace '/>$','>'; $e = 1"
-set "pco=$h = ($h | select -first ($m.linenumber-1)) + $s + ($h | select -skip ($e+$m.linenumber-1)); $hp = '%h%'; %ho%"
+set "pco=$h = ($h | select -first ($m.linenumber-1)) + $s + ($h | select -skip ($e+$m.linenumber-1)); $hp = '%h%'; %PSout:var=h%"
 CLS
 echo Writing new skin information to "%h%" . . .
 Powershell "%psc:"=""%; %pcr%; %pco%"
@@ -661,7 +644,6 @@ call set "pcs=%pcs%$n.stats.SetAttribute('%2','%%%1%%'); "
 EXIT /b
 
 :HScheck
-set "ho=[System.IO.File]::WriteAllLines($hp, $h, (New-Object System.Text.UTF8Encoding $False))"
 for %%i in ("%h%") do echo %%~xi|findstr /eil ".xml .txt .json" >nul && goto HScheckD
 if [%xmlb%]==[] call :xml
 call :VAR decompile h || goto HScheckD
@@ -727,7 +709,7 @@ set "pcf=$rd = '(?<=skin_filter[\s="":]{2,4})' + $on; (dir $ps %pcd%; %xdc% $ps;
 if %hdf%==lxml set "pcs=$l = $p.psobject.properties.name | %% {$_ + ' = ' + $p.$_ + ' ;'}"
 if %hdf%==json set "pcs=$l = $p | Select -Property * -ExcludeProperty talent,Multipart,StatEffect,BoltOn | ConvertTo-Json; $l = $l.substring(3,$l.length-6) + ','; "
 if %hdf%==xml set "pcs=$l = ($p.outerxml -split '(?=<.*?>)')[1]; "
-set "pcs=$r = 'charactername[\s="":]{2,4}' + $p.charactername; try {$hp = (dir '%h%' | select-string -Pattern $r)[0].path} catch {exit 3}; $hs = $h -split '\r?\n'; $m = ($hs | select-string -Pattern $r)[0].linenumber; try {$b = ($hs | select -first $m | select-string -Pattern '^\s*""?stats')[-1].linenumber} catch {$b = $m - 1}; try {$e = ($hs | select -skip $b | select-string -Pattern '{$')[0].linenumber-1} catch {$e = 1}; %pcs%; [array]$h = ($hs | select -first $b); $h += $l + ($hs | select -skip ($b+$e)); %ho%"
+set "pcs=$r = 'charactername[\s="":]{2,4}' + $p.charactername; try {$hp = (dir '%h%' | select-string -Pattern $r)[0].path} catch {exit 3}; $hs = $h -split '\r?\n'; $m = ($hs | select-string -Pattern $r)[0].linenumber; try {$b = ($hs | select -first $m | select-string -Pattern '^\s*""?stats')[-1].linenumber} catch {$b = $m - 1}; try {$e = ($hs | select -skip $b | select-string -Pattern '{$')[0].linenumber-1} catch {$e = 1}; %pcs%; [array]$h = ($hs | select -first $b); $h += $l + ($hs | select -skip ($b+$e)); %PSout:var=h%"
 if ""=="%h%" set pcs=$null
 CLS
 PowerShell "%psc%; %pcv%; %pct%; %pcl%; %pcr%; %pch%; %pcp:"=""%; %pcf:"=""%; %pcs:"=""%" || goto MC2Error
@@ -1309,7 +1291,7 @@ set i=%i:+=,%
 set i=%i:/=,%
 set i=%i:and=,%
 for %%i in (%i%) do call :ix %%i >"%tem%"
-if defined pi call :isValid %pi% && echo %pi% >>"%tem%"
+if defined pi call :ie %pi% >>"%tem%"
 EXIT /b
 :ix
 set c=%*
@@ -1319,7 +1301,7 @@ for /f "tokens=1-2 delims=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- 
  if "%%j"=="" (
   if defined n ( set i2=%pi%
   ) else (
-   if defined pi set pi=&set n=& call :isValid %pi% && echo %pi%
+   if defined pi set pi=&set n=& call :ie %pi%
    set pi=%%i
    EXIT /b
   )
@@ -1329,9 +1311,12 @@ for /f "tokens=1-2 delims=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- 
 EXIT /b
 :i2
 if %i2% LSS %i1% set i1=%i2%& set i2=%i1%
-for /l %%i in (%i1%,1,%i2%) do call :isValid %%i && echo %%i
+for /l %%i in (%i1%,1,%i2%) do call :ie %%i
 set n=
 set pi=
+EXIT /b
+:ie
+call :isValid %1 && echo %1
 EXIT /b
 
 :PSfl
@@ -1630,5 +1615,5 @@ if exist "%erl%" (
 )
 pause
 :cleanup
-del "%xco%" "%rfo%" "%tem%" "%tem%l" "%tem%c" "%tem%m" "%outfile%" %optSet%
+del "%xco%" "%rfo%" "%tem%" "%tem%l" "%tem%c" "%tem%m" "%tem%.%dex%" "%outfile%" %optSet%
 EXIT
