@@ -1,17 +1,17 @@
-#Zsnd
+# Zsnd
 
-##Requirements
+## Requirements
 - [Python 3.8 or newer](https://www.python.org/downloads/), incl. [PATH variable](https://cloudacademy.com/wp-content/uploads/2020/01/Python-Windows-installer.png)
 - Powershell v3 or newer (Win 7+ should have you covered)
 - Optional [ravenAudio](https://discord.com/channels/449510825385000960/459862699870781451/934369862841688154) (in same folder or %windir%\system32)
 - Optional xmlb-compile (in same folder or %windir%\system32)
 
-##Features
+## Features
 - Full support of Zsnd, including formats for different platforms
 - As easy as it gets
 - Supports drag & drop
 
-##Instructions
+## Instructions
 - Run Zsnd.
   If a ZSM/ZSS file exists in the folder, all of them are extracted.
   A .json file with the same name (.json extension instead of .zss/.zsm) is created by Zsnd.
@@ -33,9 +33,9 @@
 - ZSS/ZSM file is automatically created.
   (You'll be asked for the extension, if the filename doesn't end in `_m` or `_v` or is `x_voice` or `x_common`)
 
-##Known issues
+## Known issues
 - The BAT has a lot of features, but they haven't all been tested.
   If you want to use any of these features (eg. add music) consider this batch in alpha state.
 
-##Tips
+## Tips
 - [XiMpLe](http://www.ximple.cz/download.php) or another JSON table viewer.
