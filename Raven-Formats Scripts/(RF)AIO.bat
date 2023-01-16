@@ -6,7 +6,9 @@ REM ----------------------------------------------------------------------------
 REM Settings:
 
 REM What operation should be made? (=decompile; =compile; =edit; =convert; =ask; =detect)
-REM (Operations for Zsnd: =extract; =combine; =update; =editZSSZSM; =editJSON; add sound files =addWAV; convert WAV files for old versions of Zsnd =convertW; convert multi-channel sounds =ravenAudio; =PackageCloner; =ModCloner; =Herostat-Skin-Editor)
+REM (Operations for Zsnd: =extract; =combine; =update; =editZSSZSM; =editJSON; add sound files =addWAV; convert WAV files for old versions of Zsnd =convertW; convert multi-channel sounds =ravenAudio)
+REM (Operations that use Raven-Formats: =PackageCloner; =ModCloner; =Herostat-Skin-Editor; =SkinsHelper)
+REM (Alchemy operations used by other operations: =genGColorFix; =SkinEditFN)
 set operation=detect
 REM Set the decompile/convert format: (JSON =json; true XML =xml; NBA2kStuff's XML =lxml)
 set decformat=json
@@ -22,6 +24,8 @@ REM Ask before backing up existing files? (yes =true; no =false; always replace,
 set askbackup=false
 REM Include subfolders (recursive mode)? (yes =true; no =false)
 set recursive=false
+REM Path to MUA, or a MUA MO2 mod folder, or OpenHeroSelect? (for herostat names)
+set "MUAOHSpath="
 
 REM Zsnd settings:
 REM Location of portable Zsnd? (folder where zsnd.py and hashes.json are in)
@@ -34,8 +38,6 @@ set outfile=true
 REM addWAV and modify JSON Settings:
 REM Specify a JSON file to add the sounds to. This is useful for x_voice for example.
 set "oldjson="
-REM Path to MUA, or a MUA MO2 mod folder, or OpenHeroSelect? (for herostat names only)
-set "MUAOHSpath="
 REM Automatically combine to ZSS/ZSM at the end? (Yes =true; No =false)
 set combine=false
 REM For the new file: Do you want to be asked for a new name? (ask, even if a JSON has been found or selected =true; ask, always create new json =new; auto name if JSON exists =false; update if JSON exists =update; take the name of the input folder instead of the JSON, behaves like false =folder; always take the folder name, will never ask =forcefolder)
@@ -73,6 +75,10 @@ set newPKGn=ask
 REM Clone existing NC packages, when not among input files? (no, clone from combat instead =false; yes =true; no, only clone combat, ignore NC =never)
 REM Also sets behaviour if no NC package exists. (clone from combat =false; don't create =true or =never)
 set cloneNC=true
+
+REM SkinsHelper settings:
+REM Edit herostats to add or (re)name a skin? (yes =true; no =false)
+set EditStat=true
 
 REM -----------------------------------------------------------------------------
 
@@ -232,8 +238,16 @@ set operation=PackageCloner
 set operationtext=Clone package files for other skins of the same character.
 EXIT /b 10
 :OPS10
+set operation=ModCloner
+set operationtext=Rename the number of a mod, to fix clashes with another mod. Must be used on a mod folder that's not in the game files. Requires Alchemy 5.
+EXIT /b 11
+:OPS11
 set operation=Herostat-Skin-Editor
 set operationtext=Modify the in game skin information throught the herostat.
+EXIT /b 12
+:OPS12
+set operation=SkinsHelper
+set operationtext=Add skins with HUDs to the game or mod folder.
 EXIT /b 0
 
 :starteditZSSZSM
@@ -297,6 +311,11 @@ set inext=.%rf: =b, .%b, .xml, .txt, .json
 set minindx=0
 set maxindx=99
 EXIT /b
+:startSkinsHelper
+set inext=.igb
+set minindx=0
+set maxindx=255
+EXIT /b
 :startedit
 :startdecompile
 set inext=.%rf: =b, .%b
@@ -307,6 +326,9 @@ set xm=xmlb&if %decformat%==lxml set xm=xmlb-compile
 call :checkTools %xm% && EXIT /b
 echo %xm% not found. Check the Readme.
 goto Errors
+:startSkinEditFN
+:startgenGColorFix
+set inext=.igb
 :sgO
 call :checkAlchemy sgOptimizer && EXIT /b 0
 echo "%IG_ROOT%\bin\sgOptimizer.exe" must exist. Please check your Alchemy 5 installation.
@@ -552,9 +574,78 @@ call :isNumber %ch:&=_% && set sn=%ch%
 call :trimmer %ch:&=;;%
 set "ch=%trim:;;=&%"
 set "ch=%ch:_= %"
-if %EditStat%==false goto copySkins
-call :HSSetup name in
-(if only 1 character, sets charactername only
+if %EditStat%==false goto SkinsHelper2
+set maxindx=99
+call :HSSetup charactername ch || set EditStat=false|| goto SkinsHelper2
+call :SkinEditor "%ch%"
+CLS
+call :listSkins
+echo.
+choice /c %options% /m "Select a skin to which you want to install '%nameonly%'"
+call set ns=%%skin_0%errorlevel%%%
+set sn=%cn%%ns%
+call :PSparseHS name set in charactername match ch
+:SkinsHelper2
+CLS
+set "MUApath=%MUAOHSpath%"
+if exist "%MUApath%\mua\xml\" set /p MUApath=Please paste or enter the MUA installation or a MO2 mod path where you want to add the IGB files to: 
+call :stripQ MUApath
+mkdir "%MUApath%\actors" "%MUApath%\hud" 2>nul
+if %EditStat%==false call :SkinsHelper3
+set "ts=%MUApath%\actors\%sn%.igb"
+set "sh=%pathonly%hud_head_%namextns%"
+set "th=%MUApath%\hud\hud_head_%sn%.igb"
+set "tp=%MUApath%\packages\generated\characters\"
+call :numberedBKP ts
+copy /y "%fullpath%" "%ts%"
+set fullpath=
+if not exist "%sh%" set /p sh=Please paste or enter the full path and filename to the HUD head file, including .igb extension, or just press enter to skip: 
+call :stripQ sh
+if exist "%sh%" call :numberedBKP th & copy /y "%sh%" "%th%"
+if exist "%tp%%in%_%sn%.pkgb" goto SkinsHelper5
+for /f "delims=" %%p in ('dir /b "%tp%%in%_%cn%*.pkgb"') do set "fullpath=%tp%%%p" & goto SkinsHelper4
+echo A package file does not seem to exist, and no package was found, which could be cloned. Powers and HUD may not work properly for this skin. & pause & goto SkinsHelper5
+:SkinsHelper4
+call :xml
+call :filesetup
+set m=1
+set newPKGn=%ns%
+call :clonePKG
+:SkinsHelper5
+call :sgO
+set "fullpath=%ts%" & call :SkinEditFN
+REM HUDs are not optimized for now, as they need the texture renamed, not igSkin.
+EXIT /b
+:SkinsHelper3
+if defined sn set cn=%sn:~,-2%& set fn=%sn:~-2%
+CLS
+dir /b "%MUApath%\actors\*.igb" | findstr /r "^[0-9]*.igb$"
+echo.
+echo "%ch%": No skin number detected. All existing skins are listed above. 
+call :asknum cn "for the character (mod number)"
+set maxindx=99
+echo|set /p=%cn%XX
+if defined fn ( echo , detected: %cn%%fn%
+) else echo.
+call :asknum ns "for the skin"
+if "%cn:~1%"=="" set cn=0%cn%
+if "%ns:~1%"=="" set ns=0%ns%
+set sn=%cn%%ns%
+for /f "delims=" %%i in ('dir /b "%MUApath%\actors\%sn%.igb"') do goto SH3pkg
+choice /m "Skin does not seem to exist. Manual herostat and package modifications may be required. Change number
+if errorlevel 2 goto SH3pkg
+goto SkinsHelper3
+:SH3pkg
+set in=defaultman
+for /f "delims=" %%p in ('dir /b "%tp%*_%cn%*.pkgb"') do set "nameonly=%%~np" & goto SH3pkg2
+goto SH3pkg3
+:SH3pkg2
+call :readNumber || goto SH3pkg3
+set "in=%pkgnm:~,-5%"
+if "_"=="%in:~-1%" set "in=%in:~,-1%"
+:SH3pkg3
+set /p "in=Internal name detected: '%in%'. Press enter to accept, or enter the internal name here: "
+EXIT /b
 
 :Herostat-Skin-Editor
 set "h=%fullpath%"
@@ -654,7 +745,7 @@ EXIT /b
 :HScheckD
 set xmlbd=
 set hdf=lxml
-call :checkVersion || EXIT /b 
+call :checkVersion || EXIT /b
 set hdf=%version%
 EXIT /b
 
@@ -715,19 +806,10 @@ CLS
 PowerShell "%psc%; %pcv%; %pct%; %pcl%; %pcr%; %pch%; %pcp:"=""%; %pcf:"=""%; %pcs:"=""%" || goto MC2Error
 if defined xmlbd call :VAR compile h
 call :sgO
-for %%i in (actors\*.igb) do set "fullpath=%%~fi" & call :MChexed
-set "outfile=%temp%\temp.igb"
+for %%i in (actors\*.igb) do set "fullpath=%%~fi" & call :SkinEditFN
 for %%e in ("%erl%") do if %%~ze LSS 8 del %%e
 if defined ccl EXIT /b
 GOTO End
-:MChexed
-set "outfile=%temp%\temp.igb"
-call :filesetup
-call :getSkinName
-set "newName=%nameonly%"
-(call :OptHead 1 & call :OptRen 1)>%optSet%
-set "outfile=%fullpath%"
-goto Optimizer
 :ModClonerH
 call :readHS charactername ch || goto MChsError
 call :PSparseHS . psc psc charactername match ch
@@ -747,6 +829,15 @@ set "ig=%ig:~,-1%00"
 call :isNumber %ig%
 EXIT /b
 
+:SkinEditFN
+set "outfile=%temp%\temp.igb"
+call :filesetup
+call :getSkinName
+set "newName=%nameonly%"
+(call :OptHead 2 & call :OptRen 1 & call :optGGC 2)>%optSet%
+set "outfile=%fullpath%"
+goto Optimizer
+
 :getSkinName
 set "igSS=%temp%\igStatisticsSkin.ini"
 if not exist "%igSS%" (call :OptHead 1 & call :OptSkinStats 1)>"%igSS%"
@@ -756,6 +847,11 @@ for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\
 del "%temp%\%nameonly%.txt"
 EXIT /b
 
+:genGColorFix
+set "igGGC=%temp%\igGenerateGlobalColor.ini"
+if not exist "%igGGC%" (call :OptHead 1 & call :optGGC 1)>"%igGGC%"
+%sgOptimizer% "%fullpath%" "%fullpath%" "%igGGC%"
+EXIT /b
 
 
 :askSR
@@ -1063,6 +1159,7 @@ if ERRORLEVEL 2 set ch=
 EXIT /b
 :HSSetup
 if ""=="%MUAOHSpath%" set /p "MUAOHSpath=Please paste or enter the path to the MUA installation, or a MUA MO2 mod folder, or OpenHeroSelect here: " || goto HSSE
+call :stripQ MUAOHSpath
 set %2=
 set "h=%MUAOHSpath%\data\herostat.engb"
 if exist "%MUAOHSpath%\mua\xml\" ( set "h=%MUAOHSpath%\mua\xml\*.xml"
@@ -1076,7 +1173,7 @@ set /p %2=Enter the internal name for "%nameonly%": || EXIT /b
 EXIT /b 0
 :readHS
 REM For other uses: If the herostat has 1 char, charactername will always be set, regardless of the argument
-call :HScheck || EXIT /b
+call :HScheck
 CLS
 call :PSparseHS charactername print %2 && EXIT /b || set /p ch=Choose a character from the list above by entering the name exactly as printed: || EXIT /b
 call :PSparseHS %1 set %2 charactername match ch && EXIT /b
@@ -1086,10 +1183,6 @@ goto readHS
 REM Add, Update (remove = -2, add at the end = -1), convert (hash = anything)
 echo %indx% "%hash%" "%file%" %format% %sample_rate% %flgf%
 EXIT /b
-REM Move
-echo %index% %newindex%
-REM Remove
-echo %index%
 
 :cMdestination
 call :M%movewhr%
@@ -1166,6 +1259,7 @@ CLS
 if defined oj echo Each & goto eZZmsg
 echo.
 set /p fullpath=Enter or paste the file name to the ZSM/ZSS file, or drag and drop it here: 
+call :stripQ fullpath
 call :filesetup
 if exist "%fullpath%" (
  if /i "%xtsnonly:~1,-1%" NEQ "ZS" echo Wrong format & goto Errors
@@ -1290,6 +1384,7 @@ set i=%i:&=,%
 set i=%i:+=,%
 set i=%i:/=,%
 set i=%i:and=,%
+set n=
 for %%i in (%i%) do call :ix %%i >"%tem%"
 if defined pi call :ie %pi% >>"%tem%"
 EXIT /b
@@ -1297,10 +1392,10 @@ EXIT /b
 set c=%*
 call :isNumber %* || call :isNumber %c:~,1% || set n=%*
 for /f "tokens=1-2 delims=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz- " %%i in ("%*") do (
- set i1=%%i& set i2=%%j
+ set i1=%%i
+ set i2=%%j
  if "%%j"=="" (
-  if defined n ( set i2=%pi%
-  ) else (
+  if defined n (set i2=%pi%) else (
    if defined pi set pi=&set n=& call :ie %pi%
    set pi=%%i
    EXIT /b
@@ -1500,6 +1595,11 @@ echo targetName = %targetName%
 echo newName = %newName%
 EXIT /b
 
+:optGGC
+echo [OPTIMIZATION%1]
+echo name = igGenerateGlobalColor
+EXIT /b
+
 
 :isNumber string
 for /f "delims=0123456789" %%i in ("%*") do EXIT /b 1
@@ -1507,6 +1607,10 @@ EXIT /b 0
 
 :trimmer
 set "trim=%*"
+EXIT /b
+
+:stripQ
+if defined %1 call set "%1=%%%1:"=%%"
 EXIT /b
 
 
@@ -1615,5 +1719,5 @@ if exist "%erl%" (
 )
 pause
 :cleanup
-del "%xco%" "%rfo%" "%tem%" "%tem%l" "%tem%c" "%tem%m" "%tem%.%dex%" "%outfile%" %optSet%
+del "%xco%" "%rfo%" "%tem%" "%tem%l" "%tem%c" "%tem%m" "%tem%.%dex%" "%temp%\temp.igb" %optSet%
 EXIT
