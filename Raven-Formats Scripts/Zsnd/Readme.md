@@ -3,8 +3,8 @@
 ## Requirements
 - [Python 3.8 or newer](https://www.python.org/downloads/), incl. [PATH variable](https://cloudacademy.com/wp-content/uploads/2020/01/Python-Windows-installer.png)
 - Powershell v3 or newer (Win 7+ should have you covered)
-- Optional [ravenAudio](https://discord.com/channels/449510825385000960/459862699870781451/934369862841688154) (in same folder or %windir%\system32)
-- Optional xmlb-compile (in same folder or %windir%\system32)
+- Optional [ravenAudio](https://discord.com/channels/449510825385000960/459862699870781451/934369862841688154) (in same folder or `%windir%\system32`)
+- Optional xmlb-compile (in same folder or `%windir%\system32`)
 
 ## Features
 - Full support of Zsnd, including formats for different platforms
@@ -25,10 +25,10 @@
 - You'll be asked for details of any new file, so be sure that you know them.
   It's possible do set-up the BAT to include this information, so you're not asked each time.
   For example: If your files are always 22050hz mono (what you usually use in zsnd-editor),
-  you can open the Zsnd..bat with a text editor (eg. Notepad) and change lines 62, 64, and 66:
-  62 to `set sr=22050`
-  64 to `set channels=1`
-  66 to `set loop=false`
+  you can open the Zsnd..bat with a text editor (eg. Notepad) and change lines 64, 66, and 68:
+  64 to `set sr=22050`
+  66 to `set channels=1`
+  68 to `set loop=false`
   Similarly, it's possible to define all other inputs in the BAT, except the hash.
 - ZSS/ZSM file is automatically created.
   (You'll be asked for the extension, if the filename doesn't end in `_m` or `_v` or is `x_voice` or `x_common`)
