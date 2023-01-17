@@ -15,16 +15,16 @@
 - Run Zsnd.
   If a ZSM/ZSS file exists in the folder, all of them are extracted.
   A .json file with the same name (.json extension instead of .zss/.zsm) is created by Zsnd.
-  If none exist (and if no ZSM/ZSM is dropped on the BAT), you're asked for a name and platform,
-  and an empty .json file will be created.
   A new BAT file with the name of the JSON file (.bat extension instead of .json) will be created.
+  If no ZSM/ZSS file exist (and if none is dropped on the BAT), you're asked for a name and platform,
+  and an empty .json file will be created.
 - Add and remove sound files to your hearts desire.
   You can make new folders and add sound files anywhere in the same folder and its sub-folders.
 - Run the new BAT file (the one with the same name as the JSON).
   The directories will be scanned for any changes twice (added files and removed ones), so it will take a while.
 - You'll be asked for details of any new file, so be sure that you know them.
   It's possible do set-up the BAT to include this information, so you're not asked each time.
-  For example: If your files are always 22050hz mono (what you usually use in zsnd-editor),
+  For example: If your files are always 22050hz mono (what you usually use in zsm-editor),
   you can open the Zsnd..bat with a text editor (eg. Notepad) and change lines 64, 66, and 68:
   64 to `set sr=22050`
   66 to `set channels=1`
