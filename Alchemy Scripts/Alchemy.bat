@@ -149,7 +149,7 @@ set "outfile=%temp%\temp.igb"
 call :start%operation% 2>nul || call :sgO
 REM TC is part of a bigger name which is used in the Maps operation. Change that.
 set "TC=%temp%\tempC"
-del "%erl%" %tem% %optSet% %optSetT% "%outfile%"
+del "%erl%" %tem% %optSetT% "%outfile%"
 
 if %unsafe%==false set unsafe=- else set unsafe=
 set "askallsw=Ask for the next input file again"
@@ -706,15 +706,16 @@ call :%1Load
 :IntAnimations
 call :EnbCompr
 (call :Optimizer)>"%pathname%.txt"
-for /f skip^=2^ tokens^=2^ delims^=^" %%a in ('find "Skipping igAnimation" "%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
+for /f tokens^=2^ delims^=^" %%a in ('findstr /b "Skipping" ^<"%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
 del "%pathname%.txt"
 EXIT /b
 REM use this if animations are not found:
 REM for /f tokens^=2^ delims^=^" %%a in ('findstr /lc:"Skipping igAnimation" "%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
 REM for /f %%a in ('findstr /lc:"true  " /c:"false  " "%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
 :checkAnimations
-if not "%animname:&=%" == "%animname%" echo "%animname%" can not be extracted, because it contains "&">>"%~dp0error.log" & EXIT /b
-if not "%animname: =%" == "%animname%" echo "%animname%" can not be extracted, because it contains spaces>>"%~dp0error.log" & EXIT /b
+echo "%animname%" | find "uniformly constructed of igTransformSequences" >nul && echo An animation could not be processed, because it has no name>>"%~dp0error.log" && EXIT /b
+if not "%animname:&=%" == "%animname%" echo "%animname%" could not be processed, because it contains "&">>"%~dp0error.log" & EXIT /b
+if not "%animname: =%" == "%animname%" echo "%animname%" could not be processed, because it contains spaces>>"%~dp0error.log" & EXIT /b
 if "%extall%" == "false" findstr /i "\<%animname%\>" <"%~dp0_animations.ini" >nul || EXIT /b
 goto %1Files
 :extrFiles
@@ -1063,9 +1064,7 @@ REM This should be called for every texture map
 echo Texture files found:
 for /f "delims=" %%t in ('for %%f in ^(png, tga, dds, jpg, bmp^) do @dir /a-d /b%subf% "%pathonly%*.%%f" 2^>nul') do echo %%~nxt
 REM only until here.
-del "%TC%T.txt" 2>nul
-del "%TC%N.txt" 2>nul
-del %optSetT% 2>nul
+del "%TC%T.txt" "%TC%N.txt" %optSetT% 2>nul
 REM del %tem%
 REM set done=
 REM set options=
@@ -1523,7 +1522,7 @@ if exist "%~dp0error.log" (
 )
 pause
 :cleanup
-del %tem% %optSet% %optSetT% "%outfile%" "%TC%T.txt" "%TC%N.txt"
+del %tem% %optSet% %optSetT% "%temp%\temp.igb" "%TC%T.txt" "%TC%N.txt"
 if %delOptSets%==false EXIT
 del %optSet% %optSetT%
 if %delOptSets%==true EXIT
