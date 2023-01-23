@@ -671,6 +671,8 @@ EXIT /b
 copy "%~dp0animLists\*txt" "%~dp0allAnims.txt" /b
 rmdir /s /q "%~dp0animLists"
 EXIT /b
+REM This code was used to compare powerstyle animations to cap's fightstyle_default.igb from the OCP1.3 (fightstyle animations only), and if the fighmoves are not covered by the powerstyle (powerstyle was checked separately), they are checked in the listed animations, and put to the a new list, if missing.
+for %%p in ("%~dp0ps_*.xml") do for /f "usebackq delims=" %%l in (`Powershell "$a = '%~dp0allAnims.txt'; [xml]$x = gc -raw '%%~p'; (@{anim='attack_light1';name='attacklight1'},@{anim='attack_light2';name='attacklight2'},@{anim='attack_light3';name='attacklight3'},@{anim='attack_stun2';name='attackstun_finish'},@{anim='attack_heavy1';name='attackheavy1'},@{anim='attack_knockback1';name='attack_knockback_charge'},@{anim='attack_knockback2';name='attackknockback2'} | ? {$x.powerstyle.fightmove.name -NotContains $_.name}).anim | ? {$a -NotContains $_}"`) do echo %%l>>"%~dp0missingFSDanims.txt"
 
 :extractAnimations
 set "AnimProcess=%pathonly%extract-%nameonly%.txt"

@@ -15,23 +15,22 @@ set RKL=HKEY_CURRENT_USER\SOFTWARE\Activision\Marvel Ultimate Alliance\Controls\
 if "%temp%"=="" set "temp=%~dp0"
 
 setlocal enableDelayedExpansion
-goto chooseP
 for /f "delims=" %%d in ('reg query "%RKL%"') do if not "%%~nd"=="BXNoneDevice" if not "%%~nd"=="BXKeyboard" set devices=!devices!"%%~nd" 
 if not defined devices goto chooseP
-set device=%devices%
-set devcode=CB
-REM goto chooseP
+set deviceB=%devices:~,-1%
+set devcode=AU
 
 :chooseD
 call :switch devices device m || goto chooseP
 CALL :TITLE 1
-CHOICE /C AS /M "Press 'A' to accept and fix this controller, press 'S' to switch"
+CHOICE /C ASE /M "Press 'A' to accept and fix this controller, press 'S' to switch, and press 'E' to fix every controller"
+IF ERRORLEVEL 3 set device=%deviceB% & goto chooseP
 IF ERRORLEVEL 2 goto chooseD
 set device="%device%"
 call :readDC %device%
-set m=
 
 :chooseP
+set m=
 echo.
 choice /c 1234A /m "Fix controls for which player [A = all]"
 set /a player=%errorlevel%-1
@@ -71,7 +70,7 @@ set "MUApath=%MUApath:"=%"
 set "tp=%MUApath%\texs"
 set "sp=%~dp0%tex%\texs"
 set "dp=%MUApath%\data\"
-set "ix=%~dp0colors.txt"
+set "ix=%~dp0tools\colors.txt"
 set "tx=%temp%\colors.txt"
 set "ox=%dp%colors.xmlb"
 set vl=value = 
@@ -87,7 +86,7 @@ if %askc%==false goto patch
 echo.
 choice /m "Do you want to change the button challenge and hint effect colours"
 if errorlevel 2 goto patch
-CALL :TITLE 4
+CALL :TITLE 6
 echo.
 echo https://www.w3schools.com/colors/colors_rgb.asp
 for %%b in (Attack, Smash, Use, Jump) do call :askCb %%b
@@ -187,7 +186,7 @@ call :TexFB %ds%
 call :TexCY %f% %ds:2=1% 360
 call :TexCY %f% %ds:2=1% 360 _hd
 set k=%k%_%lang%.png
-convert -background none "%~dp0\textures\%k%" %k1%  !k%ds%! -layers flatten "%tp%\%k%"
+tools\convert -background none "%~dp0\textures\%k%" %k1%  !k%ds%! -layers flatten "%tp%\%k%"
 REM if %devcode% LEQ 3 set ds=3
 rem ??? REUI, which has no fullkeyset
 rem ??? Fullkeyset_ita
@@ -212,7 +211,7 @@ Powershell -executionpolicy remotesigned -File "%temp%\%fm%.ps1"
 if %errorlevel% NEQ 0 EXIT /b 1
 del "%temp%\%fm%.ps1"
 mkdir "%dp%" >nul 2>nul
-xmlb-compile -s "%tx%" "%ox%"
+tools\xmlb-compile -s "%tx%" "%ox%"
 del "%tx%"
 EXIT /b
 
@@ -250,13 +249,13 @@ EXIT /b
 
 :askCol
 set w=%1
-set /p c=%1: 
+set /p c=%1: || goto askCol
 for /f %%c in ('PowerShell %c%/255') do set c=%%c
 if %c% LSS 0 goto askCol
 if %c% LSS 1 ( set %w:~,1%=%c:~,4%
 ) else for /f "delims=." %%c in ("%c%") do set %w:~,1%=%%c
 EXIT /b
-REM Faster without powershell (not crucial), but doesn't support higher numbers, and forces two decimals
+REM Faster without powershell (not crucial), but has upper limit, and forces two decimals
 if %c% GTR 9999999 goto askCol
 if %c% LSS 0 goto askCol
 set /a c=c*100/255
