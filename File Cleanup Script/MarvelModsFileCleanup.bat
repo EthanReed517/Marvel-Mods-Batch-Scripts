@@ -408,7 +408,7 @@ ui\menus\mlm_shop.igb ^
 ui\menus\mlm_simulator.igb ^
 ui\menus\mlm_user_select.igb ^
 ui\menus\model_* ^
-ui\menus\movie.* ^
+ui\menus\movie.igb ^
 ui\menus\options.* ^
 ui\menus\options_360.* ^
 ui\menus\options_controller.igb ^
@@ -433,7 +433,6 @@ packages\generated\maps\package\menus\legal_xbox_uk.pkgb ^
 packages\generated\maps\package\menus\list_view_back.pkgb ^
 packages\generated\maps\package\menus\main.pkgb ^
 packages\generated\maps\package\menus\main_pc.pkgb ^
-packages\generated\maps\package\menus\movie.pkgb ^
 packages\generated\maps\package\menus\options.pkgb ^
 packages\generated\maps\package\menus\options_360.pkgb ^
 packages\generated\maps\package\menus\options_ps3.pkgb ^
