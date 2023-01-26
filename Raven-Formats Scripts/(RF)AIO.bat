@@ -371,8 +371,10 @@ EXIT /b 0
 :checkVersion
 set /p version=<"%fullpath%"
 set "version=%version%"
-if "%version:~0,1%" == "<" ( set version=xml
+if "%version:~,1%" == "<" ( set version=xml
 ) else if "%version:~0,1%" == "{" ( set version=json
+) else if "%version:~3,1%" == "<" ( set version=xml
+) else if "%version:~3,1%" == "{" ( set version=json
 ) else EXIT /b 1
 EXIT /b 0
 :fixExt
