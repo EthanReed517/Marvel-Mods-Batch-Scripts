@@ -499,7 +499,7 @@ if %lowercaseFiles%==1 (
 	echo Renaming file extensions to lowercase. This will take a few minutes . . .
 	for %%B in (BOYB CHRB IGB NAVB PKGB PY XMLB) do (
 		echo .%%B to lowercase
-		for /f "delims=" %%F in ('dir /b /a-d /s /l *%%B 2^>nul') do for %%E in ("_%%~F") do ren "%%~F" "%%~nF%%~xE"
+		for /f "delims=" %%F in ('dir /b /a-d /s /l *.%%B 2^>nul') do for %%E in ("_%%~F") do ren "%%~F" "%%~nF%%~xE"
 	)
 	echo All files are now lowercase.
 	echo.
