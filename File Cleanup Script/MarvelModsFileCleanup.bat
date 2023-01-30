@@ -177,6 +177,7 @@ conversations\act2\murder\murder3\temp_*
 conversations\act2\murder\murder5\arcade*
 conversations\act2\murder\murder5\headstone.*
 conversations\act2\strange\1_stark2_360.*
+conversations\act2\strange\1_strange1_720.*
 conversations\act2\strange\2_strange1_100_old.*
 conversations\act2\strange\no_enter_bedroom.*
 conversations\act2\strange\temp_conv.*
@@ -474,7 +475,6 @@ REM ui\menus\blank.xmlb & pkgb
 REM ui\menus\mlm_blank.igb
 REM ui\menus\debug.* & pkgb
 REM ui\menus\pause.igb
-REM There are still a lot of other files which are unused.
 
 goto End
 
@@ -520,3 +520,4 @@ goto EOF
 
 REM Hulk has many unused convos in the game files, i'm just not sure which they are exactly. -Rampage
 REM There are tons of scripts in the scripts folder that aren't used in-game but it's tough to know which are and arent used so I didnt remove any script files. -Rampage
+REM There are still a lot of other files which are unused. - ak2yny
