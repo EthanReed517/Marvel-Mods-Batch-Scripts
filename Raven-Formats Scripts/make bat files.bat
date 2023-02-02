@@ -11,8 +11,7 @@ mkdir QuickBatch Zsnd 2>nul
 (call :writeBAT "(RF)AIO.bat" compile lxml false %zsnd% txt)>(XC)Compile.bat
 (call :writeBAT "(RF)AIO.bat" decompile lxml false %zsnd% txt)>QuickBatch\(XC)Decompile.bat
 (call :writeBAT "(RF)AIO.bat" edit lxml false %zsnd% txt)>QuickBatch\(XC)Edit.bat
-copy Cleanup.bat QuickBatch\Cleanup.bat
-copy ReadMe.md QuickBatch\!ReadMe.md
+copy QuickBatch\ReadMe.md QuickBatch\!ReadMe.md
 (call :writeBAT "(RF)AIO.bat" PackageCloner %default%)>PackageCloner.bat
 (call :writeBAT "(RF)AIO.bat" ModCloner %default%)>ModRenumberer.bat
 (call :writeBAT "(RF)AIO.bat" Herostat-Skin-Editor lxml false %zsnd% txt)>Herostat-Skin-Editor.bat
