@@ -1,9 +1,6 @@
 @echo off
 
-mkdir AnimationMixing>nul
-mkdir hud>nul
-mkdir image2igb>nul
-mkdir "SkinEdit (internal name renamer)">nul
+mkdir AnimationMixing hud image2igb "SkinEdit (internal name renamer)" 2>nul
 (call :writeBAT "Alchemy.bat" Extract false dxt1 false true)>ext.images.bat
 (call :writeBAT "Alchemy.bat" IGBconverter false dxt1 false true)>IGBconverter.bat
 (call :writeBAT "Alchemy.bat" image2igb false dds false true)>image2igb\image2igb.bat
