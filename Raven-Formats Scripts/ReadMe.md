@@ -16,8 +16,7 @@
 
 ### Usage with batch files:
 
-- [Download](https://marvelmods.com/forum/index.php/topic,10969.msg202344.html#msg202344) QuickBatch or Zsnd.
-- Run `make bat files.bat` first.
+- [Download](https://marvelmods.com/forum/index.php/topic,10969.msg202344.html#msg202344) QuickBatch or Zsnd BAT files.
 - To use them, run a .bat file in a folder with supported files, or use the input file as argument (shortcut, drag&drop, etc.)
   - [Xmlb](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/tree/main/Raven-Formats%20Scripts/QuickBatch#information-about-each-bat-file) = QuickBatch
   - [Zsnd](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/tree/main/Raven-Formats%20Scripts/Zsnd#instructions)
