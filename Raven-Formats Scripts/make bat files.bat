@@ -111,4 +111,6 @@ echo.
 echo REM SkinsHelper settings:
 echo REM Edit herostats to add or (re)name a skin? (yes =true; no =false)
 echo set EditStat=true
+echo REM For XML2 or MUA? (XML2 =XML2; MUA "=MUA" or nothing) (Make a batch for each game)
+echo set EditGame=MUA
 EXIT /b
