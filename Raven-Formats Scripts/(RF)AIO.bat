@@ -79,6 +79,8 @@ set cloneNC=true
 REM SkinsHelper settings:
 REM Edit herostats to add or (re)name a skin? (yes =true; no =false)
 set EditStat=true
+REM For XML2 or MUA? (XML2 =XML2; MUA "=MUA" or nothing) (Make a batch for each game)
+set EditGame=MUA
 
 REM -----------------------------------------------------------------------------
 
@@ -569,6 +571,10 @@ if ERRORLEVEL 3 set "newPKGn=%i%"
 EXIT /b
 
 :SkinsHelper
+CLS
+set "MUApath=%MUAOHSpath%"
+if exist "%MUApath%\mua\xml\" set /p MUApath=Please paste or enter the MUA installation or a MO2 mod path where you want to add the IGB files to: 
+call :stripQ MUApath
 set sn=
 set nn=
 set "ch=%nameonly%"
@@ -584,14 +590,10 @@ CLS
 call :listSkins
 echo.
 choice /c %options% /m "Select a skin to which you want to install '%nameonly%'"
-call set ns=%%skin_0%errorlevel%%%
+call set ns=%%skin_0%errorlevel%:~-2%%
 set sn=%cn%%ns%
 call :PSparseHS name set in charactername match ch
 :SkinsHelper2
-CLS
-set "MUApath=%MUAOHSpath%"
-if exist "%MUApath%\mua\xml\" set /p MUApath=Please paste or enter the MUA installation or a MO2 mod path where you want to add the IGB files to: 
-call :stripQ MUApath
 mkdir "%MUApath%\actors" "%MUApath%\hud" 2>nul
 if %EditStat%==false call :SkinsHelper3
 set "ts=%MUApath%\actors\%sn%.igb"
@@ -632,7 +634,7 @@ if defined fn ( echo , detected: %cn%%fn%
 call :asknum ns "for the skin"
 if "%cn:~1%"=="" set cn=0%cn%
 if "%ns:~1%"=="" set ns=0%ns%
-set sn=%cn%%ns%
+set sn=%cn%%ns:~-2%
 for /f "delims=" %%i in ('dir /b "%MUApath%\actors\%sn%.igb"') do goto SH3pkg
 choice /m "Skin does not seem to exist. Manual herostat and package modifications may be required. Change number
 if errorlevel 2 goto SH3pkg
@@ -668,10 +670,10 @@ if %hdf%==json set "psc=%psc%$s = $s -split '\n'; $s[-1] = $s[-1] -replace '.$';
 if %hdf%==xml set "psc=%psc%([xml]($h.line -replace '(.*(?=skin=))(.*)((?= sounddir=).*)','<skins $2 />')).skins"
 CLS
 echo Reading "%h%" . . .
-for /f "usebackq tokens=1* delims=:= " %%r in (`Powershell "%psc:"=""%"`) do set "s=%%s" & call :SE3count && set "h=%%r:%%s"
+for /f "usebackq tokens=1* delims=:= " %%r in (`Powershell "%psc:"=""%"`) do set "n=%%r" & set "s=%%s" & call :SE3count && set "h=%%r:%%s"
+call :isNumber %skin_01% || set skin_01=
 if ""=="%skin_01%" echo "%h%" not correctly formatted. & goto Errors
 set cn=%skin_01:~,-2%
-set p=%skin_01%
 :SkinEditor3
 CLS
 call :listSkins
@@ -683,23 +685,38 @@ set nn=
 echo.
 echo Skin %n% of %cn% %ch%
 call :asknum nn
-set /p skin_0%n%_name=Enter a skin name :               || goto SE4clear
+if %EditGame%==XML2 ( call :SkinAutoNameXML2 %n%
+) else set /p skin_0%n%_name=Enter a skin name :               || goto SE4clear
 set nn=0%nn%
 set skin_0%n%=%nn:~-2%
+if defined MUApath goto SkinEditor3
 if exist "%MUAOHSpath%\actors\%cn%%nn:~-2%.igb" goto SkinEditor3
 echo WARNING: %cn%%nn:~-2%.igb not found. Make sure it's in the game^'s actors folder.
 pause
 goto SkinEditor3
+:SkinAutoNameXML2
+if %1==1 set nm=Main
+if %1==2 set nm=astonishing
+if %1==3 set nm=aoa
+if %1==4 set nm=60s
+if %1==5 set nm=70s
+if %1==6 set nm=weaponx
+if %1==7 set nm=future
+if %1==8 set nm=winter
+if %1==9 set nm=civilian
+set skin_0%n%_name=%nm%
+EXIT /b
 :SE4clear
 set skin_0%n%=
 set skin_0%n%_name=
 goto SkinEditor3
 :listSkins
+if %EditGame%==XML2 (set sl=9) else set sl=6
 set o=0
 echo ^#   File       Name
-for /l %%n in (1,1,6) do if defined skin_0%%n call echo 0%%n  %cn%%%skin_0%%n:~-2%%.igb  "%%skin_0%%n_name%%" & set o=%%n
-if %o% LSS 6 set /a o+=1
-set to=123456
+for /l %%n in (1,1,%sl%) do if defined skin_0%%n call echo 0%%n  %cn%%%skin_0%%n:~-2%%.igb  "%%skin_0%%n_name%%" & set o=%%n
+if %o% LSS %sl% set /a o+=1
+set to=123456789
 call set options=%%to:~,%o%%%
 EXIT /b
 :SE3count
@@ -708,9 +725,16 @@ if defined ns ( set /a si+=1 & set ns=
 ) else set ns=_name
 set "skin_0%si%%ns%=%s%"
 EXIT /b 1
+:SE3XML2
+set /a si+=1
+set "skin_0%si%=%s%"
+set "skin_0%si%_name=%n:~5%"
+if ""=="%n:~5%" set "skin_0%si%_name=Main"
+EXIT /b 1
 :SkinEditor4
 if "%skin_01%"=="" goto SkinEditor3
-for /l %%n in (1,1,6) do if defined skin_0%%n call :SE5 %%n
+set skin_01=%cn%%skin_01:~-2%
+for /l %%n in (1,1,%sl%) do if defined skin_0%%n call :SE5 %%n
 set "psc=$h = gc '%h%'; $m = ($h | select-string -Pattern 'skin[\s="":]{2,4}%p%')[0]; $s = $h | select -skip ($m.linenumber-1); try {$e = ($s | select-string -Pattern 'sounddir[\s="":]{2,4}')[0].linenumber-1} catch {exit 1}; $s = $s | select -first $e"
 if %hdf%==lxml set "pcr=$n = New-Object PSObject; ($s -replace '\s;$') | ConvertFrom-StringData | %% {$n | Add-Member NoteProperty $_.keys $_.values}; %pcs%$s = $n.psobject.properties.name | %% {$_ + ' = ' + $n.$_ + ' ;'}"
 if %hdf%==json set "pcr=$s[-1] = $s[-1] -replace '.$'; $n = '{' + $s + '}' | ConvertFrom-Json; %pcs%$s = $n | ConvertTo-Json; $s = $s.substring(3,$s.length-6) + ','"
@@ -723,9 +747,14 @@ if defined xmlbd call :VAR compile h
 EXIT /b
 :SE5
 set s=skin
+if %EditGame%==XML2 goto SE5XML2
 if %1 GTR 1 set s=skin_0%1
 call :SE5%hdf% skin_0%1 %s%
 call :SE5%hdf% skin_0%1_name skin_0%1_name
+EXIT /b
+:SE5XML2
+if %1 GTR 1 call set s=skin_%%skin_0%1_name%%
+call :SE5%hdf% skin_0%1 %s%
 EXIT /b
 :SE5lxml
 :SE5json
