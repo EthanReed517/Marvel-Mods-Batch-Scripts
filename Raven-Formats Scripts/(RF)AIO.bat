@@ -809,25 +809,35 @@ set h=
 set psc=$null
 set "pcv=$on = '%on%'; $sn = $on + '*'; $ca = '$'"
 :ModCloner2
-set "pcl=$a = '%cd%\actors\'; $l = '%cd%\textures\loading\' + $on + '*.igb'; $m = '%cd%\ui\models\mannequin\' + $on + '01.igb*'; $hu = '%cd%\hud\hud_head_'; $pk = '%cd%\packages\generated\*.pkgb'; $ps = '%cd%\data\powerstyles\' + $p.powerstyle + '.engb'; $xd = '%tem%.%dex%'"
-set xd=$xd
-if %decformat%==lxml set "xd='%xco%'"
 CLS
 echo Enter a new mod number.
 call :asknum nn
 if "%nn:~1%"=="" set nn=0%nn%
 set nn=%nn:~-3%
-if %decformat%==json if %nn% LSS 10 set "rd=-replace'(?<=(skin_filter|filename)[\s="":]{2,4})\s(\d{4,5})',' ""$2""'"
 REM Setup PowerShell:
+set "pcl=$a = '%cd%\actors\'; $l = '%cd%\textures\loading\' + $on + '*.igb'; $m = '%cd%\ui\models\mannequin\' + $on + '01.igb*'; $hu = '%cd%\hud\hud_head_'; $pk = '%cd%\packages\generated\*.pkgb'; $ps = '%cd%\data\powerstyles\' + $p.powerstyle + '.engb'; $xd = '%tem%.%dex%'"
+set xd=$xd
+REM xmlb-compile prints to temp file %xco%, instead of output file
+if %decformat%==lxml set "xd='%xco%'"
+REM need to wrap JSON number in double-quotes
+if %decformat%==json if %nn% LSS 10 set "rd=-replace'(?<=(skin_filter|filename)[\s="":]{2,4})\s(\d{4,5})',' ""$2""'"
+REM pct = Title
 set "pct=if ($on -eq '%nn%') {exit 2}; $p.charactername + ': From ' + $on + ' to %nn%'"
+REM pcd = Decompile code
 set "pcd=| Select-String $on).path | %% {if ($_) {%xmlb% -d $_ $xd 2>>'%erl%' 1>'%xco%'"
+REM xdc = Compile code (with replace/rename code)
 set "xdc=(gc %xd%) %rd% -replace $rd,'%nn%' | Out-File -encoding ASCII $xd; %xmlb% $xd"
+REM f = Rename code for filelist f
 set "f=dir $f | ren -NewName {$_.name -replace $r,'%nn%'}"
+REM pcr = Main rename code
 set "pcr=$r = '^' + $on; $f = ($a + $ca + '.igb*'), ($a + $ca + '_4_combat.igb*'), ($a + $sn + '.igb*'), $l, $m; 2..6 | %% {$x = 'skin_0' + $_; if ($p.$x) {$f += $a + $on + $p.$x + '.igb*'}}; %f%; 'characteranims','skin' | %% {$p.$_ = $p.$_ -replace $r,'%nn%'}"
+REM pch = Hud rename code
 set "pch=$r = '(?<=^hud_head_)' + $on; [array]$f = $hu + $sn + '.igb*'; 2..6 | %% {$x = 'skin_0' + $_; if ($p.$x) {$f += $hu + $on + $p.$x + '.igb*'}}; %f%"
-REM Old packages are currently not deleted
+REM pcp = Package clone/rename code. Old packages are currently not deleted
 set "pcp=$r = '(?=' + $on + '\d\d(_nc)?\.pkgb$)' + $on; $rd = '(?<=filename[\s="":]{2,4}(.*\/(hud_head_)?)?)' + $on; (dir -s $pk %pcd%; $xds = ($_ -split '\\'); $xdo = ($xds[0..($xds.length-2)] + ($xds[-1] -replace $r,'%nn%')) -join '\'; %xdc% $xdo}}"
+REM pcf = Powerstyle code +
 set "pcf=$rd = '(?<=skin_filter[\s="":]{2,4})' + $on; (dir $ps %pcd%; %xdc% $ps; $e = (gc %xd% -raw | Select-String 'ents_') -replace '[\s\S]+filename[\s="":]{2,4}(ents_.*?)(""|\s)[\s\S]+','$1'; if ($e) {$e = '%cd%\data\entities\' + $e + '.xmlb'; (dir $e %pcd%; %xdc% $e}}}}}"
+REM pcs = Herostat code
 if %hdf%==lxml set "pcs=$l = $p.psobject.properties.name | %% {$_ + ' = ' + $p.$_ + ' ;'}"
 if %hdf%==json set "pcs=$l = $p | Select -Property * -ExcludeProperty talent,Multipart,StatEffect,BoltOn | ConvertTo-Json; $l = $l.substring(3,$l.length-6) + ','; "
 if %hdf%==xml set "pcs=$l = ($p.outerxml -split '(?=<.*?>)')[1]; "
