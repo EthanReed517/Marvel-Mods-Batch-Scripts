@@ -627,9 +627,9 @@ EXIT /b
 :SkinEdit
 set "outfile=%temp%\temp.igb"
 call :askSkinEdit
+if "%targetName%" == "%newName%" EXIT /b
 (call :OptHead 1 & call :OptRen 1)>%optSet%
 set targetName=
-if "%targetName%" == "%newName%" EXIT /b
 set "outfile=%infile%"
 goto Optimizer
 

@@ -79,7 +79,7 @@ set cloneNC=true
 REM SkinsHelper settings:
 REM Edit herostats to add or (re)name a skin? (yes =true; no =false)
 set EditStat=true
-REM For XML2 or MUA? (XML2 =XML2; MUA "=MUA" or nothing) (Make a batch for each game)
+REM For XML2 or MUA? (XML2 =XML2; MUA =MUA) (Make a batch for each game)
 set EditGame=MUA
 
 REM -----------------------------------------------------------------------------
@@ -571,10 +571,6 @@ if ERRORLEVEL 3 set "newPKGn=%i%"
 EXIT /b
 
 :SkinsHelper
-CLS
-set "MUApath=%MUAOHSpath%"
-if exist "%MUApath%\mua\xml\" set /p MUApath=Please paste or enter the MUA installation or a MO2 mod path where you want to add the IGB files to: 
-call :stripQ MUApath
 set sn=
 set nn=
 set "ch=%nameonly%"
@@ -585,10 +581,15 @@ set "ch=%ch:_= %"
 if %EditStat%==false goto SkinsHelper2
 set maxindx=99
 call :HSSetup charactername ch || set EditStat=false|| goto SkinsHelper2
+CLS
+set "MUApath=%MUAOHSpath%"
+if exist "%MUApath%\%EditGame%\config.ini" set /p MUApath=Please paste or enter the %EditGame% installation or a MO2 mod path where you want to add the IGB files to: 
+call :stripQ MUApath
 call :SkinEditor "%ch%"
 CLS
 call :listSkins
 echo.
+set options=%options:~,-1%
 choice /c %options% /m "Select a skin to which you want to install '%nameonly%'"
 call set ns=%%skin_0%errorlevel%:~-2%%
 set sn=%cn%%ns%
@@ -668,12 +669,14 @@ if %hdf% NEQ xml set "psc=%psc%$s = ((gc $h.path) -replace '\s;$' | select -skip
 if %hdf%==lxml set "psc=%psc%$s"
 if %hdf%==json set "psc=%psc%$s = $s -split '\n'; $s[-1] = $s[-1] -replace '.$'; '{' + $s + '}' | ConvertFrom-Json"
 if %hdf%==xml set "psc=%psc%([xml]($h.line -replace '(.*(?=skin=))(.*)((?= sounddir=).*)','<skins $2 />')).skins"
+set si=
 CLS
 echo Reading "%h%" . . .
 for /f "usebackq tokens=1* delims=:= " %%r in (`Powershell "%psc:"=""%"`) do set "n=%%r" & set "s=%%s" & call :SE3count && set "h=%%r:%%s"
 call :isNumber %skin_01% || set skin_01=
 if ""=="%skin_01%" echo "%h%" not correctly formatted. & goto Errors
 set cn=%skin_01:~,-2%
+set p=%skin_01%
 :SkinEditor3
 CLS
 call :listSkins
@@ -721,6 +724,8 @@ call set options=%%to:~,%o%%%
 EXIT /b
 :SE3count
 if "%si%"=="" set si=0& set ns= & EXIT /b 0
+if /i "%n:~,4%" NEQ "skin" EXIT /b
+if %EditGame%==XML2 goto SE3XML2
 if defined ns ( set /a si+=1 & set ns=
 ) else set ns=_name
 set "skin_0%si%%ns%=%s%"
@@ -875,6 +880,8 @@ set "outfile=%temp%\temp.igb"
 call :filesetup
 call :getSkinName
 set "newName=%nameonly%"
+if "%targetName%" == "%newName%" EXIT /b
+if %EditGame%==XML2 echo INFORMATION: "%namextns%" is not hex-edited. & pause & EXIT /b
 (call :OptHead 2 & call :OptRen 1 & call :optGGC 2)>%optSet%
 set "outfile=%fullpath%"
 goto Optimizer
@@ -1199,11 +1206,13 @@ choice /m "Do you want to use '%hash%' for the hash of all remaining input files
 if ERRORLEVEL 2 set ch=
 EXIT /b
 :HSSetup
-if ""=="%MUAOHSpath%" set /p "MUAOHSpath=Please paste or enter the path to the MUA installation, or a MUA MO2 mod folder, or OpenHeroSelect here: " || goto HSSE
+if ""=="%MUAOHSpath%" set /p "MUAOHSpath=Please paste or enter the path to the %EditGame% installation, or a %EditGame% MO2 mod folder, or OpenHeroSelect here: " || goto HSSE
 call :stripQ MUAOHSpath
 set %2=
 set "h=%MUAOHSpath%\data\herostat.engb"
-if exist "%MUAOHSpath%\mua\xml\" ( set "h=%MUAOHSpath%\mua\xml\*.xml"
+if exist "%MUAOHSpath%\%EditGame%\config.ini" call :readOHS herostatFolder hsFo || set hsFo=xml
+if defined hsFo ( if "%hsFo:~1,1%"==":" ( set "h=%hsFo%\*.*"
+) else set "h=%MUAOHSpath%\%EditGame%\%hsFo%\*.*"
 ) else if not exist "%h%" EXIT /b 1
 call :readHS %1 %2 || goto HSSE
 if defined %2 EXIT /b 0
@@ -1588,7 +1597,7 @@ EXIT /b
 :PSparseHS
 REM var h must one or multiple herostat files (multi only tested with lxml)
 set "psc=$h = (gc -raw '%h%'); $d = "
-if %hdf%==lxml set "psc=%psc%$h -split '(?=stats\s{\r?\n[\S\s]*)' | %% {(($_ -split '[a-zA-Z]*\s{\r?\n')[1] -split '\s;\r' -split '\s*}\r') -join '' | ConvertFrom-StringData}"
+if %hdf%==lxml set "psc=%psc%$h -split '(?=stats\s{\r?\n[\S\s]*)' | %% {($_ -split '[a-zA-Z]*\s{\r?\n')[1] -replace '(\s;|\s*}) *(?=\r?\n)','' | ConvertFrom-StringData}"
 if %hdf%==xml set "psc=%psc%([xml]$h).characters.stats"
 if %hdf%==json set "psc=%psc%($h -replace '{\r?\n\s*\"characters\":\s{','' -replace '\s*}\s*}\r','' -split '(?=\"stats\":[\S\s]*},?)') | %% {(('{' + $_.Trim().Trim(',') + '}' | ConvertFrom-Json).stats)}"
 set "d=.%1"
@@ -1607,6 +1616,10 @@ EXIT /b
 REM Tried to parse lxml with powershell, but there's an issue because of non-indexed identical properties (stats{}, stats{}, etc.)
 REM Powershell index (eg. [0]) does not work with property paths, because it's required to be part in the path.
 REM (((gc -raw '%h%') -split '(?=stats\s{\r[\S\s]*)')[5] -split '\n') | %% {if ($_ -match '^[{\r]') {$t=$_.trim().trim('{ '); if ($p) {$l+='.'}; $l+=$t; if ($m) {if (!$m.$l) {$m.$p+=@{$t=@{}}}} else {$m=@{$t=@{}}}; $p=$l} elseif ($_ -match '}\r') {$p = $p -replace '\.(\w+)$',''} else {$m.$p+=($_.trim().trim('; ') | ConvertFrom-StringData)}}
+
+:readOHS
+for /f "tokens=1* delims=:, " %%a in ('type "%MUAOHSpath%\%EditGame%\config.ini" ^| find """%1"": "') do for %%m in (%%b) do set "%2=%%~m" & EXIT /b
+EXIT /b 1
 
 
 :Optimizer
