@@ -1,8 +1,14 @@
 @echo off
 
 REM define initial variables
-set "filePath=C:\Users\ethan\Desktop\Temp"
+REM File path where the sounds should be installed (if blank, will ask)
+set filePath=""
 set language=eng
+
+REM see if the file path is defined
+if %filePath%=="" (
+	set /p "filePath=Enter your game directory or an MO2 mod folder: "
+)
 
 REM enable delayed expansion for the variables in the loop
 setlocal EnableDelayedExpansion
