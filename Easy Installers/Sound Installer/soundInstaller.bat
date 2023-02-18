@@ -3,11 +3,19 @@
 REM define initial variables
 REM File path where the sounds should be installed (if blank, will ask)
 set filePath=""
-set language=eng
+REM Select a language (eng = English, blank = ask)
+set language="eng"
 
 REM see if the file path is defined
 if %filePath%=="" (
+	REM get the file path
 	set /p "filePath=Enter your game directory or an MO2 mod folder: "
+)
+
+REM see if the language is defined
+if %language%=="" (
+	REM get the language
+	set /p "language=Enter a language option (eng = English): "
 )
 
 REM enable delayed expansion for the variables in the loop
