@@ -19,7 +19,7 @@ set askbackup=false
 REM Include subfolders (recursive mode)? (yes =true; no =false)
 set recursive=false
 
-REM IGBconverter settings (detects actorConverter):
+REM IGBconverter settings (detects actorConverter and animationConverter):
 REM Format (valid values: =FBX, =OBJ, =DAE, =ask)
 set format=OBJ
 REM Extract textures as well? (yes =true, no =false)
@@ -39,51 +39,51 @@ set refExtTex=false
 REM image2igb settings:
 REM Prompt for conversion? (ask for all exc. dds =true; ask for all exc. png+dds =false; no conversion =never; ask for all + dds =dds)
 REM Always convert all, except png+dds. (to DDS DXT1 =dxt1; to DDS DXT5 =dxt5)
-REM Force conversion of all files (to DDS DXT1 =fdxt1; to DDS DXT5 =fdxt5; to other formats, as defined below, eg. =IG_GFX_TEXTURE_FORMAT_RGBA_5551_16)
+REM Force conversion of all files (to DDS DXT1 =fdxt1; to DDS DXT5 =fdxt5; to other formats, as defined below, eg. =RGBA_5551_16)
 set askconv=dxt1
 REM Force conversion to one of the following formats (use the format as option in the askconv= setting above):
 REM -- rgb formats for icons and effect textures
-REM IG_GFX_TEXTURE_FORMAT_RGBA_4444_16
-REM IG_GFX_TEXTURE_FORMAT_RGBA_8888_32
-REM IG_GFX_TEXTURE_FORMAT_RGBA_2222_8
-REM IG_GFX_TEXTURE_FORMAT_RGBA_5551_16   (default)
-REM IG_GFX_TEXTURE_FORMAT_RGBA_128F
+REM RGBA_4444_16
+REM RGBA_8888_32
+REM RGBA_2222_8
+REM RGBA_5551_16   (default)
+REM RGBA_128F
 REM -- dxt textures for most model (skin, boltons, etc) textures
-REM IG_GFX_TEXTURE_FORMAT_RGBA_DXT1
-REM IG_GFX_TEXTURE_FORMAT_RGBA_DXT3
-REM IG_GFX_TEXTURE_FORMAT_RGBA_DXT5
+REM RGBA_DXT1
+REM RGBA_DXT3
+REM RGBA_DXT5
+REM -- indexed PNG color formats
+REM X_8
+REM X_4
+REM TILED_X_8_PSP
+REM TILED_X_4_PSP
 REM -- gamecube textures
-REM IG_GFX_TEXTURE_FORMAT_TILED_DXT1_GAMECUBE          (seems not to work, use normal DXT1 instead)
-REM IG_GFX_TEXTURE_FORMAT_TILED_RGBA_5553_16_GAMECUBE
-REM IG_GFX_TEXTURE_FORMAT_TILED_L_8_GAMECUBE
-REM IG_GFX_TEXTURE_FORMAT_TILED_LA_88_16_GAMECUBE
-REM IG_GFX_TEXTURE_FORMAT_TILED_LA_44_8_GAMECUBE
+REM TILED_DXT1_GAMECUBE   (seems not to work, use normal DXT1 instead)
+REM TILED_RGBA_5553_16_GAMECUBE
+REM TILED_L_8_GAMECUBE
+REM TILED_LA_88_16_GAMECUBE
+REM TILED_LA_44_8_GAMECUBE
 REM -- rgb formats without transparency
-REM IG_GFX_TEXTURE_FORMAT_RGB_332_8
-REM IG_GFX_TEXTURE_FORMAT_RGB_888_24
-REM IG_GFX_TEXTURE_FORMAT_RGB_565_16
-REM IG_GFX_TEXTURE_FORMAT_TILED_RGB_565_16_GAMECUBE
-REM -- indexed color formats
-REM IG_GFX_TEXTURE_FORMAT_X_8
-REM IG_GFX_TEXTURE_FORMAT_X_4
-REM IG_GFX_TEXTURE_FORMAT_TILED_X_8_PSP
-REM IG_GFX_TEXTURE_FORMAT_TILED_X_4_PSP
+REM RGB_332_8
+REM RGB_888_24
+REM RGB_565_16
+REM TILED_RGB_565_16_GAMECUBE
 REM -- intensity/grayscale formats
-REM IG_GFX_TEXTURE_FORMAT_L_8
-REM IG_GFX_TEXTURE_FORMAT_LA_44_8
-REM IG_GFX_TEXTURE_FORMAT_LA_88_16
-REM IG_GFX_TEXTURE_FORMAT_A_8
-REM -- reset: =IG_GFX_TEXTURE_FORMAT_INVALID
+REM L_8
+REM LA_44_8
+REM LA_88_16
+REM A_8
+REM -- reset: =INVALID
 REM -- example:
-REM set askconv=IG_GFX_TEXTURE_FORMAT_RGBA_8888_32
+REM set askconv=RGBA_8888_32
 REM -- 
 REM Force asking to convert PNG. (=true; =false)
 set askpng=false
 REM Resize? (no resize =false; to loading screens for Ultimate Alliance 2048x1024 =MUA, for X-Men Legends 2 512x512 =XML2; icons for last-gen consoles 128x128 =ILQ; icons for PC & next-gen consoles 256x256 =IHQ; prompt for each file =ask)
 REM Custom resize values possible (eg. 1024x1024 =1024; 100x100 =100)
 set maxHeight=false
-REM Custom width, to be used with custom height (eg. 64x64 =same & maxHeight=64; 1024x512 =1024 & maxHeight=512)
-set maxWidth=same
+REM Custom width, to be used with custom height (eg. 64x64 =identical & maxHeight=64; 1024x512 =1024 & maxHeight=512)
+set maxWidth=identical
 REM Minification/Magnification method? (linear =true; nearest, recommended =false)
 set MagFilter=false
 REM WrapS/T method? (repeat, default =false; clamp =true)
@@ -105,8 +105,6 @@ REM Extract/combine animations with wrong names as well? (Yes =true; No =false)
 set extall=false
 REM Remove extract TXT files? (Yes =true; No =false)
 set remext=false
-REM Do you want to risk that existing files are replaced? (Yes =true; No =false)
-set unsafe=false
 REM Always use the first folder name when combining animations? (Yes =true; No =false)
 set autonm=false
 REM Enter an IGB file for the skeleton. (Use the first input file "skeleton="; use fightstyle default incl. ponytail =_fightstyle_default)
@@ -124,16 +122,13 @@ REM Experimental: Use source skin name? (Yes =true; No =false)
 set skinSr=false
 
 REM Texture Map Editor settings:
-REM Convert PNG to DXT/DDS? Ideal for PC. (yes =true; no =false)
-set ConvertPNGs=true
-REM Convert to DXT1 or DXT3? (Normal maps are always DXT5) (DXT1 =1; DXT3 =3)
+REM Convert to DXT/DDS? Ideal for PC. (yes to DXT1 =1; yes to DXT3 =3; no =false)
+REM Normal maps are always DXT5; DDS never converted; PNG acc. settings; Other always converted
 set ConvertDDSf=1
 REM List all images in subfolders? (yes, always =true; no, root folder only =false; ask once =ask)
 set SubfoldAuto=true
 REM Always process all input files (IGB)?  (Yes =true; No, asks first =false)
 set MultiInputA=false
-REM Always process all textures? (Yes, asks each texture =true; No, asks first =false)
-set MultiTextAl=false
 
 REM -----------------------------------------------------------------------------
 
@@ -143,16 +138,15 @@ set inext=.igb
 if ""=="%temp%" set "temp=%~dp0"
 set optSet="%temp%\%operation%.ini"
 set optSetT="%temp%\%operation%T.ini"
-set tem="%temp%\%operation%.txt"
+set "tem=%temp%\%operation%.txt"
 set "erl=%~dp0error.log"
 set "outfile=%temp%\temp.igb"
+set igTF=IG_GFX_TEXTURE_FORMAT_
 call :start%operation% 2>nul || call :sgO
-REM TC is part of a bigger name which is used in the Maps operation. Change that.
-set "TC=%temp%\tempC"
-del "%erl%" %tem% %optSetT% "%outfile%"
+del "%erl%" "%tem%" %optSetT% "%outfile%"
 
-if %unsafe%==false set unsafe=- else set unsafe=
-set "askallsw=Ask for the next input file again"
+set askallsw=true
+set askallsz=true
 set isExclude=exclude
 CLS
 
@@ -173,7 +167,7 @@ GOTO End
 :isfolder
 cd /d "%fullpath:"=%"
 call :rec%recursive%
-for /f "delims=" %%i in ('dir %inext:.=*.% 2^>nul') do (
+for /f "delims=" %%i in ('dir %inext:.=*.% 2^>nul ') do (
  set "fullpath=%dp%%%~i"
  call :isfiles
 )
@@ -199,9 +193,10 @@ EXIT /b
 :convCCL
 set "i=%cmdcmdline:"=""%"
 set "i=%i:*"" =%"
-set "%1=%i:~0,-2%"
+set "i=%i:~0,-2%"
 :fixQ
-call set "i=%%%1:^=^^%%"
+if ""=="%i%" call set "i=%%%1%%"
+set "i=%i:^=^^%"
 set "i=%i:&=^&%"
 set "i=%i: =^ ^ %"
 set i=%i:""="%
@@ -211,6 +206,7 @@ set "i=%i:^ ^ = %"
 set "i=%i:""="%"
 set "i=%i:"Q=%"
 set %1="%i:"S"S=" "%"
+set i=
 EXIT /b
 
 :test
@@ -362,18 +358,23 @@ goto combineAnimations
 call :combineAnimationsPost
 set "fullpath=%~dp0%outanim%.igb"
 call :filesetup
-EXIT /b
-REM Ripper can't rip skins+anims. Combined anims rip better though. Animation converter is still missing.
+REM Ripper can't rip skins+anims. Combined anims rip better though.
 
 :IGBconverter
-echo %askallsw% | find "Ask" >nul && if /i %format%==ask call :askformat3D
+if %askallsw%==true if /i %format%==ask call :askformat3D
 call :toLower format
 set c=actorConverter
-findstr "igAnimationDatabase" <"%fullpath%" >nul 2>nul || call :remInfo
-if not defined %c% call :checkTools %c% || (echo "%fullpath%": %c%.exe not found.)>>"%~dp0error.log" || EXIT /b
+findstr "igEnbaya" <"%fullpath%" >nul 2>nul && call :AnimConverter || findstr "igAnimationDatabase" <"%fullpath%" >nul 2>nul || call :remInfo
+if not defined %c% call :checkTools %c% || (echo "%fullpath%": %c%.exe not found.)>>"%erl%" || EXIT /b
+call set c=%%%c%%%
 %c% "%fullpath%" "%pathname%.%format%"
 if "%exttextrs%" == "true" goto Extract
 EXIT /b
+:AnimConverter
+set c=animationConverter
+set exttextrs=false
+set format=%format:obj=fbx%
+EXIT /b 0
 :remInfo
 set c=IGBconverter
 findstr "igActorInfo" <"%fullpath%" >nul 2>nul || EXIT /b
@@ -388,20 +389,20 @@ echo.
 echo F) FBX ("%nameonly%.fbx")
 echo O) OBJ ("%nameonly%.obj")
 echo D) DAE ("%nameonly%.dae")
-echo A) Press A to switch: %askallsw%
 echo.
+call :askallD askallsw A
 choice /c FODA /m "What format do you want to convert %namextns% into"
-IF ERRORLEVEL 4 call :askallswitch & goto askformat3D
+IF ERRORLEVEL 4 call :switchBool askallsw & goto askformat3D
 IF ERRORLEVEL 3 set "format=dae" & EXIT /b
 IF ERRORLEVEL 2 set "format=obj" & EXIT /b
 IF ERRORLEVEL 1 set "format=fbx" & EXIT /b
 
 :Extract
 set iformat=tga
-if "%detectPNG%" == "true" call :fetchFormat & del "%pathname%.txt"
-if "%subfolder%" == "true" set "sfolder=%nameonly%" & mkdir "%pathname%"
-if "%subfolder%" == "false" set "sfolder="
-if "%refExtTex%" == "true" set "outfile=%fullpath%"
+set sfolder=
+if %detectPNG%==true call :fetchFormat & del "%pathname%.txt"
+if %subfolder%==true set "sfolder=%nameonly%" & mkdir "%pathname%"
+if %refExtTex%==true set "outfile=%fullpath%"
 (call :OptHead 1 & call :OptExt 1 %iformat% %refExtTex% false %enm%)>%optSet%
 call :Optimizer
 if %remMipMap%==true goto remMM
@@ -415,12 +416,11 @@ EXIT /b
 :fetchFormat
 call :fetchTexInfo
 set iformat=png
-for /f "usebackq skip=%skipt% delims=" %%a in ("%pathname%.txt") do (
- echo "%%a" | find "IG_GFX_TEXTURE_FORMAT_RGBA_8888_32">nul && EXIT /b
- echo "%%a" | find "IG_GFX_TEXTURE_FORMAT_X">nul && EXIT /b
+for /f "delims=" %%a in ('findstr "%igTF%" ^<"%pathname%.txt"') do (
+ echo "%%a" | find "%igTF%RGBA_8888_32">nul && EXIT /b
+ echo "%%a" | find "%igTF%X">nul && EXIT /b
  set iformat=tga
  EXIT /b
- echo "%%a" | find "---------------------">nul && EXIT /b
 )
 EXIT /b
 
@@ -430,22 +430,17 @@ EXIT /b
 
 :fetchTexInfo
 call :fTi 0x00000011
-goto sTi
+EXIT /b
 :fTi
 (call :OptHead 1 & call :OptInfo 1 %1) >%optSet%
 (call :Optimizer)>"%pathname%.txt"
-EXIT /b
-:sTi
-REM Format must be selected to make skipt work.
-for /f "delims=:" %%a in ('findstr /n /c:"Format (IG_GFX_TEXTURE_FORMAT)" ^<"%pathname%.txt"') do set skipt=%%a
 EXIT /b
 
 :fetchTextures
 call :fetchTexInfo
 set count=0
 echo Textures found in "%namextns%":
-for /f "usebackq skip=%skipt% tokens=1 delims=|" %%a in ("%pathname%.txt") do (
- echo %%a | find "---------------------">nul && EXIT /b
+for /f "delims=|" %%a in ('findstr "%igTF%" ^<"%pathname%.txt"') do (
  echo  %%a
  call :remSpacesLT %%a
  set /a count+=1
@@ -453,140 +448,166 @@ for /f "usebackq skip=%skipt% tokens=1 delims=|" %%a in ("%pathname%.txt") do (
 EXIT /b
 
 :image2igb
-REM Automatic and manual setup for the texture format:
-if "%askconv%" == "never" EXIT /b
-if "%askconv%" == "true" ( set "askpng=true" & set checkformat=true
-) else if "%askconv%" == "dds" ( set askpng=true
-) else if "%askconv%" == "dxt1" ( set checkformat=true
-) else if "%askconv%" == "dxt5" ( set checkformat=true
-) else if "%askconv%" == "false" ( set checkformat=true )
-if "%askconv:~0,21%" == "IG_GFX_TEXTURE_FORMAT" call :setIMGformat %askconv%
-if not "%askallsw%" == "Use the same setting for all input files" call :checkconvert
-if "%checkformat%" == "true" if /i "%xtnsonly%" == ".png" ( if not "%askpng%" == "true" EXIT /b
-) else if /i "%xtnsonly%" == ".dds" EXIT /b
-REM Automatic and manual setup for the texture size:
-if not "%askallsz%" == "Use the same setting for all input files" call :checkresize
-if not defined createINI (set createINI=true) else set createINI=false
-for %%s in ("%askallsw%", "%askallsz%") do for /f %%f in ('echo %%s ^| findstr "again" 2^>nul') do set createINI=true
+if %askallsw%==true call :checkconvert
+if %askallsz%==true call :checkresize
 set ini=%optSet%
-if "%MagFilter%" == "false" if "%WrapST%" == "false" set ini=
+if %MagFilter%%WrapST%==falsefalse set ini=
 if defined ini (call :i2iSettings)>"%ini%"
 set "infile=%pathname%.igb"
 %image2igb% "%fullpath%" "%infile%" %ini%
 set "outfile=%infile%"
-if "%createINI%" == "true" goto i2iOptSet
+if ""=="%createINI%" goto i2iOptSet
+if %askallsw%==true goto i2iOptSet
+if %askallsz%==true goto i2iOptSet
 goto Optimizer
 
 :checkconvert
-set convert=
-if "%askconv%" == "fdxt1" ( call :setIMGformat IG_GFX_TEXTURE_FORMAT_RGBA_DXT1
-) else if "%askconv%" == "fdxt5" ( call :setIMGformat IG_GFX_TEXTURE_FORMAT_RGBA_DXT5
-) else if /i "%xtnsonly%" == ".png" ( if "%askpng%" == "true" call :askconvert PNG
-) else if /i "%xtnsonly%" == ".dds" ( if "%askconv%" == "dds" call :askconvert DDS
-) else if "%askconv%" == "dds" ( call :askconvert %xtnsonly%
-) else if "%askconv%" == "true" ( call :askconvert %xtnsonly%
-) else if "%askconv%" == "false" ( call :askconvert %xtnsonly%
-) else if "%askconv%" == "dxt1" ( call :setIMGformat IG_GFX_TEXTURE_FORMAT_RGBA_DXT1
-) else if "%askconv%" == "dxt5" call :setIMGformat IG_GFX_TEXTURE_FORMAT_RGBA_DXT5
-EXIT /b
+REM Automatic and manual setup for the texture format:
+set convert=false
+set format=%askconv%
+if %format:_=%==%format% (
+ if %format%==never EXIT /b
+ echo :dxt5.png:dxt1.png:false.png:dxt5.dds:dxt1.dds:false.dds:true.dds: | find /i ":%format%%xtnsonly%:" >nul && if %askpng%==false EXIT /b
+ if /i %format:~-4%==dxt1 set format=RGBA_DXT1
+ if /i %format:~-4%==dxt5 set format=RGBA_DXT5
+)
+set convert=true
+if %format:_=% NEQ %format% if %askpng%==false EXIT /b
 :askconvert
-CLS
-echo Note: JPG and TGA don't work ingame, PNG works sometimes.
-echo.
-echo N^) No, keep current format %1
+call :CTitle %xtnsonly%
+echo N^) No conversion ^(JPG and TGA don't work, PNG usually works^)
 echo 1^) Convert to DDS DXT1
 echo 5^) Convert to DDS DXT5
 echo 0^) More conversion formats
-echo S^) Press S to switch: %askallsw%
-echo M^) Press M to switch Magnification method: %magmthd%
-echo W^) Press W to switch WrapS/T method: %wrmthd%
-echo.
+call :askCopt
 choice /c N150SMW /m "Convert %namextns%"
-IF ERRORLEVEL 7 (if %WrapST%==false (set WrapST=true&set wrmthd=Clamp) else set WrapST=false&set wrmthd=Repeat) & goto askformat
-IF ERRORLEVEL 6 (if %MagFilter%==false (set MagFilter=true&set magmthd=Linear) else set MagFilter=false&set magmthd=Nearest) & goto askformat
-IF ERRORLEVEL 5 call :askallswitch askallsw & goto askconvert
-set format=IG_GFX_TEXTURE_FORMAT_RGBA_4444_16
-IF ERRORLEVEL 4 call :IGBimgFormats & goto askformat
-IF ERRORLEVEL 3 call :setIMGformat IG_GFX_TEXTURE_FORMAT_RGBA_DXT5 askagain & EXIT /b
-IF ERRORLEVEL 2 call :setIMGformat IG_GFX_TEXTURE_FORMAT_RGBA_DXT1 askagain & EXIT /b
-IF ERRORLEVEL 1 set convert=false & EXIT /b
+call :askC%errorlevel% && EXIT /b
+goto askconvert
+:askF3
+:askC7
+call :switchBool WrapST
+set wrmthd=Repeat
+if %WrapST%==true set wrmthd=Clamp
+EXIT /b 1
+:askF2
+:askC6
+call :switchBool MagFilter
+set magmthd=Nearest
+if %MagFilter%==true set magmthd=Linear
+EXIT /b 1
+:askF1
+:askC5
+call :switchBool askallsw
+EXIT /b 1
+:askC1
+set convert=false
+EXIT /b 0
+:askC2
+set format=RGBA_DXT1
+EXIT /b 0
+:askC3
+set format=RGBA_DXT5
+EXIT /b 0
+:askC4
+set format=RGBA_4444_16
+call :IGBimgFormats
 :askformat
-CLS
-echo Note: JPG and TGA don't work ingame, PNG works sometimes.
-echo.
-echo Format to convert into: %format%
+call :CTitle %1
+echo %format%
 echo %desc%
+call :askCopt
+choice /c SMWFA /m "Press 'F' to change the format. Press 'A' to accept and continue"
+IF ERRORLEVEL 5 EXIT /b 0
+IF ERRORLEVEL 4 call :IGBimgFormats
+call :askF%errorlevel%
+goto askformat
+:CTitle
+CLS
+echo Current format: %1
 echo.
-echo F^) Press F to switch the format
-echo A^) Press A to accept the format and continue
+echo Format to convert into:
+EXIT /b
+:askCopt
 echo.
-choice /c AF /m "Press 'F' to change the format. Press 'A' to continue"
-IF ERRORLEVEL 2 call :IGBimgFormats & goto askformat
-IF ERRORLEVEL 1 set "convert=true" & EXIT /b
-
-:setIMGformat
-set format=%1
-set convert=true
-if not "%2" == "askagain" set "askallsw=Use the same setting for all input files"
+echo Options:
+echo Magnification method (Press 'M' to switch)
+echo %magmthd%
+echo Wrap S/T method      (Press 'W' to switch)
+echo %wrmthd%
+echo.
+call :askallD askallsw S
 EXIT /b
 
 :checkresize
-set "askallsz=%askallsw%"
-if "%maxHeight%" == "ask" ( call :asksize
-) else if /i "%maxHeight%" == "MUA" ( set "maxHeight=1024" & set "maxWidth=2048"
-) else if /i "%maxHeight%" == "XML2" ( set "maxHeight=512" & set "maxWidth=512"
-) else if /i "%maxHeight%" == "ILQ" ( set "maxHeight=128" & set "maxWidth=128"
-) else if /i "%maxHeight%" == "IHQ" ( set "maxHeight=256" & set "maxWidth=256"
-) else if "%maxWidth%" == "same" ( set "maxWidth=%maxHeight%" )
-EXIT /b
+REM Automatic and manual setup for the texture size:
+set askallsz=%askallsw%
+if /i %maxHeight%==false EXIT /b
+if /i %maxHeight%==MUA set maxHeight=1024&set maxWidth=2048
+if /i %maxHeight%==XML2 set maxHeight=512&set maxWidth=512
+if /i %maxHeight%==ILQ set maxHeight=128&set maxWidth=128
+if /i %maxHeight%==IHQ set maxHeight=256&set maxWidth=256
+call :validateSize && EXIT /b
+REM maxHeight is "ask" or invalid
 :asksize
 CLS
 echo Enter the pixel size you want to change the image into. It's recommended to have a bigger input size.
 echo.
+echo N^) Keep current size, No resize
 echo U^) Loading screen size for MUA 2048x1024
 echo X^) Loading screen size for XML2 512x512
 echo L^) Icon size for last-gen consoles 128x128
 echo H^) Icon size for PC and next-gen consoles 256x256 
 echo C^) Enter a custom height value
-echo W^) Press W to switch: Use %maxWidth% values for the width
-echo M^) Press M to switch: Generate mipmaps? %mipmaps%
-echo N^) No, keep current size
-echo S^) Press S to switch: %askallsz%
 echo.
+echo Options:
+echo Current width     (Press 'W' to switch)
+if %maxWidth%==identical (echo %maxHeight%) else echo.%maxWidth:different=%
+echo Generate mipmaps? (Press 'M' to switch)
+echo %mipmaps%
+echo.
+call :askallD askallsz S
 choice /c UXLHCWMNS /m "Resize %~1"
-IF ERRORLEVEL 9 call :askallswitch askallsz & goto asksize
-IF ERRORLEVEL 8 set "maxHeight=false" & EXIT /b
-IF ERRORLEVEL 7 call :switch mipmaps true false & goto asksize
-IF ERRORLEVEL 6 call :switch maxWidth same different & goto asksize
+IF ERRORLEVEL 9 call :switchBool askallsz & goto asksize
+IF ERRORLEVEL 8 set maxHeight=false&set maxWidth=false&EXIT /b
+IF ERRORLEVEL 7 call :switchBool mipmaps & goto asksize
+IF ERRORLEVEL 6 call :switch maxWidth identical different & goto asksize
 IF ERRORLEVEL 5 goto enterSize
-IF ERRORLEVEL 4 set "maxHeight=256" & set "maxWidth=256" & EXIT /b
-IF ERRORLEVEL 3 set "maxHeight=128" & set "maxWidth=128" & EXIT /b
-IF ERRORLEVEL 2 set "maxHeight=512" & set "maxWidth=512" & EXIT /b
-IF ERRORLEVEL 1 set "maxHeight=1024" & set "maxWidth=2048" & EXIT /b
+IF ERRORLEVEL 1 set maxHeight=MUA
+IF ERRORLEVEL 2 set maxHeight=XML2
+IF ERRORLEVEL 3 set maxHeight=ILQ
+IF ERRORLEVEL 4 set maxHeight=IHQ
+goto checkresize
 :enterSize
 echo.
 set /p maxHeight=Enter the height in pixels for the new size: 
-if "%maxWidth%" == "different" (
- echo It's highly recommended to have a height:width ratio of 1:1, 1:2, or 2:1.
- set /p maxWidth=Enter the width in pixels for the new size: 
+if %maxWidth%==different (
+ echo Enter the width in pixels for the new size.
+ echo It's highly recommended to have a height:width ratio of 1:1, 1:2 or 2:1.
+ set /p maxWidth=Enter number, or press enter to use %maxHeight%: || set maxWidth=%maxHeight%
 )
-if "%maxWidth%" == "same" set maxWidth=%maxHeight%
+call :validateSize || goto enterSize
+:askSc
 echo.
 echo Height: %maxHeight%
 echo Width:  %maxWidth%
 choice /m "Are these values correct"
 if not ERRORLEVEL 2 EXIT /b
 goto asksize
+:validateSize
+if %maxWidth%==identical set maxWidth=%maxHeight%
+call :isNumber %maxHeight% && call :isNumber %maxWidth% && EXIT /b
+EXIT /b 1
 
 :i2iOptSet
 type nul>%optSetT%
 set optcnt=0
-if not "%maxHeight%" == "false" call :writeOpt optRes
-if "%convert%" == "true" call :writeOpt optConv
-if "%mipmaps%" == "true" call :writeOpt optMipmap
+if not %maxHeight%==false call :writeOpt optRes
+if %convert%==true call :writeOpt optConv
+if %mipmaps%==true call :writeOpt optMipmap
 if not %optcnt% GTR 0 EXIT /b
 (call :optHead %optcnt%)>%optSet%
 type %optSetT%>>%optSet%
+set createINI=false
 goto Optimizer
 
 :askSkinEdit
@@ -627,7 +648,7 @@ EXIT /b
 :SkinEdit
 set "outfile=%temp%\temp.igb"
 call :askSkinEdit
-if "%targetName%" == "%newName%" EXIT /b
+if "%targetName%"=="%newName%" EXIT /b
 (call :OptHead 1 & call :OptRen 1)>%optSet%
 set targetName=
 set "outfile=%infile%"
@@ -715,9 +736,9 @@ REM use this if animations are not found:
 REM for /f tokens^=2^ delims^=^" %%a in ('findstr /lc:"Skipping igAnimation" "%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
 REM for /f %%a in ('findstr /lc:"true  " /c:"false  " "%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
 :checkAnimations
-echo "%animname%" | find "uniformly constructed of igTransformSequences" >nul && echo An animation could not be processed, because it has no name>>"%~dp0error.log" && EXIT /b
-if not "%animname:&=%" == "%animname%" echo "%animname%" could not be processed, because it contains "&">>"%~dp0error.log" & EXIT /b
-if not "%animname: =%" == "%animname%" echo "%animname%" could not be processed, because it contains spaces>>"%~dp0error.log" & EXIT /b
+echo "%animname%" | find "uniformly constructed of igTransformSequences" >nul && echo An animation could not be processed, because it has no name>>"%erl%" && EXIT /b
+if not "%animname:&=%" == "%animname%" echo "%animname%" could not be processed, because it contains "&">>"%erl%" & EXIT /b
+if not "%animname: =%" == "%animname%" echo "%animname%" could not be processed, because it contains spaces>>"%erl%" & EXIT /b
 if "%extall%" == "false" findstr /i "\<%animname%\>" <"%~dp0_animations.ini" >nul || EXIT /b
 goto %1Files
 :extrFiles
@@ -744,13 +765,15 @@ EXIT /b
 :extractAnimAllTxt
 call :txtChck || EXIT /b 1
 for /f "tokens=1*" %%a in ('findstr /bi "save" ^<"%fullpath%"') do mkdir "%%~dpb" >nul 2>nul
-for /f "skip=2 tokens=1*" %%a in ('find "load_actor" "%fullpath%"') do (
- if not "%pathonly%%nameonly:~8%.igb" == "%~dp0%%b" set "numBKP=%~dp0%%b" & call :numberedBKP
- move "%pathonly%%nameonly:~8%.igb" "%~dp0%%b"
- call :animationProducer
- move "%~dp0%%b" "%pathonly%%nameonly:~8%.igb"
-)
+set "srcf=%pathonly%%nameonly:~8%.igb"
+for /f "skip=2 tokens=1*" %%a in ('find "load_actor" "%fullpath%"') do set "srca=%~dp0%%b" & call :eAAT
 EXIT /b 1
+:eAAT
+if not "%srcf%"=="%srca%" call :numberedBKP srca
+move "%srcf%" "%srca%"
+call :animationProducer
+move "%srca%" "%srcf%"
+EXIT /b
 
 :combineAnimations
 call :checktxt combine || EXIT /b
@@ -760,7 +783,7 @@ for %%a in ("%pathonly:~0,-1%") do set outanim=%%~na
 if "%autonm%" == "false" set /p outanim=Please enter the name you want to save your new animation set as (without extension). Press enter to use "%outanim%": 
 set outanim=%outanim:&=_%
 set outanim=%outanim: =_%
-set "numBKP=%~dp0%outanim%.igb" & call :numberedBKP
+set "oa=%~dp0%outanim%.igb" & call :numberedBKP oa
 set "outpath=%outanim%\"
 if "%pathonly%" == "%~dp0" set outpath=
 if not defined skeleton set "skeleton=%outanim%\%namextns%"
@@ -779,11 +802,12 @@ if "%animfn%"=="false" (
 )
 :moveToAP
 if not defined outpath EXIT /b
-if "%fullpath%" == "%~dp0%outpath%%namextns%" EXIT /b
+set "AP=%~dp0%outpath%%namextns%"
+if "%fullpath%"=="%AP%" EXIT /b
 REM This currently copies a lot of files. Mayhap, they should be moved instead, or deleted after completion.
 if not exist "%~dp0%outpath%" mkdir "%~dp0%outpath%"
-set "numBKP=%~dp0%outpath%%namextns%" & call :numberedBKP
-copy "%fullpath%" "%~dp0%outpath%%namextns%"
+call :numberedBKP AP
+copy "%fullpath%" "%AP%"
 EXIT /b
 :anameFiles
 if "%extall%" == "false" call :animNames %animname% || choice /m "'%animname%' is not in shared_anims. Continue"
@@ -876,57 +900,72 @@ EXIT /b
 
 :hud_head_e
 REM For 256 MUA icons, the format is DXT, therefore the images extract to TGA only
-if /i "%xtnsonly%" == ".tga" call :hudextract tga hud_head_0201 hud_conversation DXT1 true
+if /i "%xtnsonly%"==".tga" call :hudextract tga hud_head_0201 hud_conversation 1 true
 REM For 128 MUA icons, the template is PNG compatible, and extracts to PNG
-if /i "%xtnsonly%" == ".png" call :hudextract png hud_head_0000 hud_conversation DXT5
+if /i "%xtnsonly%"==".png" call :hudextract png hud_head_0000 hud_conversation 5
 del "%~dp0hud_conversation*"
 EXIT /b
 
 :hudextract - format (tga or png); IGB template; intern text. name to repl.; target format; has mipmaps (true/false)
-if "%nameonly%" == "%3" EXIT /b
-set "numBKP=%~dp0%nameonly%" & call :numberedBKP
-mkdir "%~dp0%nameonly%" & set "sfolder=%nameonly%"
+set "sfolder=%nameonly%"
+if "%sfolder%"=="%3" EXIT /b
+set "hudp=%~dp0%sfolder%"
+call :numberedBKP hudp
+mkdir "%hudp%"
 (call :OptHead 1 & call :OptExt 1 %1 true false false)>%optSet%
-%sgOptimizer% "%~dp0%2.igb" "%~dp0%nameonly%\%nameonly%.igb" %optSet%
-if not "%~dp0%nameonly%" == "%pathname%" xcopy /i /y "%~dp0%nameonly%" "%pathname%" & rmdir /s /q "%~dp0%nameonly%"
-copy /y "%fullpath%" "%pathname%\%3.%1" & set sfolder=
-set format=IG_GFX_TEXTURE_FORMAT_RGBA_%4
-if "%5" == "true" (set optcnt=3) else set optcnt=2
+%sgOptimizer% "%~dp0%2.igb" "%hudp%\%nameonly%.igb" %optSet%
+if not "%hudp%"=="%pathname%" xcopy /i /y "%hudp%" "%pathname%" & rmdir /s /q "%hudp%"
+copy /y "%fullpath%" "%pathname%\%3.%1"
+set sfolder=
+set format=RGBA_DXT%4
+if "%5"=="true" (set optcnt=3) else set optcnt=2
 (call :OptHead %optcnt% & call :OptExt 1 png false true false & call :optConv 2)>"%pathname%\%operation:~0,-2%_i.ini"
-if "%5" == "true" (call :optMipmap 3)>>"%pathname%\%operation:~0,-2%_i.ini"
+if "%5"=="true" (call :optMipmap 3)>>"%pathname%\%operation:~0,-2%_i.ini"
 REM Injecting the images from batch fails. Has to be made manually in Finalizer.
 EXIT /b
 
 :logos_e
-if "%namextns%" == "power_ring.tga" EXIT /b
-call :hudextract tga 0000 team DXT5
+if "%namextns%"=="power_ring.tga" EXIT /b
+call :hudextract tga 0000 team 5
 move /y "%~dp0power_ring.tga" "%pathname%\power_ring.tga"
 EXIT /b
 
 
 :Maps
-if "%inputfiles%"=="existonall" goto addNewTextures
-call :checkMapTexs
-call :Mset || goto MapsW
-set inputfiles=asked
-choice /m "Optimization set found (%operation%.ini). Do you want to apply it on all input files"
-if not errorlevel 2 set inputfiles=existonall& goto addNewTextures
-:MapsW
-set /a count+=1
-echo "%fullpath%">>%tem%
+for /d %%a in ("%pathonly%\*") do goto askSubfolder
+goto Mchck
+:askSubfolder
+if %SubfoldAuto%==ask (
+ choice /m "Do you want to search subfolders for textures as well"
+ if errorlevel 2 (set SubfoldAuto=false) else set SubfoldAuto=true
+)
+:Mchck
+call :rec%SubfoldAuto:ask=false%
+if ""=="%oo%" (
+ set oo=done
+ copy /y "%fullpath:~,-4%.ini" %optSet% >nul
+ copy /y "%pathonly%%operation%.ini" %optSet% >nul
+ call :Mset && choice /m "Optimization set found (%operation%.ini). Do you want to apply it on all input files"
+ if not errorlevel 2 set operation=addNewTextures& goto addNewTextures
+)
+if %MultiInputA%==true goto MapsMain
+set /a c+=1
+echo "%fullpath%">>"%tem%"
 EXIT /b
-:checkMapTexs
-for /f "delims=" %%t in ('for %%f in ^(png, tga, dds, jpg, bmp^) do @dir /a-d /b%subf% "%pathonly%*.%%f" 2^>nul') do EXIT /b
-echo No map textures detected. Please move them to the same folder as the input IGB file.
-goto Errors
 :Mset
-if not defined inputfiles if exist %optSet% (
+if exist %optSet% (
  call :MTitle
  type %optSet%
  echo.
  EXIT /b 0
 )
-EXIT /b 1
+EXIT /b 2
+
+:MapsPost
+if ""=="%c%" EXIT /b
+if %c% GTR 1 call :IGBselect
+for /f "usebackq delims=" %%i in ("%tem%") do set "fullpath=%%~fi" & call :MapsMain
+EXIT /b
 
 :MTitle
 CLS
@@ -937,84 +976,128 @@ echo --------------------------------------------
 echo.
 EXIT /b
 
-:MapsPost
-if not defined count EXIT /b
-if %count% GTR 1 if "%MultiInputA%" == "false" call :IGBselect
-for /f "usebackq delims=" %%i in (%tem%) do set "fullpath=%%~fi" & call :IntImages
-EXIT /b
-
 :IGBselect
-set input=
-set fullpath=
 call :MTitle
 echo Multiple input files found:
-type %tem%
+type "%tem%"
 echo.
-set /p input=Enter the name of the file you want to process, or press enter to process all files: 
-if not defined input EXIT /b
-for /f "usebackq delims=" %%i in (%tem%) do echo %%~nxi | find /i "%input%" && echo "%%~fi">%tem% && set "fullpath=%%~fi"
-if not defined fullpath goto IGBselect
-EXIT /b
+set /p input=Enter the name of the file you want to process, or press enter to process all files: || EXIT /b
+for /f "usebackq delims=" %%i in ("%tem%") do echo "%%~nxi" | find /i "%input%" && echo "%%~fi">"%tem%" && EXIT /b
+goto IGBselect
+
+:MapsMain
+call :filesetup
+if defined options (
+ timeout 1
+ call :Mset && choice /m "Do you want to add the same textures to '%namextns%'"
+ if not errorlevel 2 goto addNewTextures
+)
+set done= 
+set dc=0
+set /a sv+=1
+REM Write internal texture info to "%tem%" and call the dialogue
+set "subf=%pathonly%" & if %SubfoldAuto%==true set subf=
+del "%tem%" "%tem:~,-4%T.txt" "%tem:~,-4%N.txt" %optSetT% 2>nul
+call :fTi 0x00000091
+for /f "tokens=1* delims=|" %%a in ('findstr "%igTF%" ^<"%pathname%.txt"') do set mi=%%b & call :filterDiff %%a
+if %dc%==1 call :MapSelect 0 & EXIT /b
+set to=0123456789
+call set options=%%to:~,%dc%%%
+call :mapsD
+REM Write new optimization set
+set oc=0
+for %%d in (%done%) do call :cRSMMo %%d
+set DXT=%ConvertDDSf:false=1%
+if exist "%tem:~,-4%T.txt" call :convMaps T %DXT%
+if exist "%tem:~,-4%N.txt" call :convMaps N 5
+if %mipmaps%==true set /a oc+=1
+if %mipmaps%==true (call :optMipmap %oc%)>>%optSetT%
+(call :OptHead %oc% & type %optSetT%) > %optSet%
+del "%pathname%.txt"
+:addNewTextures
+set outfile=
+call :MTitle
+echo Enter a name to save "%nameonly%" as (existing files will be replaced).
+set /p outfile=Enter a name or press enter to update "%namextns%": 
+if defined outfile (set "outfile=%pathonly%%outfile%.igb") else (set "outfile=%fullpath%")
+choice /m "Save the optimization set as well"
+if not errorlevel 2 copy %optSet% "%outfile:~,-4%.ini"
+goto Optimizer
 
 :mapsD
 set dc=0
 call :MTitle
 echo "%namextns%":
 echo.
-for /f "skip=2 tokens=1 delims=|" %%a in ('findstr /l "|" ^<"%pathname%.txt"') do call :printDiff %%a
-if %dc% LEQ 1 goto MapSelect
+echo Select the number of a diffuse texture to add texture maps to.
+echo Ask for help, if you are unsure about diffuse textures.
 echo.
-echo Only select diffuse textures. Ask for help, if you are unsure.
+for /f "usebackq delims=" %%a in ("%tem%") do call :printDiff %%a
 echo.
 if defined duplicate (
- echo  WARNING: Duplicate texture names found. They must be the identical textures. 
+ echo  WARNING: Duplicate texture names found. They must be the identical texture. 
  echo           If you think it's possible that this is not the case, abort now,
- echo           and rename one or both textures, if they're truly different.
+ echo           and rename one or both textures.
  echo.
  set duplicate=
 )
-if not defined options for /l %%d in (0,1,%dc%) do if %%d LEQ 9 call set options=%%options%%%%d
-choice /c %options%A /m "Select the number of a diffuse texture to add texture maps to. Press 'A' to accept and continue."
-if %errorlevel%==%d% EXIT /b
-call :MapSelect %errorlevel%
+choice /c A%options% /m "Press 'A' to accept and continue."
+if %errorlevel%==1 EXIT /b
+set /a d=%errorlevel%-2
+call :MapSelect %d%
 goto mapsD
 :printDiff
-if exist %tem% findstr /bei /c:"%*" <%tem% >nul && set duplicate=found
-echo %*>> %tem%
-if %dc% LEQ 9 set /a d=dc+2
 set nr=%dc%.
 set sfx=
-echo %done% | find "%dc%" && set sfx=-- Done
-if %dc% GTR 9 set nr=  & set sfx=(unable to modify)
+if %dc% GTR 9 ( set nr=  & set sfx=^(unable to modify^)
+) else echo %done% | find "%dc%" >nul && set sfx=-- Done
 echo %nr% %* %sfx%
 set /a dc+=1
 EXIT /b
-:MapSelect
-echo %done% | find "%1" || set /a count+=1 & set set done=%done%%1
-set /a sk=%1+1
-for /f "skip=%sk% tokens=1 delims=|" %%a in ('findstr /l "|" ^<"%pathname%.txt"') do (
- set intTex=%%~a
- call :mapsM %1
- EXIT /b
-)
+:filterDiff
+call :chMM %* && EXIT /b
+if exist "%tem%" findstr /bei /c:"%*" <"%tem%" >nul && set duplicate=found
+echo %*>> "%tem%"
+set /a dc+=1
 EXIT /b
+:chMM
+for %%m in ("%*") do set "pm=%%~nm" & echo "%%~nm" | find """%pm:~,-3%" || EXIT /b 1
+for /f "tokens=1-2 delims=|" %%y in ("%mi%") do (
+ set mz=%%z
+ set mf=%%y
+ if 0%mz% LSS %%z EXIT /b 1
+ if not "%mf%"=="%%y" EXIT /b 1
+)
+for %%m in (%*) do set mm=m%%~nm
+for %%m in (%mm:-= %) do set mm=%%m
+if "%mm:~2%"=="" if %mm% LEQ 30 if %mm% GEQ 0 EXIT /b 0
+EXIT /b 1
 
+:MapSelect
+call :mapsR %1
 :mapsM
-call :mapsS %1 restore
 if defined Environment (set "ER=%Environment%") else set "ER=%reflectance%"
+if not defined reflectance set reflectance=0.000000
 call :MTitle
 echo "%namextns%":
 echo.
 echo 0. Diffuse:      %intTex%
 echo.
+echo Select a number to add or replace a texture map.
+echo.
 echo 1. Normal:       "%Normal%"
 echo 2. Specular:     "%Specular%"
-echo 3. Env. cubemap: "%reflectionR%" %reflectionL:~-6,2% %reflectionB:~-6,2% %reflectionF:~-6,2% %reflectionU:~-6,2% %reflectionD:~-6,2%
+echo 3. Env. cubemap: "%reflectionR%"
+if defined reflectionL echo                  "%reflectionL%"
+if defined reflectionB echo                  "%reflectionB%"
+if defined reflectionF echo                  "%reflectionF%"
+if defined reflectionU echo                  "%reflectionU%"
+if defined reflectionD echo                  "%reflectionD%"
 echo 4. Env. mask:    "%ER%"
 echo 5. Emissive:     "%Emissive%"
 echo.
-choice /c 1245A /m "Select a number to add or replace a texture map. Press 'A' to accept and continue."
-goto map%errorlevel% %1
+choice /c 1245A /m "Press 'A' to accept and continue."
+goto map%errorlevel%
 :map1
 call :askTexMaps N Normal Normal " (Bump map)"
 goto mapsM
@@ -1029,181 +1112,81 @@ goto mapsM
 call :askTexMaps T Emissive Emissive " (gloss/illuminating)"
 goto mapsM
 :map5
-(call :OptRSMUAMat %count%)>>%optSetT%
-call :mapsS %1
+call set done=%%done: %1=%% %1
+call :mapsS %sv%%1
 EXIT /b
+:askTexMaps
+echo.
+echo Texture files found:
+echo - INFORMATION: Must provide full path if no files found -
+for %%e in (png, tga, dds, jpg, bmp) do for /f "delims=" %%t in ('dir "%pathonly%*.%%e" 2^>nul ') do echo %%~nxt
+:aTMnL
+set %3=
+echo.
+echo Press enter to skip.
+echo Enter the name of the texture to be added as ...
+set /p map=%~2 map%~4: || EXIT /b
+call :stripQ map
+echo "%map:~,2%" | findstr /l "\\\\ :" >nul && goto isFullPath
+for %%e in (png, tga, dds, jpg, bmp) do for /f "delims=" %%t in ('dir "%pathonly%*.%%e" 2^>nul ') do echo %%~nxt | find /i "%map%" && set "map=%subf%%%~t" && goto isFullPath
+goto aTMnL
+:isFullPath
+set "%3=%map%"
+for %%t in ("%map%") do call :chkFrmt %%~xt %1 && echo %%~nxt>>"%tem:~,-4%%1.txt"
+EXIT /b 0
+:chkFrmt
+if %2=="" EXIT /b 1
+if /i "%1"==".dds" EXIT /b 1
+if %2==N EXIT /b 0
+if /i "%1"==".png" if %ConvertDDSf%==false EXIT /b 1
+EXIT /b 0
+:askReflectance
+if defined Environment goto CubeMaps
+echo.
+echo Press enter to skip.
+echo Enter a number for an environment mask with an even reflection of a percentual intensity, based on the entered value. Example: 20.1  [=20.1%%]
+set /p reflectance=Enter a number between 0 and 100: || EXIT /b
+for /f usebackq %%r in (`PowerShell "try {[decimal]$t = '%reflectance%'} catch {exit}; if ($t -ge 0 -and $t -le 100) {[string]$t = $t/100; if (!$t.Contains('.')) {$t += '.'}; $t.PadRight(8,'0').Substring(0,8)}"`) do set reflectance=%%r& goto CubeMaps
+goto askReflectance
+:CubeMaps
+for %%r in (R:Right L:Left B:Back F:Front U:Top D:Bottom) do for /f "tokens=1* delims=:" %%a in ("%%r") do call :askCubeMaps %%a %%b && EXIT /b
+EXIT /b 0
+:askCubeMaps
+call :aTMnL "" "%2 side cube" reflection%1 " (reflection cube/sphere)" || EXIT /b 0
+if %1 NEQ R EXIT /b 1
+echo.
+choice /m "Do you want to use the same texture for all sides"
+if errorlevel 2 EXIT /b 1
+for %%r in (L, B, F, U, D) do set "reflection%%r=%reflectionR%"
+EXIT /b 0
 :mapsS
 set s=
 set r=%1
 if "%2"=="" set r=&set s=%1
 for %%m in (Normal Specular reflectionR reflectionL reflectionB reflectionF reflectionU reflectionD Environment reflectance Emissive) do call set "%%m%s%=%%%%m%r%%%"
 EXIT /b
-
-:IntImages
-call :filesetup
-set count=0
-REM Remove from here ...
-call :MTitle
-call :fetchTextures
-if %count% GTR 1 call :multiTex
-if defined noSpace echo %noSpace:&=^&%> %tem%
-REM ... until here
-set subf=
-for /f %%a in ('dir /ad /b "%pathonly%"') do goto askSubfolder
-REM call :Mset || goto Images
-REM choice /m "Do you want to add the same textures to '%namextns%'"
-REM if not errorlevel 2 goto addNewTextures
-goto Images
-:askSubfolder
-if "%SubfoldAuto%" == "ask" (
- choice /m "Do you want to search subfolders for textures as well"
- if not errorlevel 2 set SubfoldAuto=true
+:mapsR
+call :mapsS %sv%%1 restore
+set skip=
+if %1 GTR 0 set skip=skip=%1
+for /f "usebackq %skip% delims=" %%a in ("%tem%") do (
+ set intTex=%%~na
+ EXIT /b
 )
-if "%SubfoldAuto%" == "true" set "subf= /s"
-:Images
-call :MTitle
-REM This should be called for every texture map
-echo Texture files found:
-for /f "delims=" %%t in ('for %%f in ^(png, tga, dds, jpg, bmp^) do @dir /a-d /b%subf% "%pathonly%*.%%f" 2^>nul') do echo %%~nxt
-REM only until here.
-del "%TC%T.txt" "%TC%N.txt" %optSetT% 2>nul
-REM del %tem%
-REM set done=
-REM set options=
-REM call :fTi 0x00000091
-REM call :mapsD 1
-REM Remove from here ...
-set count=0
-for /f "usebackq delims=" %%i in (%tem%) do for /f %%c in ('findstr "|" ^<"%pathname%.txt" ^| find /c /i "%%~ni"') do if %%c GTR 1 call :warnMulti
-for /f "usebackq delims=" %%d in (%tem%) do set "intTex=%%~nd" & call :askNewTextures
-REM ... until here
-if exist "%TC%T.txt" call :convMaps T %ConvertDDSf%
-if exist "%TC%N.txt" call :convMaps N 5
-if "%mipmaps%" == "true" set /a count+=1
-if "%mipmaps%" == "true" (call :optMipmap %count%)>>%optSetT%
-(call :OptHead %count% & type %optSetT%) > %optSet%
-del %optSetT%
-del "%pathname%.txt"
-:addNewTextures
-set outfile=
-call :MTitle
-set /p outfile=Enter a name to save "%nameonly%" as ^(existing files will be replaced^). Press enter to update "%namextns%": 
-if defined outfile (set "outfile=%pathonly%%outfile%.igb") else (set "outfile=%fullpath%")
-goto Optimizer
-
-:multiTex
-set noSpace=
-if "%MultiTextAl%" == "true" call :askTextures & EXIT /b
-echo.
-echo  WARNING: Identical texture names should be the identical texture as well. 
-echo           If you think it's possible that this is not the case, abort now,
-echo           and rename one or both textures if they're truly different.
-:multiText
-set intTex=
-echo.
-set /p intTex=Multiple textures found. Enter the name of the diffuse texture you want to add texture maps to, or press enter to choose multiple textures: 
-if not defined intTex call :askTextures & EXIT /b
-for /f "tokens=1 delims=|" %%i in ('findstr "|" ^<"%pathname%.txt" ^| find /i "%intTex%"') do call :remSpacesLT %%i & EXIT /b
-goto multiText
-:warnMulti
-if defined warning EXIT /b
-echo.
-echo  Hint: If you want to add different texture maps to multiple files with 
-echo        identical diffuse textures ^(names^), abort, and start again by dropping
-echo        them onto the batch, one after the other.
-set warning=warned
 EXIT /b
 
+:cRSMMo
+call :mapsR %1
+set /a oc+=1
+call :OptRSMUAMat %oc% >>%optSetT% 2>nul
+EXIT /b
 :convMaps
-set /a count+=1
+set /a oc+=1
 set isExclude=include
-set "convertlist=%TC%%1.txt"
-set format=IG_GFX_TEXTURE_FORMAT_RGBA_DXT%2
-(call :optConv %count%)>>%optSetT%
+set "convertlist=%tem:~,-4%%1.txt"
+set format=RGBA_DXT%2
+call :optConv %oc% >>%optSetT%
 EXIT /b
-
-:askTextures
-del %tem%
-set count=0
-set countb=0
-for /f "usebackq skip=%skipt% tokens=1 delims=|" %%a in ("%pathname%.txt") do (
- echo %%a | find "---------------------">nul && EXIT /b
- call :askTextures2 %%a
-)
-EXIT /b
-:askTextures2
-set /a countb+=1
-echo.
-if %countb% GTR 1 echo WARNING: multiple textures in "%nameonly%" - this might be a non-diffuse map
-if exist %tem% findstr /bei /c:"%*" <%tem% >nul && set duplicate=found
-if defined duplicate ( 
- echo Duplicate texture name: "%*". The duplicate one is skipped. Abort now, if the textures aren't identical.
- set duplicate=
-) else (
- choice /m "Do you want to add texture maps to %*"
- if not errorlevel 2 set /a count+=1 & echo %*>> %tem%
-)
-EXIT /b
-
-:askNewTextures
-set /a count+=1
-echo.
-echo.
-echo diffuseMapName = "%intTex%"
-echo --------------------------------------------
-call :askTexMaps T Specular Specular
-call :askTexMaps N Normal Normal " (Bump map)"
-call :askTexMaps T Emissive Emissive " (gloss/illuminating)"
-call :askTexMaps T Environment Environment " (reflections)"
-call :askReflectance
-(call :OptRSMUAMat %count%)>>%optSetT%
-EXIT /b
-:askTexMaps
-set map=
-set %3=
-echo.
-set /p map=Enter the name of the texture you want to use for the %~2 map%~4, or press enter to skip this map: 
-if not defined map EXIT /b
-set "map=%map:"=%"
-if %map:~1,1%==: goto isFullPath
-for /f "delims=" %%t in ('for %%f in ^(png, tga, dds, jpg, bmp^) do @dir /a-d /b%subf% "%pathonly%*.%%f" 2^>nul') do echo %%~nxt | find /i "%map%" && set "%3=%%~ft" && if not "%~1"=="" call :chkFrmt %%~xt && echo %%~nxt>>"%TC%%~1.txt"
-if not defined %3 goto askTexMaps
-EXIT /b
-:isFullPath
-set "%3=%map%"
-for %%t in ("%map%") do call :chkFrmt %%~xt && echo %%~nxt>>"%TC%%~1.txt"
-EXIT /b
-:chkFrmt
-if /i "%1" == ".png" if "%ConvertPNGs%" == "false" EXIT /b 1
-if /i "%1" == ".dds" EXIT /b 1
-EXIT /b 0
-:askReflectance
-set reflectance=0.000000
-if defined Environment goto CubeMaps
-echo.
-set /p reflectance=Enter a number between 0 and 1 [eg. 0.001] for an environment mask of an even reflection of the entered value [1=100%%], or press enter to skip: 
-if %reflectance% EQU 0.000000 EXIT /b
-if %reflectance% GTR 1 goto askReflectance
-if %reflectance% LSS 0 goto askReflectance
-for /f usebackq %%d in (`PowerShell "('%reflectance%' -replace '[^.]').length"`) do if %%d GTR 1 (goto askReflectance) else if %%d EQU 1 if not "%reflectance:~1,1%" == "." goto askReflectance
-:prettyPrintRefl
-echo %reflectance% | find "." >nul || set reflectance=%reflectance%.
-set reflectance=%reflectance%000000
-set reflectance=%reflectance:~0,8%
-:CubeMaps
-set cubemap=%5
-for %%r in (R:right L:left B:back F:front U:top D:bottom) do for /f "tokens=1* delims=:" %%a in ("%%r") do call :askCubeMaps %%a %%b && EXIT /b
-EXIT /b 0
-:askCubeMaps
-call :askTexMaps "" "%2 side cube" reflection%1 " (reflection cube/sphere)"
-if not defined reflectionR EXIT /b 0
-if %1==R goto askCubeMapsSame
-EXIT /b 1
-:askCubeMapsSame
-choice /m "Do you want to use the same texture for all sides"
-if errorlevel 2 EXIT /b 1
-for %%r in (L, B, F, U, D) do set "reflection%%r=%reflectionR%"
-EXIT /b 0
 
 :checkExist extension
 set "%1=%pathname%.%1"
@@ -1223,12 +1206,16 @@ EXIT /b 0
 
 :removeSpaces
 set "infile=%pathonly%%nameonly: =_%%xtnsonly%"
-if exist "%infile%" move /%unsafe%y "%infile%" "%infile%.bak"
+call :numberedBKP infile
 copy "%fullpath%" "%infile%"
 EXIT /b
 
 :remSpacesLT
 set noSpace=%*
+EXIT /b
+
+:stripQ
+if defined %1 call set "%1=%%%1:"=%%"
 EXIT /b
 
 :toLower
@@ -1243,12 +1230,21 @@ for %%g in (A B C D E F G H I J K L M N O P Q R S T U V W X Y Z) do call set _in
 set "%1=%_in%"
 EXIT /b
 
-:askallswitch
-call :switch %1 "Ask for the next input file again" "Use the same setting for all input files"
-EXIT /b
+:isNumber string
+for /f "delims=0123456789" %%i in ("%*") do EXIT /b 1
+EXIT /b 0
 
+:switchBool
+call :switch %1 true false
+EXIT /b
 :switch
 call echo "%%%1%%" | find "%~2" && set "%1=%~3" || set "%1=%~2"
+EXIT /b
+
+:askallD
+echo Ask again for the next input file (Press '%2' to switch)
+call echo %%%1%%
+echo.
 EXIT /b
 
 :writeOpt
@@ -1286,12 +1282,12 @@ echo enummerateSameNamedImages = %5
 EXIT /b
 
 :optConv
-echo %format% | find /i "DXT" >nul && set "order=IG_GFX_IMAGE_ORDER_DX" || set "order=IG_GFX_IMAGE_ORDER_DEFAULT"
+echo %format% | find /i "DXT" >nul && set "order=DX" || set "order=DEFAULT"
 echo [OPTIMIZATION%1]
 echo name = igConvertImage
-echo format = %format%
+echo format = IG_GFX_TEXTURE_FORMAT_%format%
 echo sourceFormat = invalid
-echo order = %order%
+echo order = IG_GFX_IMAGE_ORDER_%order%
 echo isExclude = %isExclude%
 echo convertIfSmaller = false
 echo imageListFilename = %convertlist%
@@ -1400,7 +1396,7 @@ echo [OPTIMIZATION%1]
 echo name = igRavenSetupMUAMaterial
 echo diffuseMapName = %intTex:&=^&%
 echo normalMap = %Normal:&=^&%
-echo specularMap = %Specula:&=^&r%
+echo specularMap = %Specular:&=^&r%
 echo reflectionMapRight = %reflectionR:&=^&%
 echo reflectionMapLeft = %reflectionL:&=^&%
 echo reflectionMapBack = %reflectionB:&=^&%
@@ -1420,80 +1416,80 @@ echo clamp = %WrapST%
 EXIT /b
 
 :IGBimgFormats
-if "%format%" == "IG_GFX_TEXTURE_FORMAT_TILED_X_4_PSP" (
- set format=IG_GFX_TEXTURE_FORMAT_L_8
+if "%format%" == "TILED_X_4_PSP" (
+ set format=L_8
  set desc=Intensity aka grayscale image with 8 bits ^(1 channel^) - no transparency supported
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_L_8" (
- set format=IG_GFX_TEXTURE_FORMAT_A_8
+) else if "%format%" == "L_8" (
+ set format=A_8
  set desc=Alpha channel only, with 8 bits
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_A_8" (
- set format=IG_GFX_TEXTURE_FORMAT_LA_44_8
+) else if "%format%" == "A_8" (
+ set format=LA_44_8
  set desc=Intensity aka grayscale image with alpha channel and 4 bits per channel
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_LA_44_8" (
- set format=IG_GFX_TEXTURE_FORMAT_LA_88_16
+) else if "%format%" == "LA_44_8" (
+ set format=LA_88_16
  set desc=Intensity aka grayscale image with alpha channel and 8 bits per channel
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_LA_88_16" (
- set format=IG_GFX_TEXTURE_FORMAT_RGB_332_8
+) else if "%format%" == "LA_88_16" (
+ set format=RGB_332_8
  set desc=RGB ^(Red Green Blue channels^) 8bit image with 3 and 2 bits per channel - no transparency supported
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGB_332_8" (
- set format=IG_GFX_TEXTURE_FORMAT_RGB_888_24
+) else if "%format%" == "RGB_332_8" (
+ set format=RGB_888_24
  set desc=RGB ^(Red Green Blue channels^) 24bit image with 8 bits per channel - no transparency supported
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGB_888_24" (
- set format=IG_GFX_TEXTURE_FORMAT_RGBA_2222_8
+) else if "%format%" == "RGB_888_24" (
+ set format=RGBA_2222_8
  set desc=RGBA ^(Red Green Blue Alpha channels^) 8bit image with 2 bits per channel - PNG
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGBA_2222_8" (
- set format=IG_GFX_TEXTURE_FORMAT_RGBA_4444_16
+) else if "%format%" == "RGBA_2222_8" (
+ set format=RGBA_4444_16
  set desc=RGBA ^(Red Green Blue Alpha channels^) 16bit image with 4 bits per channel - PNG
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGBA_4444_16" (
- set format=IG_GFX_TEXTURE_FORMAT_RGBA_8888_32
+) else if "%format%" == "RGBA_4444_16" (
+ set format=RGBA_8888_32
  set desc=RGBA ^(Red Green Blue Alpha channels^) 32bit image with 8 bits per channel - PNG
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGBA_8888_32" (
- set format=IG_GFX_TEXTURE_FORMAT_RGB_565_16
+) else if "%format%" == "RGBA_8888_32" (
+ set format=RGB_565_16
  set desc=RGB ^(Red Green Blue channels^) 16 bit image with 5 and 6 bits per channel - no transparency supported
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGB_565_16" (
- set format=IG_GFX_TEXTURE_FORMAT_RGBA_5551_16
+) else if "%format%" == "RGB_565_16" (
+ set format=RGBA_5551_16
  set desc=RGBA ^(Red Green Blue Alpha channels^) 16 bit image with 5 and 1 bits per channel - PNG
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGBA_5551_16" (
- set format=IG_GFX_TEXTURE_FORMAT_X_8
+) else if "%format%" == "RGBA_5551_16" (
+ set format=X_8
  set desc=Indexed color image with 8 bits - limited transparency
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_X_8" (
- set format=IG_GFX_TEXTURE_FORMAT_X_4
+) else if "%format%" == "X_8" (
+ set format=X_4
  set desc=Indexed color image with 4 bits - limited transparency
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_X_4" (
- set format=IG_GFX_TEXTURE_FORMAT_RGBA_DXT1
+) else if "%format%" == "X_4" (
+ set format=RGBA_DXT1
  set desc=DirectX texture 1 ^(Red Green Blue Alpha channels^) for textured 3d objects - DDS - transparency not fully supported
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGBA_DXT1" (
- set format=IG_GFX_TEXTURE_FORMAT_RGBA_DXT3
+) else if "%format%" == "RGBA_DXT1" (
+ set format=RGBA_DXT3
  set desc=DirectX texture 2 ^(Red Green Blue Alpha channels^) for textured 3d objects - DDS
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGBA_DXT3" (
- set format=IG_GFX_TEXTURE_FORMAT_RGBA_DXT5
+) else if "%format%" == "RGBA_DXT3" (
+ set format=RGBA_DXT5
  set desc=DirectX texture 3 ^(Red Green Blue Alpha channels^) for textured 3d objects with best alpha channel support - DDS
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGBA_DXT5" (
- set format=IG_GFX_TEXTURE_FORMAT_TILED_DXT1_GAMECUBE
+) else if "%format%" == "RGBA_DXT5" (
+ set format=TILED_DXT1_GAMECUBE
  set desc=DirectX texture 1 ^(Red Green Blue Alpha channels^) for textured 3d objects on Gamecube and Wii consoles - DDS - transparency not fully supported
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_TILED_DXT1_GAMECUBE" (
- set format=IG_GFX_TEXTURE_FORMAT_TILED_RGBA_5553_16_GAMECUBE
+) else if "%format%" == "TILED_DXT1_GAMECUBE" (
+ set format=TILED_RGBA_5553_16_GAMECUBE
  set desc=RGBA ^(Red Green Blue Alpha channels^) 16bit image with 5 and 3 bits per channel for Gamecube and Wii consoles - PNG - please give me a message if you know more
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_TILED_RGBA_5553_16_GAMECUBE" (
- set format=IG_GFX_TEXTURE_FORMAT_TILED_RGB_565_16_GAMECUBE
+) else if "%format%" == "TILED_RGBA_5553_16_GAMECUBE" (
+ set format=TILED_RGB_565_16_GAMECUBE
  set desc=RGB ^(Red Green Blue channels^) 16bit image with 5 and 6 bits per channel for Gamecube and Wii consoles - no transparency supported
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_TILED_RGB_565_16_GAMECUBE" (
- set format=IG_GFX_TEXTURE_FORMAT_TILED_L_8_GAMECUBE
+) else if "%format%" == "TILED_RGB_565_16_GAMECUBE" (
+ set format=TILED_L_8_GAMECUBE
  set desc=Intensity aka grayscale image with 8 bits ^(1 channel^) for Gamecube and Wii consoles - no transparency supported
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_TILED_L_8_GAMECUBE" (
- set format=IG_GFX_TEXTURE_FORMAT_TILED_LA_88_16_GAMECUBE
+) else if "%format%" == "TILED_L_8_GAMECUBE" (
+ set format=TILED_LA_88_16_GAMECUBE
  set desc=Intensity aka grayscale image with alpha channel and 8 bits per channel for Gamecube and Wii consoles
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_TILED_LA_88_16_GAMECUBE" (
- set format=IG_GFX_TEXTURE_FORMAT_TILED_LA_44_8_GAMECUBE
+) else if "%format%" == "TILED_LA_88_16_GAMECUBE" (
+ set format=TILED_LA_44_8_GAMECUBE
  set desc=Intensity aka grayscale image with alpha channel and 4 bits per channel for Gamecube and Wii consoles
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_TILED_LA_44_8_GAMECUBE" (
- set format=IG_GFX_TEXTURE_FORMAT_RGBA_128F
+) else if "%format%" == "TILED_LA_44_8_GAMECUBE" (
+ set format=RGBA_128F
  set desc=Unknown - please give me a message if you know more
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_RGBA_128F" (
- set format=IG_GFX_TEXTURE_FORMAT_TILED_X_8_PSP
+) else if "%format%" == "RGBA_128F" (
+ set format=TILED_X_8_PSP
  set desc=Indexed color image with 8 bits for PSP - limited transparency
-) else if "%format%" == "IG_GFX_TEXTURE_FORMAT_TILED_X_8_PSP" (
- set format=IG_GFX_TEXTURE_FORMAT_TILED_X_4_PSP
+) else if "%format%" == "TILED_X_8_PSP" (
+ set format=TILED_X_4_PSP
  set desc=Indexed color image with 4 bits for PSP - limited transparency
 )
 EXIT /b
@@ -1505,7 +1501,7 @@ EXIT /b 0
 :checkTools program
 if not defined IG_ROOT echo The IG_ROOT variable is not defined. Please check your Alchemy 5 installation. & goto Errors
 if exist "%~dp0%1.exe" set %1="%~dp0%1.exe"
-if not defined %1 for /f "delims=" %%a in ('where %1.exe 2^>nul') do set %1=%1
+if not defined %1 for /f "delims=" %%a in ('where %1.exe 2^>nul ') do set %1=%1
 if not defined %1 if exist "%IG_ROOT%\bin\%1.exe" set %1="%IG_ROOT%\bin\%1.exe"
 if defined %1 EXIT /b 0
 EXIT /b 1
@@ -1514,17 +1510,17 @@ EXIT /b 1
 :End
 call :%operation%Post
 CLS
-if not exist "%~dp0error.log" goto cleanup
+if not exist "%erl%" goto cleanup
 :Errors
 echo.
 echo There was an error in the process. Check the error description.
-if exist "%~dp0error.log" (
+if exist "%erl%" (
  echo.
- type "%~dp0error.log"
+ type "%erl%"
 )
 pause
 :cleanup
-del %tem% %optSet% %optSetT% "%temp%\temp.igb" "%TC%T.txt" "%TC%N.txt"
+del "%tem%" "%temp%\temp.igb" "%tem:~,-4%N.txt" "%tem:~,-4%T.txt"
 if %delOptSets%==false EXIT
 del %optSet% %optSetT%
 if %delOptSets%==true EXIT

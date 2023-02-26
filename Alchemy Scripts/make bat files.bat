@@ -5,9 +5,9 @@ mkdir AnimationMixing hud image2igb "SkinEdit (internal name renamer)" 2>nul
 (call :writeBAT "Alchemy.bat" IGBconverter false dxt1 false true)>IGBconverter.bat
 (call :writeBAT "Alchemy.bat" image2igb false dds false true)>image2igb\image2igb.bat
 (call :writeBAT "Alchemy.bat" image2igb true dxt1 false true)>image2igb\image2igb-fxtext.bat
-(call :writeBAT "Alchemy.bat" image2igb false IG_GFX_TEXTURE_FORMAT_RGBA_8888_32 false true)>"image2igb\image2igb-icons,fonts.bat"
+(call :writeBAT "Alchemy.bat" image2igb false RGBA_8888_32 false true)>"image2igb\image2igb-icons,fonts.bat"
 (call :writeBAT "Alchemy.bat" image2igb false fdxt1 MUA true)>image2igb\image2igb-ls.bat
-(call :writeBAT "Alchemy.bat" image2igb false false false true)>image2igb\image2igb-pngicons.bat
+(call :writeBAT "Alchemy.bat" image2igb false false IHQ true)>image2igb\image2igb-pngicons.bat
 (call :writeBAT "Alchemy.bat" genGColorFix false dxt1 false true)>genGColorFix.bat
 (call :writeBAT "Alchemy.bat" combineAnimations false dxt1 false true)>AnimationMixing\_combine.bat
 (call :writeBAT "Alchemy.bat" extractAnimations false dxt1 false true)>AnimationMixing\_extract.bat
@@ -51,7 +51,7 @@ echo set askbackup=false
 echo REM Include subfolders (recursive mode)? (yes =true; no =false)
 echo set recursive=false
 echo.
-echo REM IGBconverter settings (detects actorConverter):
+echo REM IGBconverter settings (detects actorConverter and animationConverter):
 echo REM Format (valid values: =FBX, =OBJ, =DAE, =ask)
 echo set format=FBX
 echo REM Extract textures as well? (yes =true, no =false)
@@ -71,51 +71,51 @@ echo.
 echo REM image2igb settings:
 echo REM Prompt for conversion? (ask for all exc. dds =true; ask for all exc. png+dds =false; no conversion =never; ask for all + dds =dds)
 echo REM Always convert all, except png+dds. (to DDS DXT1 =dxt1; to DDS DXT5 =dxt5)
-echo REM Force conversion of all files (to DDS DXT1 =fdxt1; to DDS DXT5 =fdxt5; to other formats, as defined below, eg. =IG_GFX_TEXTURE_FORMAT_RGBA_5551_16)
+echo REM Force conversion of all files (to DDS DXT1 =fdxt1; to DDS DXT5 =fdxt5; to other formats, as defined below, eg. =RGBA_5551_16)
 echo set askconv=%3
 echo REM Force conversion to one of the following formats (use the format as option in the askconv= setting above):
 echo REM -- rgb formats for icons and effect textures
-echo REM IG_GFX_TEXTURE_FORMAT_RGBA_4444_16
-echo REM IG_GFX_TEXTURE_FORMAT_RGBA_8888_32
-echo REM IG_GFX_TEXTURE_FORMAT_RGBA_2222_8
-echo REM IG_GFX_TEXTURE_FORMAT_RGBA_5551_16   (default)
-echo REM IG_GFX_TEXTURE_FORMAT_RGBA_128F
+echo REM RGBA_4444_16
+echo REM RGBA_8888_32
+echo REM RGBA_2222_8
+echo REM RGBA_5551_16   (default)
+echo REM RGBA_128F
 echo REM -- dxt textures for most model (skin, boltons, etc) textures
-echo REM IG_GFX_TEXTURE_FORMAT_RGBA_DXT1
-echo REM IG_GFX_TEXTURE_FORMAT_RGBA_DXT3
-echo REM IG_GFX_TEXTURE_FORMAT_RGBA_DXT5
+echo REM RGBA_DXT1
+echo REM RGBA_DXT3
+echo REM RGBA_DXT5
+echo REM -- indexed PNG color formats
+echo REM X_8
+echo REM X_4
+echo REM TILED_X_8_PSP
+echo REM TILED_X_4_PSP
 echo REM -- gamecube textures
-echo REM IG_GFX_TEXTURE_FORMAT_TILED_DXT1_GAMECUBE          (seems not to work, use normal DXT1 instead)
-echo REM IG_GFX_TEXTURE_FORMAT_TILED_RGBA_5553_16_GAMECUBE
-echo REM IG_GFX_TEXTURE_FORMAT_TILED_L_8_GAMECUBE
-echo REM IG_GFX_TEXTURE_FORMAT_TILED_LA_88_16_GAMECUBE
-echo REM IG_GFX_TEXTURE_FORMAT_TILED_LA_44_8_GAMECUBE
+echo REM TILED_DXT1_GAMECUBE   (seems not to work, use normal DXT1 instead)
+echo REM TILED_RGBA_5553_16_GAMECUBE
+echo REM TILED_L_8_GAMECUBE
+echo REM TILED_LA_88_16_GAMECUBE
+echo REM TILED_LA_44_8_GAMECUBE
 echo REM -- rgb formats without transparency
-echo REM IG_GFX_TEXTURE_FORMAT_RGB_332_8
-echo REM IG_GFX_TEXTURE_FORMAT_RGB_888_24
-echo REM IG_GFX_TEXTURE_FORMAT_RGB_565_16
-echo REM IG_GFX_TEXTURE_FORMAT_TILED_RGB_565_16_GAMECUBE
-echo REM -- indexed color formats
-echo REM IG_GFX_TEXTURE_FORMAT_X_8
-echo REM IG_GFX_TEXTURE_FORMAT_X_4
-echo REM IG_GFX_TEXTURE_FORMAT_TILED_X_8_PSP
-echo REM IG_GFX_TEXTURE_FORMAT_TILED_X_4_PSP
+echo REM RGB_332_8
+echo REM RGB_888_24
+echo REM RGB_565_16
+echo REM TILED_RGB_565_16_GAMECUBE
 echo REM -- intensity/grayscale formats
-echo REM IG_GFX_TEXTURE_FORMAT_L_8
-echo REM IG_GFX_TEXTURE_FORMAT_LA_44_8
-echo REM IG_GFX_TEXTURE_FORMAT_LA_88_16
-echo REM IG_GFX_TEXTURE_FORMAT_A_8
-echo REM -- reset: =IG_GFX_TEXTURE_FORMAT_INVALID
+echo REM L_8
+echo REM LA_44_8
+echo REM LA_88_16
+echo REM A_8
+echo REM -- reset: =INVALID
 echo REM -- example:
-echo REM set askconv=IG_GFX_TEXTURE_FORMAT_RGBA_8888_32
+echo REM set askconv=RGBA_8888_32
 echo REM -- 
 echo REM Force asking to convert PNG. (=true; =false)
 echo set askpng=false
 echo REM Resize? (no resize =false; to loading screens for Ultimate Alliance 2048x1024 =MUA, for X-Men Legends 2 512x512 =XML2; icons for last-gen consoles 128x128 =ILQ; icons for PC ^& next-gen consoles 256x256 =IHQ; prompt for each file =ask)
 echo REM Custom resize values possible (eg. 1024x1024 =1024; 100x100 =100)
 echo set maxHeight=%4
-echo REM Custom width, to be used with custom height (eg. 64x64 =same ^& maxHeight=64; 1024x512 =1024 ^& maxHeight=512)
-echo set maxWidth=same
+echo REM Custom width, to be used with custom height (eg. 64x64 =identical ^& maxHeight=64; 1024x512 =1024 ^& maxHeight=512)
+echo set maxWidth=identical
 echo REM Minification/Magnification method? (linear =true; nearest, recommended =false)
 echo set MagFilter=false
 echo REM WrapS/T method? (repeat, default =false; clamp =true)
@@ -137,8 +137,6 @@ echo REM Extract/combine animations with wrong names as well? (Yes =true; No =fa
 echo set extall=false
 echo REM Remove extract TXT files? (Yes =true; No =false)
 echo set remext=false
-echo REM Do you want to risk that existing files are replaced? (Yes =true; No =false)
-echo set unsafe=false
 echo REM Always use the first folder name when combining animations? (Yes =true; No =false)
 echo set autonm=false
 echo REM Enter an IGB file for the skeleton. (Use the first input file "skeleton="; use fightstyle default incl. ponytail =_fightstyle_default)
@@ -156,14 +154,11 @@ echo REM Experimental: Use source skin name? (Yes =true; No =false)
 echo set skinSr=false
 echo.
 echo REM Texture Map Editor settings:
-echo REM Convert PNG to DXT/DDS? Ideal for PC. (yes =true; no =false)
-echo set ConvertPNGs=true
-echo REM Convert to DXT1 or DXT3? (Normal maps are always DXT5) (DXT1 =1; DXT3 =3)
+echo REM Convert to DXT/DDS? Ideal for PC. (yes to DXT1 =1; yes to DXT3 =3; no =false)
+echo REM Normal maps are always DXT5; DDS never converted; PNG acc. settings; Other always converted
 echo set ConvertDDSf=1
 echo REM List all images in subfolders? (yes, always =true; no, root folder only =false; ask once =ask)
 echo set SubfoldAuto=true
 echo REM Always process all input files (IGB)?  (Yes =true; No, asks first =false)
 echo set MultiInputA=false
-echo REM Always process all textures? (Yes, asks each texture =true; No, asks first =false)
-echo set MultiTextAl=false
 EXIT /b
