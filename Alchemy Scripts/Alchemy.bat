@@ -1000,11 +1000,11 @@ set "subf=%pathonly%" & if %SubfoldAuto%==true set subf=
 del "%tem%" "%tem:~,-4%T.txt" "%tem:~,-4%N.txt" %optSetT% 2>nul
 call :fTi 0x00000091
 for /f "tokens=1* delims=|" %%a in ('findstr "%igTF%" ^<"%pathname%.txt"') do set mi=%%b & call :filterDiff %%a
-if %dc%==1 call :MapSelect 0 & EXIT /b
+if %dc%==1 call :MapSelect 0 & goto mapsWO
 set to=0123456789
 call set options=%%to:~,%dc%%%
 call :mapsD
-REM Write new optimization set
+:mapsWO
 set oc=0
 for %%d in (%done%) do call :cRSMMo %%d
 set DXT=%ConvertDDSf:false=1%
