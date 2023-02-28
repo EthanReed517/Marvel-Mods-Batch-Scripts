@@ -146,10 +146,10 @@ echo REM Use name of files for animations? (Yes, they match the anim. name =true
 echo set animfn=true
 echo REM Extract skin? (Yes =true; Skin only =only; No =false)
 echo set exskin=false
-echo REM Combine skin? (Yes =true; specific skin IGB, eg. =subfolder\skin.igb; No =false)
+echo REM Combine skin? (Yes =true; Specific skin IGB, eg. =subfolder\skin.igb; No =false)
 echo set coskin=false
 echo REM Use better scene construction load_actor_database (often fails)? (Yes =true; No =false)
-echo set actor+=true
+echo set actor+=false
 echo REM Experimental: Use source skin name? (Yes =true; No =false)
 echo set skinSr=false
 echo.

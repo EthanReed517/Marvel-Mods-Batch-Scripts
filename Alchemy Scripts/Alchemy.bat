@@ -114,7 +114,7 @@ REM Use name of files for animations? (Yes, they match the anim. name =true; No,
 set animfn=true
 REM Extract skin? (Yes =true; Skin only =only; No =false)
 set exskin=false
-REM Combine skin? (Yes =true; specific skin IGB, eg. =subfolder\skin.igb; No =false)
+REM Combine skin? (Yes =true; Specific skin IGB, eg. =subfolder\skin.igb; No =false)
 set coskin=false
 REM Use better scene construction load_actor_database (often fails)? (Yes =true; No =false)
 set actor+=true
@@ -133,7 +133,7 @@ set MultiInputA=false
 REM -----------------------------------------------------------------------------
 
 REM these are automatic settings, don't edit them:
-if "%operation%" == "ask" call :opswitcher
+if "%operation%"=="ask" call :opswitcher
 set inext=.igb
 if ""=="%temp%" set "temp=%~dp0"
 set optSet="%temp%\%operation%.ini"
@@ -187,7 +187,7 @@ if /i "%fullpath%"=="%outfile%" EXIT /b
 call :filesetup
 if not "%inext%"==".*" echo %xtnsonly%|findstr /eil "%inext:,=%" >nul || EXIT /b
 call :%operation%
-if "%delInputFiles%" == "true" del "%fullpath%"
+if %delInputFiles%==true del "%fullpath%"
 EXIT /b
 
 :convCCL
@@ -223,7 +223,7 @@ goto sgO
 set aSeIn=igActor01Appearance
 set aSeOut=f
 set aSeAll=1
-if "%SkinEditToFilename%" == "true" set aSeIn=c& set aSeAll=a
+if %SkinEditToFilename%==true set aSeIn=c&set aSeAll=a
 goto sgO
 :startlistAnimations
 mkdir "%~dp0animLists" 2>nul
@@ -368,7 +368,7 @@ findstr "igEnbaya" <"%fullpath%" >nul 2>nul && call :AnimConverter || findstr "i
 if not defined %c% call :checkTools %c% || (echo "%fullpath%": %c%.exe not found.)>>"%erl%" || EXIT /b
 call set c=%%%c%%%
 %c% "%fullpath%" "%pathname%.%format%"
-if "%exttextrs%" == "true" goto Extract
+if %exttextrs%==true goto Extract
 EXIT /b
 :AnimConverter
 set c=animationConverter
@@ -701,19 +701,19 @@ call :checktxt extract || EXIT /b
 set "outpath=%~dp0%nameonly: =_%"
 set "infile=%outpath%.igb"
 set deli=
-if /i not "%fullpath%" == "%infile%" if not exist "%infile%" copy "%fullpath%" "%infile%" & set deli=true
+if /i not "%fullpath%"=="%infile%" if not exist "%infile%" copy "%fullpath%" "%infile%" & set deli=true
 echo Extracting animations from %namextns% . . .
 mkdir "%outpath%" >nul 2>nul
-if not "%exskin%" == "only" (
+if not %exskin%==only (
  (call :writeProcFile anim)>"%AnimProcess%"
  call :animationProducer
 )
-if not "%exskin%" == "false" (
+if not %exskin%==false (
  (call :writeProcFile skin & call :skinSave)>"%AnimProcess%"
  call :animationProducer
 )
 if defined deli del "%infile%"
-if "%remext%" == "true" del "%AnimProcess%"
+if %remext%==true del "%AnimProcess%"
 EXIT /b
 :animLoad
 call :load_actor								%nameonly: =_%.igb
@@ -737,9 +737,9 @@ REM for /f tokens^=2^ delims^=^" %%a in ('findstr /lc:"Skipping igAnimation" "%p
 REM for /f %%a in ('findstr /lc:"true  " /c:"false  " "%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
 :checkAnimations
 echo "%animname%" | find "uniformly constructed of igTransformSequences" >nul && echo An animation could not be processed, because it has no name>>"%erl%" && EXIT /b
-if not "%animname:&=%" == "%animname%" echo "%animname%" could not be processed, because it contains "&">>"%erl%" & EXIT /b
+if not "%animname:&=%"=="%animname%" echo "%animname%" could not be processed, because it contains "&">>"%erl%" & EXIT /b
 if not "%animname: =%" == "%animname%" echo "%animname%" could not be processed, because it contains spaces>>"%erl%" & EXIT /b
-if "%extall%" == "false" findstr /i "\<%animname%\>" <"%~dp0_animations.ini" >nul || EXIT /b
+if %extall%==false findstr /i "\<%animname%\>" <"%~dp0_animations.ini" >nul || EXIT /b
 goto %1Files
 :extrFiles
 echo extract_animation						%animname%
@@ -756,11 +756,6 @@ rem echo load_actor								%nameonly: =_%.igb
 rem echo extract_skin							%nameonly: =_%
 rem echo create_actor							%nameonly: =_%
 echo save_actor_database						%nameonly: =_%\skin.igb
-EXIT /b
-:extractAnimationsPost
-if not "%nevtxt%" == "usetxt" EXIT /b
-set "AnimProcess=%~dp0extract.txt" 
-if exist "%AnimProcess%" goto animationProducer
 EXIT /b
 :extractAnimAllTxt
 call :txtChck || EXIT /b 1
@@ -780,12 +775,12 @@ call :checktxt combine || EXIT /b
 if defined outanim goto combineAnimationFiles
 set "AnimProcess=%~dp0combine.txt"
 for %%a in ("%pathonly:~0,-1%") do set outanim=%%~na
-if "%autonm%" == "false" set /p outanim=Please enter the name you want to save your new animation set as (without extension). Press enter to use "%outanim%": 
+if %autonm%==false set /p outanim=Please enter the name you want to save your new animation set as (without extension). Press enter to use "%outanim%": 
 set outanim=%outanim:&=_%
 set outanim=%outanim: =_%
 set "oa=%~dp0%outanim%.igb" & call :numberedBKP oa
 set "outpath=%outanim%\"
-if "%pathonly%" == "%~dp0" set outpath=
+if "%pathonly%"=="%~dp0" set outpath=
 if not defined skeleton set "skeleton=%outanim%\%namextns%"
 CLS
 echo Creating combine list for "%outanim%" . . .
@@ -793,11 +788,9 @@ call :writeTop "%coskin: =_%" >"%AnimProcess%"
 :combineAnimationFiles
 if "%coskin%"=="true" find "igSkin" "%fullpath%" | findstr "\<igSkin\>" && call :loadActorDB "%namextns: =_%" >>"%AnimProcess%" && goto moveToAP
 (call :load_actor %outpath%%namextns%)>>"%AnimProcess%"
-if "%animfn%"=="false" (
+if %animfn%==false (
  call :IntAnimations aname
 ) else (
- set "animname=%nameonly%"
- call :EnbCompr
  call :anameFiles
 )
 :moveToAP
@@ -810,9 +803,10 @@ call :numberedBKP AP
 copy "%fullpath%" "%AP%"
 EXIT /b
 :anameFiles
-if "%extall%" == "false" call :animNames %animname% || choice /m "'%animname%' is not in shared_anims. Continue"
+set "animname=%nameonly%"
+if %extall%==false call :EnbCompr & call :animNames %animname% || choice /m "'%animname%' is not in shared_anims. Continue"
 if ERRORLEVEL 2 EXIT /b
-for %%i in ("%coskin%") do if not "%%~ni" == "false" if "%nameonly%" == "%%~ni" EXIT /b
+for %%i in ("%coskin%") do if not "%%~ni"=="false" if "%nameonly%" == "%%~ni" EXIT /b
 (call :extrFiles)>>"%AnimProcess%"
 EXIT /b
 :combineAnimationsPost
@@ -869,7 +863,7 @@ EXIT /b
 :checktxt
 set x=1
 if /i "%xtnsonly%" == ".igb" set x=0
-if "%nevtxt%" == "true" EXIT /b %x%
+if %nevtxt%==true EXIT /b %x%
 if not exist "%pathonly%%1*.txt" set t=%1
 if not defined t goto asktxt
 if %x%%1==0extract if exist "%AnimProcess%" goto %1AnimAllTxt
@@ -1495,7 +1489,7 @@ if "%format%" == "TILED_X_4_PSP" (
 EXIT /b
 
 :animNames anim
-echo :step_forward:ground_attack1:ground_attack2:attack_heavy1:attack_heavy2:jump_attack1:jump_attack2:attack_jumpslam:jump_smash_loop:jump_smash:jump_smash_hold:attack_knockback:attack_knockback1:attack_knockback2:attack_light1:attack_light2:attack_light3:attack_popup1:attack_popup2:attack_stun1:attack_stun2:attack_stun3:attack_trip1:attack_trip2:block:blocking:bored_1_1:bored_1_2:bored_1_3:bored_1_4:bored_loop_1:clingwall_backflip:crouch_end:crouch_idle:crouch_start:jumpdouble_start:evade_backwards:evade_forwardroll:evade_left:evade_right:fall_FeetFirst:fly_fast:fly_idle:fly_slow:flying_attack1:flying_attack2:flyingback_getup:getup_attack_faceup:flyingforward_getup:getup_attack_facedown:grab_attack:grab_attack_finisher:grabbed_attack:grab_break:grabbed_break:grab_fallback:grab_loop:grabbed_loop:grab_smash:grabbed_smash:grab_attempt:grabbed_attempt:throw_ally_hero:throw_ally_ally:grab_throw_back:grabbed_throw_back:grab_throw_forward:grabbed_throw_forward:grab_throw_left:grabbed_throw_left:grab_throw_right:grabbed_throw_right:slamfront_slump:slamback_slump:idle:idle_to_bored:jump_attack_land:jump_land:jump_loop:jump_smash_land:jump_start:flyingback_loop:flyingforward_loop:death_gen:NO_ANIM:NO_ANIM:flyingback_landloop:slamback_getup:flyingforward_landloop:levelup:lunge_loop:lunge_land:lunge_offwall:menu_action:menu_goodbye:menu_idle:pain_airFeetfirst:pain_airHeadfirst:pain_InAirSpin:pain_rear:pain_blocking:pain_electric:groundpain_back:groundpain_forward:pain_high:pain_low:twitch_left:twitch_right:pickup_object_idle:pickup_object_lift:pickup_object_start:pickup_object_throw:pickup_object_walk:popup_break:popup_bounce:popup_loop:popup:power_1:power_10:power_11:power_12:power_13:power_14:power_15:power_16:power_17:power_18:power_19:power_1_end:power_1_loop:power_1_start:power_2:power_20:power_2_end:power_2_loop:power_3:power_3_end:power_3_loop:power_4:power_4_end:power_4_loop:power_5:power_5_end:power_6:power_7:power_8:power_8_end:power_8_loop:power_8_start:power_9:psylift:telekinesis_victim:push_heavy_object:push_heavy_object_fail:resist_knockback:resist_popup:resist_stun:resist_trip:resurrect_v:step_backward:run:spin_left:spin_right:run_sprint:step_left:step_right:sticky_floor:stun:talking_01:talking_02:talking_03:talking_04:telebuddy_grab:telebuddy_land:telebuddy_loop:slamback_loop:flyingback_land:flyingback_loop:slamfront_loop:flyingforward_land:flyingforward_loop:grabbed_throw:grabbed_throwland:grabbed_throwloop:tpose:trip:grabbed_throwslam:grabbed_throwslump:grabbed_throwslumpland:use_button:victim1:victim10:victim11:victim12:victim2:victim3:victim4:victim5:victim6:victim7:victim8:victim9:walk:zone1:zone10:zone11:zone12:zone13:zone14:zone15:zone16:zone17:zone18:zone19:zone2:zone20:zone21:zone22:zone23:zone24:zone25:zone3:zone4:zone5:zone6:zone7:zone8:zone9: | find /i ":%1:" >nul || EXIT /b 1
+echo :step_forward:ground_attack1:ground_attack2:attack_heavy1:attack_heavy2:jump_attack1:jump_attack2:attack_jumpslam:jump_smash_loop:jump_smash:jump_smash_hold:attack_knockback:attack_knockback1:attack_knockback2:attack_light1:attack_light2:attack_light3:attack_popup1:attack_popup2:attack_stun1:attack_stun2:attack_stun3:attack_trip1:attack_trip2:block:blocking:bored_1_1:bored_1_2:bored_1_3:bored_1_4:bored_loop_1:clingwall_backflip:crouch_end:crouch_idle:crouch_start:jumpdouble_start:evade_backwards:evade_forwardroll:evade_left:evade_right:fall_FeetFirst:fly_fast:fly_idle:fly_slow:flying_attack1:flying_attack2:flyingback_getup:getup_attack_faceup:flyingforward_getup:getup_attack_facedown:grab_attack:grab_attack_finisher:grabbed_attack:grab_break:grabbed_break:grab_fallback:grab_loop:grabbed_loop:grab_smash:grabbed_smash:grab_attempt:grabbed_attempt:throw_ally_hero:throw_ally_ally:grab_throw_back:grabbed_throw_back:grab_throw_forward:grabbed_throw_forward:grab_throw_left:grabbed_throw_left:grab_throw_right:grabbed_throw_right:slamfront_slump:slamback_slump:idle:idle_to_bored:jump_attack_land:jump_land:jump_loop:jump_smash_land:jump_start:flyingback_loop:flyingforward_loop:death_gen:NO_ANIM:NO_ANIM:flyingback_landloop:slamback_getup:flyingforward_landloop:levelup:lunge_loop:lunge_land:lunge_offwall:menu_action:menu_goodbye:menu_idle:pain_airFeetfirst:pain_airHeadfirst:pain_InAirSpin:pain_rear:pain_blocking:pain_electric:groundpain_back:groundpain_forward:pain_high:pain_low:twitch_left:twitch_right:pickup_object_idle:pickup_object_lift:pickup_object_start:pickup_object_throw:pickup_object_walk:popup_break:popup_bounce:popup_loop:popup:power_1:power_10:power_11:power_12:power_13:power_14:power_15:power_16:power_17:power_18:power_19:power_1_end:power_1_loop:power_1_start:power_2:power_20:power_2_end:power_2_loop:power_3:power_3_end:power_3_loop:power_4:power_4_end:power_4_loop:power_5:power_5_end:power_6:power_7:power_8:power_8_end:power_8_loop:power_8_start:power_9:psylift:telekinesis_victim:push_heavy_object:push_heavy_object_fail:resist_knockback:resist_popup:resist_stun:resist_trip:resurrect_v:step_backward:run:spin_left:spin_right:run_sprint:step_left:step_right:sticky_floor:stun:talking_01:talking_02:talking_03:talking_04:telebuddy_grab:telebuddy_land:telebuddy_loop:slamback_loop:flyingback_land:flyingback_loop:slamfront_loop:flyingforward_land:flyingforward_loop:grabbed_throw:grabbed_throwland:grabbed_throwloop:tpose:trip:grabbed_throwslam:grabbed_throwslump:grabbed_throwslumpland:use_button:victim1:victim10:victim11:victim12:victim2:victim3:victim4:victim5:victim6:victim7:victim8:victim9:walk:zone1:zone10:zone11:zone12:zone13:zone14:zone15:zone16:zone17:zone18:zone19:zone2:zone20:zone21:zone22:zone23:zone24:zone25:zone3:zone4:zone5:zone6:zone7:zone8:zone9: | find /i ":%*:" >nul || EXIT /b 1
 EXIT /b 0
 
 :checkTools program
