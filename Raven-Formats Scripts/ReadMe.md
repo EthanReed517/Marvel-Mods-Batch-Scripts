@@ -31,6 +31,6 @@
 ### Credits:
 
 - Raven-Formats - [nikita488](https://github.com/nikita488)
-- Converter - [BaconWizard17](https://github.com/EthanReed517)
+- Converter, testing, assistance - [BaconWizard17](https://github.com/EthanReed517)
 - Batch files - [ak2yny](https://github.com/ak2yny)
 
