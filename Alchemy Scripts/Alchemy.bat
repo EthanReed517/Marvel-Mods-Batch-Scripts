@@ -648,7 +648,8 @@ EXIT /b
 :SkinEdit
 set "outfile=%temp%\temp.igb"
 call :askSkinEdit
-if "%targetName%"=="%newName%" EXIT /b
+if /i "%targetName%"=="%newName%" EXIT /b
+if /i "%targetName%"=="Bip01" EXIT /b
 (call :OptHead 1 & call :OptRen 1)>%optSet%
 set targetName=
 set "outfile=%infile%"
