@@ -113,4 +113,6 @@ echo REM Edit herostats to add or (re)name a skin? (yes =true; no =false)
 echo set EditStat=true
 echo REM For XML2 or MUA? (XML2 =XML2; MUA =MUA) (Make a batch for each game)
 echo set EditGame=MUA
+echo REM Install mannequin? (Yes =true; No =false) (Make separate batch file)
+echo set Manequin=false
 EXIT /b

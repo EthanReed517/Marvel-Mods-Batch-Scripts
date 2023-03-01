@@ -9,13 +9,13 @@ REM What operation should be made? (=decompile; =compile; =edit; =convert; =ask;
 REM (Operations for Zsnd: =extract; =combine; =update; =editZSSZSM; =editJSON; add sound files =addWAV; convert WAV files for old versions of Zsnd =convertW; convert multi-channel sounds =ravenAudio)
 REM (Operations that use Raven-Formats: =PackageCloner; =ModCloner; =Herostat-Skin-Editor; =SkinsHelper)
 REM (Alchemy operations used by other operations: =genGColorFix; =SkinEditFN)
-set operation=detect
+set operation=SkinsHelper
 REM Set the decompile/convert format: (JSON =json; true XML =xml; NBA2kStuff's XML =lxml)
 set decformat=json
 REM Rename the decompiled extension to below? (enter the extension, eg.: =txt; don't rename: customext=)
 set customext=
 REM Allow all file formats, when dragging&dropping files? (yes =true; no =false)
-set allowfext=true
+set allowfext=false
 REM Always compile to this format if the format couldn't be detected (eg. =xmlb)
 set extALL=
 REM Delete decompiled files? (yes =true; no =false)
@@ -50,9 +50,9 @@ REM WARNING for destination: Avoid identical names if dropping files from multip
 set movewhr=destination
 REM Remove the header of WAV files? (only useful for old versions of Zsnd).
 REM (no, my portable Zsnd is new =false; yes, default, converts all WAVs =true)
-set remHead=true
+set remHead=false
 REM Read sample-reate, and flags, in addition to the hash in the source JSON? (yes =true; no, read hash only =false; no, don't read hash either =never)
-set asample=true
+set asample=never
 REM Ask for a new hash? (yes =true; automatically generate a custom hash, eg. =REPLACE_THIS_HASH; automatically generate hash with filename =file)
 set askhash=file
 REM Choose a sample_index number? (Yes =true; No, add at end =false; Yes, same for all =all)
@@ -80,7 +80,7 @@ REM SkinsHelper settings:
 REM Edit herostats to add or (re)name a skin? (yes =true; no =false)
 set EditStat=true
 REM For XML2 or MUA? (XML2 =XML2; MUA =MUA) (Make a batch for each game)
-set EditGame=MUA
+set EditGame=XML2
 REM Install mannequin? (Yes =true; No =false) (Make separate batch file)
 set Manequin=false
 
