@@ -50,9 +50,10 @@ EXIT /b
 :convCCL
 set "i=%cmdcmdline:"=""%"
 set "i=%i:*"" =%"
-set "%1=%i:~0,-2%"
+set "i=%i:~0,-2%"
 :fixQ
-call set "i=%%%1:^=^^%%"
+if ""=="%i%" call set "i=%%%1%%"
+set "i=%i:^=^^%"
 set "i=%i:&=^&%"
 set "i=%i: =^ ^ %"
 set i=%i:""="%
@@ -62,4 +63,5 @@ set "i=%i:^ ^ = %"
 set "i=%i:""="%"
 set "i=%i:"Q=%"
 set %1="%i:"S"S=" "%"
+set i=
 EXIT /b
