@@ -11,7 +11,11 @@ XML2 PC, MUA1 PC
  3. XML2 only: You will be asked if you want to change file extensions and folder names to lowercase. This is optional and doesn't impact gameplay. It's a visual change only. 
  4. The batch file will perform the selected operations. 
  5. Press any key when the batch file announces that the operations are complete.
-For more details, see the [MUA1 PC Mod Installation Guide](https://marvelmods.com/forum/index.php/topic,10809.0.html) or the [XML2 PC Mod Installation Guide](https://marvelmods.com/forum/index.php/topic,11322.0.html)
+For more details, see:
+- [MUA1 PC Mod Installation Guide - MO2 Method](https://marvelmods.com/forum/index.php/topic,10809.0.html)
+- [MUA1 PC Mod Installation Guide - Direct Method](https://marvelmods.com/forum/index.php/topic,11333.0.html)
+- [XML2 PC Mod Installation Guide - MO2 Method](https://marvelmods.com/forum/index.php/topic,11322.0.html)
+- [XML2 PC Mod Installation Guide - Direct Method](https://marvelmods.com/forum/index.php/topic,11334.0.html)
 
 ## Credits
 Coding: ak2yny, BaconWizard17, Rampage
