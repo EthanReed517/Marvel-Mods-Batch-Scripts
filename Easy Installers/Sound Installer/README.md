@@ -1,0 +1,2 @@
+# Sound Installer
+This is an easy installer to add sound mods to X-Men Legends, X-Men Legends II, Marvel: Ultimate Alliance, and Marvel: Ultimate Alliance 2. Simply drag and drop the sound file(s) onto this batch file, and then you will be prompted to enter a file path for the directory of the game or an MO2 folder. 
