@@ -115,6 +115,7 @@ for /f "delims=" %%f in ('%fd:|=^|%') do (
   set /a m+=1
  )
 )
+if ""=="%i%" goto restore2
 set /a m+=1
 echo 0. More
 echo.
@@ -122,6 +123,8 @@ choice /c %ch%0 /m "Choose a profile to restore"
 if errorlevel %m% (call :askP) else set bpn=!p[%errorlevel%]!
 
 del /q "%sv%\*"
+
+:restore2
 call :BoR R
 
 EXIT /b
@@ -165,11 +168,11 @@ set vrMUA=1920x1080 1680x1050 1280x1024 1280x720 1024x768
 set vrXML2=1920x1080 1680x1050 1600x900 1440x900 1440x576 1440x480 1400x1050 1366x768 1360x768 1280x1024
 call set validRes=%%vr%gs%%%
 set invalidResMUA=640x480 800x600
-for %%c in (%validRes%) do set /a ch+=1
+for %%c in (%validRes%) do set /a max+=1
 :switcher
 set /a x+=1
 call :findInString validRes %x% resolution
-if %x% GEQ %ch% set x=0
+if %x% GEQ %max% set x=0
 CLS
 ECHO.
 ECHO %resolution%
@@ -184,9 +187,9 @@ EXIT /b
 :regRes
 echo Windows Registry Editor Version 5.00
 echo.
-echo [%rk%]
+echo [%rk:"=%]
 echo "Resolution"="%resolution%"
-goto BaR
+EXIT /b
 
 :regPS
 PowerShell "(Get-Content -Path %rfn:"='%) -replace '.Resolution.=.*', '\"Resolution\"=\"%resolution%\"' | Set-Content -Path %rfn:"='%"
