@@ -1,27 +1,28 @@
 @echo off
 
 set zsnd=false false false
-set default=json false %zsnd%
+set default=json false %zsnd% MUA
 mkdir QuickBatch Zsnd 2>nul
-(call :writeBAT "(RF)AIO.bat" compile %default%)>QuickBatch\(RF)Compile.bat
-(call :writeBAT "(RF)AIO.bat" decompile json false %zsnd%)>QuickBatch\(RF)DecompileJSON.bat
-(call :writeBAT "(RF)AIO.bat" decompile xml false %zsnd%)>QuickBatch\(RF)DecompileTrueXML.bat
-(call :writeBAT "(RF)AIO.bat" edit %default%)>QuickBatch\(RF)Edit.bat
-(call :writeBAT "(RF)AIO.bat" convert %default%)>QuickBatch\(XCtoRF)Convert.bat
-(call :writeBAT "(RF)AIO.bat" compile lxml false %zsnd% txt)>(XC)Compile.bat
-(call :writeBAT "(RF)AIO.bat" decompile lxml false %zsnd% txt)>QuickBatch\(XC)Decompile.bat
-(call :writeBAT "(RF)AIO.bat" edit lxml false %zsnd% txt)>QuickBatch\(XC)Edit.bat
-copy QuickBatch\ReadMe.md QuickBatch\!ReadMe.md
-(call :writeBAT "(RF)AIO.bat" PackageCloner %default%)>PackageCloner.bat
-(call :writeBAT "(RF)AIO.bat" ModCloner %default%)>ModRenumberer.bat
-(call :writeBAT "(RF)AIO.bat" Herostat-Skin-Editor lxml false %zsnd% txt)>Herostat-Skin-Editor.bat
-(call :writeBAT "(RF)AIO.bat" SkinsHelper %default%)>SkinInstaller.bat
-(call :writeBAT "(RF)AIO.bat" editZSSZSM json true false true false)>Zsnd\Zsnd..bat
-(call :writeBAT "(RF)AIO.bat" update json true true true true "" %%%%~dp0x_voice.json)>Zsnd\build_x_voice.bat
+(call :writeBAT compile %default%)>QuickBatch\(RF)Compile.bat
+(call :writeBAT decompile json false %zsnd%)>QuickBatch\(RF)DecompileJSON.bat
+(call :writeBAT decompile xml false %zsnd%)>QuickBatch\(RF)DecompileTrueXML.bat
+(call :writeBAT edit %default%)>QuickBatch\(RF)Edit.bat
+(call :writeBAT convert %default%)>QuickBatch\(XCtoRF)Convert.bat
+(call :writeBAT compile lxml false %zsnd% txt)>(XC)Compile.bat
+(call :writeBAT decompile lxml false %zsnd% txt)>QuickBatch\(XC)Decompile.bat
+(call :writeBAT edit lxml false %zsnd% txt)>QuickBatch\(XC)Edit.bat
+copy QuickBatch\kBatch\!ReadMe.md
+(call :writeBAT PackageCloner %default%)>PackageCloner.bat
+(call :writeBAT ModCloner %default%)>ModRenumberer.bat
+(call :writeBAT Herostat-Skin-Editor lxml false %zsnd% txt)>Herostat-Skin-Editor.bat
+(call :writeBAT SkinsHelper %default%)>SkinInstaller.bat
+(call :writeBAT SkinsHelper %default:MUA=XML2%)>SkinInstallerXML2.bat
+(call :writeBAT editZSSZSM json true false true false)>Zsnd\Zsnd..bat
+(call :writeBAT update json true true true true "" %%%%~dp0x_voice.json)>Zsnd\build_x_voice.bat
 goto eof
 
 :writeBAT
-for /f "skip=2 delims=[]" %%l in ('find /n "automatic settings" "%~1"') do set l=%%l
+for /f "skip=2 delims=[]" %%l in ('find /n "automatic settings" "(RF)AIO.bat"') do set l=%%l
 set /a l-=2
 echo @echo off
 echo REM chcp 65001 ^>nul
@@ -30,10 +31,10 @@ echo REM -----------------------------------------------------------------------
 echo.
 echo REM Settings:
 echo.
-call :RFsettings %2 %3 %4 %5 %6 %7 %8 %9
+call :RFsettings %1 %2 %3 %4 %5 %6 %7 %8 %9
 echo.
 echo REM -----------------------------------------------------------------------------
-more +%l% "%~1"
+more +%l% "(RF)AIO.bat"
 EXIT /b
 
 :RFsettings
@@ -45,7 +46,7 @@ echo set operation=%1
 echo REM Set the decompile/convert format: (JSON =json; true XML =xml; NBA2kStuff's XML =lxml)
 echo set decformat=%2
 echo REM Rename the decompiled extension to below? (enter the extension, eg.: =txt; don't rename: customext=)
-echo set customext=%~7
+echo set customext=%~8
 echo REM Allow all file formats, when dragging^&dropping files? (yes =true; no =false)
 echo set allowfext=false
 echo REM Always compile to this format if the format couldn't be detected (eg. =xmlb)
@@ -69,7 +70,7 @@ echo set outfile=true
 echo.
 echo REM addWAV and modify JSON Settings:
 echo REM Specify a JSON file to add the sounds to. This is useful for x_voice for example.
-echo set "oldjson=%8"
+echo set "oldjson=%9"
 echo REM Automatically combine to ZSS/ZSM at the end? (Yes =true; No =false)
 echo set combine=%5
 echo REM For the new file: Do you want to be asked for a new name? (ask, even if a JSON has been found or selected =true; ask, always create new json =new; auto name if JSON exists =false; update if JSON exists =update; take the name of the input folder instead of the JSON, behaves like false =folder; always take the folder name, will never ask =forcefolder)
@@ -111,8 +112,8 @@ echo.
 echo REM SkinsHelper settings:
 echo REM Edit herostats to add or (re)name a skin? (yes =true; no =false)
 echo set EditStat=true
-echo REM For XML2 or MUA? (XML2 =XML2; MUA =MUA) (Make a batch for each game)
-echo set EditGame=MUA
-echo REM Install mannequin? (Yes =true; No =false) (Make separate batch file)
-echo set Manequin=false
+echo REM For XML2 or MUA? (XML2 =XML2; MUA =MUA; MUA console version = MUAc) (Make a batch for each game)
+echo set EditGame=%7
+echo REM Type to install? (mannequin =mannequin; skin =skin, NPC skin =npc) (Make separate batch file)
+echo set InstType=skin
 EXIT /b

@@ -79,10 +79,10 @@ set cloneNC=true
 REM SkinsHelper settings:
 REM Edit herostats to add or (re)name a skin? (yes =true; no =false)
 set EditStat=true
-REM For XML2 or MUA? (XML2 =XML2; MUA =MUA) (Make a batch for each game)
+REM For XML2 or MUA? (XML2 =XML2; MUA =MUA; MUA console version = MUAc) (Make a batch for each game)
 set EditGame=XML2
-REM Install mannequin? (Yes =true; No =false) (Make separate batch file)
-set Manequin=false
+REM Type to install? (mannequin =mannequin; skin =skin, NPC skin =npc) (Make separate batch file)
+set InstType=skin
 
 REM -----------------------------------------------------------------------------
 
@@ -330,6 +330,7 @@ set inext=.%rf: =b, .%b
 :xml
 set xm=xmlb&if %decformat%==lxml set xm=xmlb-compile
 call :checkTools %xm% && EXIT /b
+if not "%1"=="" EXIT /b 1
 echo %xm% not found. Check the Readme.
 goto Errors
 :startSkinEditFN
@@ -337,6 +338,7 @@ goto Errors
 set inext=.igb
 :sgO
 call :checkAlchemy sgOptimizer && EXIT /b 0
+if not "%1"=="" EXIT /b 1
 echo "%IG_ROOT%\bin\sgOptimizer.exe" must exist. Please check your Alchemy 5 installation.
 goto Errors
 
@@ -584,7 +586,7 @@ EXIT /b
 :SHTitle
 CLS
 echo -----------------------------
-echo    Skin Installer for %EditGame%
+echo    Skin Installer for %EditGame:c=%
 echo -----------------------------
 echo.
 EXIT /b
@@ -601,7 +603,7 @@ set maxindx=99
 call :SHTitle
 call :HSSetup charactername ch || set EditStat=false|| goto SkinsHelper2
 call :MUApath
-if %Manequin%==true if %EditGame%==MUA goto Mannequin
+if %InstType%==mannequin if %EditGame:~,3%==MUA goto Mannequin
 call :SkinEditor "%ch%"
 call :SHTitle
 call :listSkins
@@ -630,19 +632,19 @@ call :stripQ sh
 if exist "%sh%" call :numberedBKP th & copy /y "%sh%" "%th%"
 call :3dHead
 if exist "%tp%%in%_%sn%.pkgb" goto SkinsHelper5
-for /f "delims=" %%p in ('dir /b "%tp%%in%_%cn%*.pkgb"') do set "fullpath=%tp%%%p" & goto SkinsHelper4
+for /f "delims=" %%p in ('dir /b "%tp%%in%_%cn%*.pkgb"') do set "fullpath=%tp%%%p" & call :xml ne && goto SkinsHelper4
 echo.
-echo INFORMATION: A package file was not detected, and no package was found, which could be cloned. Manual herostat and package modifications may be required to make powers and HUD work properly for this skin.
+echo INFORMATION: A package file was not detected, and no package was found, which could be cloned, or no compiler found for cloning. Manual herostat and package modifications may be required to make powers and HUD work properly for this skin.
 pause
 goto SkinsHelper5
 :SkinsHelper4
-call :xml
 call :filesetup
 set m=1
 set newPKGn=%ns%
 call :clonePKG
 :SkinsHelper5
-call :sgO
+if not %EditGame%==MUA EXIT /b
+call :sgO ne || EXIT /b
 set "fullpath=%ts%" & call :SkinEditFN
 REM HUDs are not optimized for now, as they need the texture renamed, not igSkin.
 EXIT /b
@@ -683,13 +685,13 @@ call :SHTitle
 if defined hsFo (
  echo Please paste or enter a folder path for the installation of the skins ^(IGB files^).
  echo - Mod Organizer 2 ^(MO2^) users use an MO2 mod folder path.
- echo - Other users use the %EditGame% installation folder path.
+ echo - Other users use the %EditGame:c=% installation folder path.
  set /p MUApath=Enter path: 
 )
 call :stripQ MUApath
 EXIT /b
 :3dHead
-if %EditGame%==MUA EXIT /b
+if %EditGame:~,3%==MUA EXIT /b
 if not exist "%s3d%" (
  echo Please paste or enter the full path and filename to the 3D head file, including .igb extension.
  set /p s3d=Enter path, or press enter to skip: || EXIT /b
@@ -715,9 +717,13 @@ pause
 :HSETitle
 CLS
 echo -----------------------------------
-echo    Herostat Skin Editor for %EditGame%
+echo    Herostat Skin Editor for %EditGame:c=%
 echo -----------------------------------
 echo.
+if defined h (
+ echo "%h%"
+ echo.
+)
 EXIT /b
 :Herostat-Skin-Editor
 set "h=%fullpath%"
@@ -728,11 +734,12 @@ set "sn=%~2"
 set p=$p = %sn%
 if defined sn call :readHsn && goto SkinEditor2
 if "%ch%"=="" ( call :readHS charactername ch || EXIT /b
-) else call :HScheck
+) else call :HScheck || EXIT /b
+set "ch=^%ch%$"
 call :PSparseHS skin psc psc charactername match ch
 set "p=%psc%"
 :SkinEditor2
-set "psc=%p%; $p = 'skin[\s="":]{2,4}' + -join $p; try {$h = (dir '%h%' | select-string -Pattern $p)[0]} catch {exit 1}; $h.path; "
+set "psc=%p%; $p = 'skin[\s="":]{2,4}' + -join $p; try {$h = (dir -s  '%h%' | select-string -Pattern $p)[0]} catch {exit 1}; $h.path; "
 if %hdf% NEQ xml set "psc=%psc%$s = ((gc $h.path) -replace '\s;$' | select -skip ($h.linenumber-1)) -join ""`n"" -replace '(?=\n.*sounddir(\s=|"":))[\s\S]+'; "
 if %hdf%==lxml set "psc=%psc%$s"
 if %hdf%==json set "psc=%psc%$s = $s -split '\n'; $s[-1] = $s[-1] -replace '.$'; '{' + $s + '}' | ConvertFrom-Json"
@@ -858,22 +865,26 @@ call set "pcs=%pcs%$n.stats.SetAttribute('%2','%%%1%%'); "
 EXIT /b
 
 :HScheck
-for %%i in ("%h%") do echo %%~xi|findstr /eil ".xml .txt .json" >nul && goto HScheckD
-if [%xmlb%]==[] call :xml
+for /f "delims=" %%i in ('dir /s "%h%"') do echo %%~xi|findstr /eil ".xml .txt .json" >nul && goto HScheckD
+if [%xmlb%]==[] call :xml ne || goto HScCe
 call :VAR decompile h || goto HScheckD
 set "h=%h%.%customext%"
 set xmlbd=true
 set hdf=%decformat%
-EXIT /b
+EXIT /b 0
 :HScheckD
 set xmlbd=
 set hdf=lxml
-call :checkVersion || EXIT /b
+call :checkVersion || EXIT /b 0
 set hdf=%version%
-EXIT /b
+EXIT /b 0
+:HScCe
+echo "%h%" can't be decompiled, %xm% not found.
+pause
+EXIT /b 1
 
 :readHsn
-call :HScheck
+call :HScheck || EXIT /b
 CLS
 call :PSparseHS skin print sn && EXIT /b || set /p sn=Choose a skin number from the list above by entering the full number: || EXIT /b
 call :isNumber %sn% && call :PSparseHS skin set sn skin eq sn && EXIT /b
@@ -940,7 +951,7 @@ REM pcs = Herostat code
 if %hdf%==lxml set "pcs=$l = $p.psobject.properties.name | %% {$_ + ' = ' + $p.$_ + ' ;'}"
 if %hdf%==json set "pcs=$l = $p | Select -Property * -ExcludeProperty talent,Multipart,StatEffect,BoltOn | ConvertTo-Json; $l = $l.substring(3,$l.length-6) + ','; "
 if %hdf%==xml set "pcs=$l = ($p.outerxml -split '(?=<.*?>)')[1]; "
-set "pcs=$r = 'charactername[\s="":]{2,4}' + $p.charactername; try {$hp = (dir '%h%' | select-string -Pattern $r)[0].path} catch {exit 3}; $hs = $h -split '\r?\n'; $m = ($hs | select-string -Pattern $r)[0].linenumber; try {$b = ($hs | select -first $m | select-string -Pattern '^\s*""?stats')[-1].linenumber} catch {$b = $m - 1}; try {$e = ($hs | select -skip $b | select-string -Pattern '{$')[0].linenumber-1} catch {$e = 1}; %pcs%; [array]$h = ($hs | select -first $b); $h += $l + ($hs | select -skip ($b+$e)); %PSout:var=h%"
+set "pcs=$r = 'charactername[\s="":]{2,4}' + $p.charactername; try {$hp = (dir -s '%h%' | select-string -Pattern $r)[0].path} catch {exit 3}; $hs = $h -split '\r?\n'; $m = ($hs | select-string -Pattern $r)[0].linenumber; try {$b = ($hs | select -first $m | select-string -Pattern '^\s*""?stats')[-1].linenumber} catch {$b = $m - 1}; try {$e = ($hs | select -skip $b | select-string -Pattern '{$')[0].linenumber-1} catch {$e = 1}; %pcs%; [array]$h = ($hs | select -first $b); $h += $l + ($hs | select -skip ($b+$e)); %PSout:var=h%"
 if ""=="%h%" set pcs=$null
 call :MCTitle
 PowerShell "%psc%; %pcv%; %pct%; %pcl%; %pcr%; %pch%; %pcp:"=""%; %pcf:"=""%; %pcs:"=""%" || goto MC2Error
@@ -974,7 +985,8 @@ set "outfile=%temp%\temp.igb"
 call :filesetup
 call :getSkinName
 set "newName=%nameonly%"
-if "%targetName%" == "%newName%" EXIT /b
+if /i "%targetName%"=="%newName%" EXIT /b
+if /i "%targetName%"=="Bip01" EXIT /b
 if %EditGame%==XML2 echo INFORMATION: "%namextns%" is not hex-edited. & pause & EXIT /b
 (call :OptHead 2 & call :OptRen 1 & call :optGGC 2)>%optSet%
 set "outfile=%fullpath%"
@@ -1304,8 +1316,8 @@ if ""=="%MUAOHSpath%" (
  echo Please paste or enter a folder path.
  echo - OpenHeroSelect ^(OHS^) users use the path to the OHS folder.
  echo - Other users ^(eg. XMLBCUI, QuickBatch^) use the path to ...
- echo   ... the Mod Organizer 2 ^(MO2^) %EditGame% mod folder ...
- echo   ... or the %EditGame% installation folder ^(non-MO2 users^) ...
+ echo   ... the Mod Organizer 2 ^(MO2^) %EditGame:c=% mod folder ...
+ echo   ... or the %EditGame:c=% installation folder ^(non-MO2 users^) ...
  echo   ... containing the data folder with the currently used herostat.engb.
  set /p "MUAOHSpath=Enter path: " || goto HSSE
 )
@@ -1314,7 +1326,7 @@ set %2=
 set "h=%MUAOHSpath%\data\herostat.engb"
 call :checkOHS
 if defined hsFo ( if "%hsFo:~1,1%"==":" ( set "h=%hsFo%\*.*"
-) else set "h=%MUAOHSpath%\%EditGame%\%hsFo%\*.*"
+) else set "h=%MUAOHSpath%\%EditGame:c=%\%hsFo%\*.*"
 ) else if not exist "%h%" EXIT /b 1
 call :readHS %1 %2 || goto HSSE
 if defined %2 EXIT /b 0
@@ -1325,9 +1337,9 @@ set /p %2=Enter the internal name for "%nameonly%": || EXIT /b
 EXIT /b 0
 :readHS
 REM For other uses: If the herostat has 1 char, charactername will always be set, regardless of the argument
-call :HScheck
+call :HScheck || EXIT /b
 CLS
-call :PSparseHS charactername print %2 && EXIT /b || set /p ch=Choose a character from the list above by entering the name exactly as printed: || EXIT /b
+call :PSparseHS charactername print %2 && EXIT /b || set /p ch=Choose a character from the list above by entering its name [supports regular expressions]: || EXIT /b
 call :PSparseHS %1 set %2 charactername match ch && EXIT /b
 goto readHS
 
@@ -1698,7 +1710,7 @@ powershell "('%cd%' -split ('\\'))[-1]"
 EXIT /b
 :PSparseHS
 REM var h must one or multiple herostat files (multi only tested with lxml)
-set "psc=$h = (gc -raw '%h%'); $d = "
+set "psc=$h = (dir -s '%h%' | %% {gc -raw $_}); $d = "
 if %hdf%==lxml set "psc=%psc%$h -split '(?=stats\s{\r?\n[\S\s]*)' | %% {($_ -split '[a-zA-Z]*\s{\r?\n')[1] -replace '(\s;|\s*}) *(?=\r?\n)' | ConvertFrom-StringData}"
 if %hdf%==xml set "psc=%psc%([xml]$h).characters.stats"
 if %hdf%==json set "psc=%psc%($h -replace '{\r?\n\s*\"characters\":\s{' -replace '\s*}\s*}\r' -split '(?=\"stats\":[\S\s]*},?)') | %% {(('{' + $_.Trim().Trim(',') + '}' | ConvertFrom-Json).stats)}"
@@ -1720,15 +1732,15 @@ REM Powershell index (eg. [0]) does not work with property paths, because it's r
 REM (((gc -raw '%h%') -split '(?=stats\s{\r[\S\s]*)')[5] -split '\n') | %% {if ($_ -match '^[{\r]') {$t=$_.trim().trim('{ '); if ($p) {$l+='.'}; $l+=$t; if ($m) {if (!$m.$l) {$m.$p+=@{$t=@{}}}} else {$m=@{$t=@{}}}; $p=$l} elseif ($_ -match '}\r') {$p = $p -replace '\.(\w+)$',''} else {$m.$p+=($_.trim().trim('; ') | ConvertFrom-StringData)}}
 
 :checkOHS
-if exist "%MUAOHSpath%\%EditGame%\config.ini" (
+if exist "%MUAOHSpath%\%EditGame:c=%\config.ini" (
  call :readOHS herostatFolder hsFo || set hsFo=xml
  EXIT /b 0
 )
-if exist "%MUAOHSpath%\%EditGame%\xml" set hsFo=xml& EXIT /b 0
+if exist "%MUAOHSpath%\%EditGame:c=%\xml" set hsFo=xml& EXIT /b 0
 set hsFo=
 EXIT /b 1
 :readOHS
-for /f "tokens=1* delims=:, " %%a in ('type "%MUAOHSpath%\%EditGame%\config.ini" ^| find """%1"": "') do for %%m in (%%b) do set "%2=%%~m" & EXIT /b
+for /f "tokens=1* delims=:, " %%a in ('type "%MUAOHSpath%\%EditGame:c=%\config.ini" ^| find """%1"": "') do for %%m in (%%b) do set "%2=%%~m" & EXIT /b
 EXIT /b 1
 
 
@@ -1755,7 +1767,7 @@ EXIT /b
 echo [OPTIMIZATION%1]
 echo name = igChangeObjectName
 echo objectTypeName = igNamedObject
-echo targetName = %targetName%
+echo targetName = ^%targetName%$
 echo newName = %newName%
 EXIT /b
 
