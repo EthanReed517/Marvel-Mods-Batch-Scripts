@@ -2,7 +2,7 @@
 
 set zsnd=false false false
 set default=json false %zsnd% MUA
-mkdir QuickBatch Zsnd 2>nul
+mkdir QuickBatch Zsnd SkinHelpers 2>nul
 (call :writeBAT compile %default%)>QuickBatch\(RF)Compile.bat
 (call :writeBAT decompile json false %zsnd%)>QuickBatch\(RF)DecompileJSON.bat
 (call :writeBAT decompile xml false %zsnd%)>QuickBatch\(RF)DecompileTrueXML.bat
@@ -11,12 +11,13 @@ mkdir QuickBatch Zsnd 2>nul
 (call :writeBAT compile lxml false %zsnd% txt)>(XC)Compile.bat
 (call :writeBAT decompile lxml false %zsnd% txt)>QuickBatch\(XC)Decompile.bat
 (call :writeBAT edit lxml false %zsnd% txt)>QuickBatch\(XC)Edit.bat
-copy QuickBatch\kBatch\!ReadMe.md
+copy QuickBatch\ReadMe.md QuickBatch\!ReadMe.md
 (call :writeBAT PackageCloner %default%)>PackageCloner.bat
 (call :writeBAT ModCloner %default%)>ModRenumberer.bat
-(call :writeBAT Herostat-Skin-Editor lxml false %zsnd% txt)>Herostat-Skin-Editor.bat
-(call :writeBAT SkinsHelper %default%)>SkinInstaller.bat
-(call :writeBAT SkinsHelper %default:MUA=XML2%)>SkinInstallerXML2.bat
+(call :writeBAT Herostat-Skin-Editor lxml false %zsnd% txt)>SkinHelpers\Herostat-Skin-Editor.bat
+(call :writeBAT SkinsHelper %default%)>SkinHelpers\SkinInstaller.bat
+(call :writeBAT SkinsHelper %default:MUA=XML2%)>SkinHelpers\SkinInstallerXML2.bat
+(call :writeBAT SkinsHelper %default%c)>SkinHelpers\SkinInstallerMUAconsoles.bat
 (call :writeBAT editZSSZSM json true false true false)>Zsnd\Zsnd..bat
 (call :writeBAT update json true true true true "" %%%%~dp0x_voice.json)>Zsnd\build_x_voice.bat
 goto eof

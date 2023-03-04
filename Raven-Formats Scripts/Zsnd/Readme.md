@@ -2,7 +2,7 @@
 
 ## Requirements
 - [Python 3.8 or newer](https://www.python.org/downloads/), incl. [PATH variable](https://cloudacademy.com/wp-content/uploads/2020/01/Python-Windows-installer.png)
-- Powershell v3 or newer (Win 7+ should have you covered)
+- Powershell v3 or newer (tested with v5 on Win 10+)
 - Optional [ravenAudio](https://discord.com/channels/449510825385000960/459862699870781451/934369862841688154) (in same folder or `%windir%\system32`)
 - Optional xmlb-compile (in same folder or `%windir%\system32`)
 
