@@ -1250,7 +1250,7 @@ goto askPlat
 echo ERROR: "%fullpath%" is not in the correct format. Expected: %formatW%>>"%erl%"
 EXIT /b 1
 :checkPlat
-if defined oldjson for /f "tokens=2 delims=:," %%p in ('findstr /ilc:"\"platform\":" "%oldjson%" 2^>nul') do for %%f in (%inext%) do call echo %%%%f:~,4%% | find /i %%p && set inext=%%f&& set formatW=%%f&& if "%xtnsonly%" NEQ "%%f" EXIT /b 1
+if defined oldjson for /f "tokens=2 delims=:," %%p in ('findstr /ilc:"\"platform\":" "%oldjson%" 2^>nul') do for %%f in (%inext%) do call echo %%%%f:~,4%% | find /i %%p >nul && set inext=%%f&& set formatW=%%f&& if "%xtnsonly%" NEQ "%%f" EXIT /b 1
 EXIT /b 0
 :srchInfo
 if defined predefined EXIT /b
@@ -1621,7 +1621,7 @@ echo     }
 echo     $sf.samples = $sf.samples ^| ? file -ne $l[1]
 echo   } else {
 echo     if ($i -lt 0 -or $i -ge $max_i) {$i = $sf.samples.length}
-echo     $hs = $sf.sounds.hash -match [Regex]::Escape($l[1]) ^| %% {if ($_ -match '%ra%') {[int]($_ -split ('/'))[-1]} else {0}} ^| sort
+echo     if ($sf.sounds.hash.length -gt 0) {$hs = $sf.sounds.hash -match [Regex]::Escape($l[1]) ^| %% {if ($_ -match '%ra%') {[int]($_ -split ('/'))[-1]} else {0}} ^| sort}
 echo     if ($hs -ne $null) {$l[1] = ($l[1] -ireplace '%ra%..?$', '') + '%ra:\=%' + ($hs[-1]+1)}
 echo     $sa = @([PSCustomObject]@{file=$l[2]; format=[int]$l[3]; sample_rate=[int]$l[4]})
 echo     if ($l[5]) {$sa ^| Add-Member -NotePropertyName flags -NotePropertyValue ([int]$l[5])}
@@ -1649,11 +1649,11 @@ call :PSaddHi
 goto PSwriteJSON
 :PSaddHi
 echo     $ro = 1
-echo     $sf.sounds = $sf.sounds ^| %% {
+echo     if ($sf.sounds.hash.length -gt 0) {$sf.sounds = $sf.sounds ^| %% {
 echo       if ($_.sample_index -eq $i -and $ro) {$so; Clear-Variable ro}
 echo       if ($_.sample_index -lt $i) {$_}
 echo       else {$_ ^| select hash, @{n="sample_index";e={[int]($_.sample_index+1)}}, flags}
-echo     }
+echo     }}
 echo     if ($i -ge $max_i) {$sf.sounds += $so}
 EXIT /b
 :PSaddHiAlt
