@@ -109,7 +109,7 @@ set .wav=PC 106 WAV 16bit
 set .xbadpcm=XBOX 1 XBADPCM: Xbox, %unk%
 set .xma=XENO 1 XMA: Xbox 360, %unk%
 set .vag=PS2 0 VAG 16bit (WAV converted with FPacker or MFAudio)
-set .dsp=GCUB 0 DSP 16bit (Nintendo Gamecube DSPADPCM)
+set .dsp=GCUB 0 DSP 16bit (Nintendo Gamecube DSPADPCM for GC and Wii)
 
 call :start%operation% %~1
 del "%erl%" "%xco%" "%rfo%" "%tem%" "%tem%c" "%tem%m"
@@ -245,7 +245,7 @@ set operationtext=Clone package files for other skins of the same character.
 EXIT /b 10
 :OPS10
 set operation=ModCloner
-set operationtext=Rename the number of a mod, to fix clashes with another mod. Must be used on a mod folder that's not in the game files. Requires Alchemy 5.
+set operationtext=Rename the number of a mod, to fix clashes with another mod. Must be used on a mod folder that's not in the game files. Alchemy 5 recommended.
 EXIT /b 11
 :OPS11
 set operation=Herostat-Skin-Editor
@@ -356,8 +356,7 @@ call :checkVersion && goto convertRF
 if %decformat%==lxml EXIT /b 0
 call :checkExist json
 if ""=="%conv%" call :checkConv
-%conv% "%fullpath%" 2>"%rfo%"
-for /f %%e in ("%rfo%") do if %%~ze GTR 0 call :writerror RF & EXIT /b 1
+%conv% "%fullpath%" 2>"%rfo%" || call :writerror RF || EXIT /b
 if %XC%==true del "%fullpath%"
 set "fullpath=%pathname%.json"
 call :filesetup
@@ -472,9 +471,9 @@ EXIT /b 0
 :writerror
 set errfile=
 for /f "skip=2 delims=" %%e in ('find /i "error" "%rfo%" 2^>nul') do set "msg=%%e" & call :writeMsg>>"%erl%"
-if "%1" == "RF" EXIT /b
+if "%1" == "RF" EXIT /b 1
 for /f "delims=" %%e in ('type "%xco%"') do set "msg=%%e" & call :writeMsg>>"%erl%"
-EXIT /b
+EXIT /b 1
 :writeMsg
 if ""=="%errfile%" echo "%fullpath%"
 set "errfile=%nameonly%"
@@ -594,16 +593,18 @@ EXIT /b
 set sn=
 set nn=
 set "ch=%nameonly%"
-call :isNumber %ch:&=_% && set sn=%ch%
+call :isNumber %ch:&=_% && set nn=n&set sn=%ch%
 call :trimmer %ch:&=;;%
 set "ch=%trim:;;=&%"
 set "ch=%ch:_= %"
+if %InstType%==npc set EditStat=false
+if %InstType%==mannequin set EditGame=%EditGame:XML2=MUA%
 if %EditStat%==false call :MUApath & goto SkinsHelper2
 set maxindx=99
 call :SHTitle
-call :HSSetup charactername ch || set EditStat=false|| goto SkinsHelper2
+call :HSSetup charactername ch %nn% || set EditStat=false|| goto SkinsHelper2
 call :MUApath
-if %InstType%==mannequin if %EditGame:~,3%==MUA goto Mannequin
+if %InstType%==mannequin goto Mannequin
 call :SkinEditor "%ch%"
 call :SHTitle
 call :listSkins
@@ -623,14 +624,14 @@ set "s3d=%pathname% (3D Head).igb"
 set "t3d=%MUApath%\ui\hud\characters\%sn%.igb"
 call :numberedBKP ts
 copy /y "%fullpath%" "%ts%"
-set fullpath=
 if not exist "%sh%" (
  echo Please paste or enter the full path and filename to the HUD head file, including .igb extension.
  set /p sh=Enter path, or press enter to skip: 
 )
 call :stripQ sh
 if exist "%sh%" call :numberedBKP th & copy /y "%sh%" "%th%"
-call :3dHead
+if %EditGame%%InstType%==XML2skin call :SH23dHead
+set fullpath=
 if exist "%tp%%in%_%sn%.pkgb" goto SkinsHelper5
 for /f "delims=" %%p in ('dir /b "%tp%%in%_%cn%*.pkgb"') do set "fullpath=%tp%%%p" & call :xml ne && goto SkinsHelper4
 echo.
@@ -648,6 +649,16 @@ call :sgO ne || EXIT /b
 set "fullpath=%ts%" & call :SkinEditFN
 REM HUDs are not optimized for now, as they need the texture renamed, not igSkin.
 EXIT /b
+:SH23dHead
+if not exist "%s3d%" (
+ echo Please paste or enter the full path and filename to the 3D head file, including .igb extension.
+ set /p s3d=Enter path, or press enter to skip: || EXIT /b
+)
+call :stripQ s3d
+mkdir "%MUApath%\ui\hud\characters" 2>nul
+call :numberedBKP t3d
+copy /y "%s3d%" "%t3d%"
+EXIT /b
 :SkinsHelper3
 if defined sn set cn=%sn:~,-2%& set fn=%sn:~-2%
 call :SHTitle
@@ -655,18 +666,19 @@ dir /b "%MUApath%\actors\*.igb" | findstr /r "^[0-9]*.igb$"
 echo.
 echo "%ch%": No skin number detected. All existing skins are listed above. 
 call :asknum cn "for the character (mod number)"
+if %InstType%==mannequin set sn=%cn%01&EXIT /b
 set maxindx=99
 echo|set /p=%cn%XX
 if defined fn ( echo , detected: %cn%%fn%
 ) else echo.
 call :asknum ns "for the skin"
+set maxindx=255
 if "%cn:~1%"=="" set cn=0%cn%
 if "%ns:~1%"=="" set ns=0%ns%
 set sn=%cn%%ns:~-2%
 for /f "delims=" %%i in ('dir /b "%MUApath%\actors\%sn%.igb"') do goto SH3pkg
 choice /m "Skin does not seem to exist. Continue creating a new one"
-if errorlevel 2 goto SH3pkg
-goto SkinsHelper3
+if errorlevel 2 goto SkinsHelper3
 :SH3pkg
 set in=defaultman
 for /f "delims=" %%p in ('dir /b "%tp%*_%cn%*.pkgb"') do set "nameonly=%%~np" & goto SH3pkg2
@@ -680,6 +692,7 @@ echo Internal name detected: '%in%'.
 set /p "in=Press enter to accept, or enter the internal name here: "
 EXIT /b
 :MUApath
+if defined MUApath EXIT /b
 set "MUApath=%MUAOHSpath%"
 call :SHTitle
 if defined hsFo (
@@ -690,19 +703,9 @@ if defined hsFo (
 )
 call :stripQ MUApath
 EXIT /b
-:3dHead
-if %EditGame:~,3%==MUA EXIT /b
-if not exist "%s3d%" (
- echo Please paste or enter the full path and filename to the 3D head file, including .igb extension.
- set /p s3d=Enter path, or press enter to skip: || EXIT /b
-)
-call :stripQ s3d
-mkdir "%MUApath%\ui\hud\characters" 2>nul
-call :numberedBKP t3d
-copy /y "%s3d%" "%t3d%"
-EXIT /b
 :Mannequin
-call :PSparseHS skin set sn charactername match ch
+if %EditStat%==false ( call :SkinsHelper3
+) else call :PSparseHS skin set sn charactername match ch
 set mn=%MUApath%\ui\models\mannequin\%sn:~,-2%01.igb
 mkdir "%MUApath%\ui\models\mannequin" 2>nul
 call :numberedBKP mn
@@ -732,7 +735,7 @@ set pcs=
 set "ch=%~1"
 set "sn=%~2"
 set p=$p = %sn%
-if defined sn call :readHsn && goto SkinEditor2
+if defined sn call :readHsn skin sn && goto SkinEditor2
 if "%ch%"=="" ( call :readHS charactername ch || EXIT /b
 ) else call :HScheck || EXIT /b
 set "ch=^%ch%$"
@@ -884,10 +887,14 @@ pause
 EXIT /b 1
 
 :readHsn
+REM For other uses: If the herostat has 1 char, skin will always be set to variable, regardless of the argument
 call :HScheck || EXIT /b
 CLS
-call :PSparseHS skin print sn && EXIT /b || set /p sn=Choose a skin number from the list above by entering the full number: || EXIT /b
-call :isNumber %sn% && call :PSparseHS skin set sn skin eq sn && EXIT /b
+call :PSparseHS skin print %2 && EXIT /b
+if defined sn ( call :isNumber %sn% && set "ss=^%sn:~,-2%\d\d$"
+) else set /p ss=Choose a skin number from the list above by entering its number [supports regular expressions]: || EXIT /b
+call :PSparseHS %1 set %2 skin match ss && EXIT /b
+set sn=
 goto readHsn
 
 :MCTitle
@@ -1025,7 +1032,7 @@ echo.
 choice /c SCLEAR /m "Press [S,C,L] to switch file details. Press 'A' to accept and continue. Press 'R' to accept for all remaining input files."
 goto Wopt%errorlevel%
 :Wopt1
-call :Wopt sr 22050 41000 44100 11025
+call :Wopt sr 22050 41000 44100 32000 11025
 goto askSR
 :Wopt2
 call :Wopt channels 1 2 4
@@ -1250,7 +1257,7 @@ if defined predefined EXIT /b
 if not %asample%==true call :askSR & EXIT /b
 set "gs=%namextns%"
 echo Searching information for "%namextns%" . . .
-call :PSops Get samples sample_rate || EXIT /b
+call :PSops Get samples sample_rate || EXIT /b && set sr=%sample_rate%
 call :PSops Get samples format
 call :PSops Get sounds flags && set flgh=%flags%
 call :PSops Get samples flags || call :askSR
@@ -1288,8 +1295,8 @@ EXIT /b 0
 :hashgen
 echo.
 for %%j in ("%oldjson%") do set "j=%%~nj"
+call :%j:~,7%Hash 2>nul && EXIT /b
 set "hash=%nameonly%"
-call :%j:~,7%Hash 2>nul & EXIT /b
 if %askhash%==file EXIT /b
 set hash=%askhash%
 if not %hash%==true EXIT /b
@@ -1304,13 +1311,13 @@ call :HSSetup name in || set in=0
 set "hash=%in%"
 set hp=COMMON/MENUS/CHARACTER/
 choice /c CBX /m "Is '%nameonly%' a name [c]allout or a [b]reak line (press [X] if it's something else)"
-if ERRORLEVEL 3 EXIT /b
+if ERRORLEVEL 3 EXIT /b 0
 if ERRORLEVEL 1 set cp=AN_
 if ERRORLEVEL 2 set cp=BREAK_
 set "hash=%hp%%cp%%in%"
 choice /m "Do you want to use '%hash%' for the hash of all remaining input files"
 if ERRORLEVEL 2 set ch=
-EXIT /b
+EXIT /b 0
 :HSSetup
 if ""=="%MUAOHSpath%" (
  echo Please paste or enter a folder path.
@@ -1328,7 +1335,7 @@ call :checkOHS
 if defined hsFo ( if "%hsFo:~1,1%"==":" ( set "h=%hsFo%\*.*"
 ) else set "h=%MUAOHSpath%\%EditGame:c=%\%hsFo%\*.*"
 ) else if not exist "%h%" EXIT /b 1
-call :readHS %1 %2 || goto HSSE
+call :readHS%3 %1 %2 || goto HSSE
 if defined %2 EXIT /b 0
 :HSSE
 if not %1==name EXIT b 1
@@ -1336,16 +1343,19 @@ set %2=
 set /p %2=Enter the internal name for "%nameonly%": || EXIT /b
 EXIT /b 0
 :readHS
-REM For other uses: If the herostat has 1 char, charactername will always be set, regardless of the argument
+REM For other uses: If the herostat has 1 char, charactername will always be set to variable, regardless of the argument
 call :HScheck || EXIT /b
 CLS
-call :PSparseHS charactername print %2 && EXIT /b || set /p ch=Choose a character from the list above by entering its name [supports regular expressions]: || EXIT /b
-call :PSparseHS %1 set %2 charactername match ch && EXIT /b
+call :PSparseHS charactername print %2 && EXIT /b
+if defined ch ( set "cs=^%ch%"
+) else set /p cs=Choose a character from the list above by entering its name [supports regular expressions]: || EXIT /b
+call :PSparseHS %1 set %2 charactername match cs && EXIT /b
+set ch=
 goto readHS
 
 :writefile
 REM Add, Update (remove = -2, add at the end = -1), convert (hash = anything)
-echo %indx% "%hash%" "%file%" %format% %sample_rate% %flgf%
+echo %indx% "%hash%" "%file%" %format% %sr% %flags%
 EXIT /b
 
 :cMdestination
@@ -1415,8 +1425,8 @@ EXIT /b
 call :extract
 :mkZSbat
 REM combine must be true
-set /a l=36-1
-PowerShell "$b=gc '%~f0'; $b[%l%]=$b[%l%] -replace '=[^""]*','=%pathname:'=''%.json'; $b[9]=$b[9] -replace '=.*','=update'; $b" >"%pathname%.bat"
+set /a l=40-1
+PowerShell "$b=gc '%~f0'; $b[%l%]=$b[%l%] -replace '=[^""]*','=%pathname:'=''%.json'; $b[11]=$b[11] -replace '=.*','=update'; $b" >"%pathname%.bat"
 EXIT /b
 :editZSSZSMPost
 CLS
@@ -1585,6 +1595,7 @@ del "%tem%.ps1"
 EXIT /b
 
 :PSJZ
+if not exist "%tem%" EXIT /b
 echo Generating sound database . . .
 call :PSfl PSjsonZSND %1 %2
 EXIT /b
