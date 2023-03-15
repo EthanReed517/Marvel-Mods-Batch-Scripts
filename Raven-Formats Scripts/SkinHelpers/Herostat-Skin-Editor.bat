@@ -1720,7 +1720,8 @@ REM Fix random index
 set ra=/\*\*\*random\*\*\*/
 echo $hs = $sf.sounds ^| select @{n="hash";e={($_.hash -ireplace '%ra%\d\d?$')}}, sample_index, flags
 echo $ra = $hs.hash ^| select -unique ^| %% {if (($hs.hash -eq $_).count -gt 1) {$_}}
-echo $sf.sounds = ($ra ^| %% {$i = 0; Foreach ($s in $hs) {if ($s.hash -eq $_) {$s ^| select @{n="hash";e={($s.hash + '%ra:\=%' + $i).ToUpper()}}, sample_index, flags; $i++}}}) + ($hs ^| ? {$ra -notcontains $_.hash}) ^| sort -property sample_index
+echo $d = @([PSCustomObject]@{hash=''; i=0})
+echo $sf.sounds = Foreach ($s in $hs) {if ($ra -eq $s.hash) {$i = $d.hash.IndexOf($s.hash); if ($i -gt 0) {$d[$i].i++} else {$d += [PSCustomObject]@{hash=$s.hash; i=0}; $i=-1}; $s ^| select @{n="hash";e={($s.hash + '%ra:\=%' + $d[$i].i).ToUpper()}}, sample_index, flags} else {$s}}
 REM Convert to JSON, and fix bad formatting of v5 (newer versions aren't part of Win)
 echo $ind = 0
 echo [IO.File]::WriteAllLines("%newjson%", (($sf ^| ConvertTo-Json) -split '\r?\n' ^| ForEach-Object {
