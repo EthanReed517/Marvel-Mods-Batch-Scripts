@@ -1874,7 +1874,7 @@ PICKUP:PICKUP
 THROW:THROW
 FLYBEGIN:FLYBEGIN
 FLYEND:FLYEND
-) do for /f "tokens=1* delims=:" %%a in ("%%s") do echo "%nameonly: =_%" | findstr /bir ^"\^"%a_*\d*^" && set hn=%%b&& EXIT /b
+) do for /f "tokens=1* delims=:" %%a in ("%%s") do echo "%nameonly: =_%" | findstr /bir ^"\^"%a_*\d*^" >nul && set hn=%%b&& EXIT /b
 set "hn=%nameonly%"
 EXIT /b
 REM Power sounds not added
