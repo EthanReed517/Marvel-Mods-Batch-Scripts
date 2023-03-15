@@ -1104,19 +1104,23 @@ EXIT /b
 :updatePost
 call :addConv
 for %%j in ("%oldjson%") do cd /d %%~dpj
-for /f "tokens=1*" %%e in ('find /i """file"":" "%oldjson%" 2^>nul') do (
+echo.
+for /f "skip=2 tokens=1*" %%e in ('find /i """file"":" "%oldjson%" 2^>nul') do (
  set "fullpath=%%~f
  call :uChckRem
 )
+echo.
 call :PSJZ F Upd
 call :comb%combine%
 EXIT /b
 :uChckRem
+echo|set /p=#
 if exist "%fullpath%" EXIT /b
 echo -2 "%fullpath:\\=\%">>"%tem%"
 EXIT /b
 
 :update
+echo|set /p=#
 if ""=="%plat%" call :platW %xtnsonly%
 if ""=="%oldjson%" call :prepJSON
 for %%x in ("%oldjson%") do call set "f=%%fullpath:%%~dpx=%%"
@@ -1625,9 +1629,9 @@ EXIT /b
 
 :PSJZ
 if not exist "%tem%" EXIT /b
+call :numberedBKP newjson
 echo Generating sound database . . .
 call :PSfl PSjsonZSND %1 %2
-call :numberedBKP newjson
 echo.
 choice /m "Save configurations"
 if errorlevel 2 EXIT /b
