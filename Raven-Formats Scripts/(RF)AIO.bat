@@ -1418,7 +1418,7 @@ EXIT /b
 :ravenAudio
 set "out=%fullpath%"
 call :rA%movewhr%
-if ""=="%ravenAudio%" call :checkTools ravenAudio
+if ""=="%ravenAudio%" call :checkTools ravenAudio || echo ravenAudio not found. Only 1 channel files possible. || EXIT /b
 %ravenAudio% "%fullpath%" "%out%"
 EXIT /b
 :rAdestination
@@ -1632,21 +1632,17 @@ goto ZsndSave
 echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
 echo $max_i = $sf.samples.file.count
 echo $rQ = '(?=(?:[^^"]*"[^^"]*")*[^^"]*$)'
-echo (gc "%tem%" ^| %% {[PSCustomObject]@{index=[int]($_ -Split ' ')[0]; value=$_}} ^| Sort-Object -Property index -Descending).value ^| %% {
+echo (gc "%tem%" ^| %% {[PSCustomObject]@{index=[int]($_ -Split ' ')[0]; hash=($_ -Split ' ')[1]; value=$_}} ^| Sort-Object -Property @{Expression = 'index'; Descending = $true}, @{Expression = 'hash'}).value ^| %% {
 echo   $l = ($_ -Split " +$rQ").Trim('"')
 echo   [int]$i, [int]$oi = $l[0]
 set ccb=}
 goto PSfor%1
 :PSforF
 if ""=="%flgh%" set flgh=31
-set ra=/\*\*\*random\*\*\*/
 echo   if ($i -eq -2) {
 echo     $oi = $sf.samples.IndexOf(($sf.samples ^| ? file -eq $l[1])[0])
 call :PSrmI
 echo   } else {
-echo     $hs = $sf.sounds.hash -match [Regex]::Escape($l[1]) ^| %% {if ($_ -match '%ra%') {[int]($_ -split ('/'))[-1]} elseif ($_) {0}} ^| sort
-echo     if ($hs -ne $null) {$l[1] = ($l[1] -ireplace '%ra%..?$', '') + '%ra:\=%' + ($hs[-1]+1)}
-echo     $hs = $null
 echo     if ($i -lt 0 -or $i -ge $max_i -and $i -ne 0) {$i = $sf.samples.file.count}
 echo     $so = @([PSCustomObject]@{hash=$l[1].ToUpper(); sample_index=$i; flags=%flgh%})
 echo     $sa = @([PSCustomObject]@{file=$l[2]; format=[int]$l[3]; sample_rate=[int]$l[4]})
@@ -1719,8 +1715,13 @@ call :PSaddFi
 echo.%ccb% & set ccb=
 echo $sf.sounds = @([PSCustomObject]@{hash='CONVERT'; sample_index=1; flags=%flgh%})
 :PSwriteJSON
-REM Convert to JSON, and fix bad formatting of v5 (newer versions aren't part of Win)
 echo.%ccb%
+REM Fix random index
+set ra=/\*\*\*random\*\*\*/
+echo $hs = $sf.sounds ^| select @{n="hash";e={($_.hash -ireplace '%ra%\d\d?$')}}, sample_index, flags
+echo $ra = $hs.hash ^| select -unique ^| %% {if (($hs.hash -eq $_).count -gt 1) {$_}}
+echo $sf.sounds = ($ra ^| %% {$i = 0; Foreach ($s in $hs) {if ($s.hash -eq $_) {$s ^| select @{n="hash";e={($s.hash + '%ra:\=%' + $i).ToUpper()}}, sample_index, flags; $i++}}}) + ($hs ^| ? {$ra -notcontains $_.hash}) ^| sort -property sample_index
+REM Convert to JSON, and fix bad formatting of v5 (newer versions aren't part of Win)
 echo $ind = 0
 echo [IO.File]::WriteAllLines("%newjson%", (($sf ^| ConvertTo-Json) -split '\r?\n' ^| ForEach-Object {
 echo   if ($_ -match "[}\]]$rQ") {$ind = [Math]::Max($ind - 4, 0)}
@@ -1871,10 +1872,11 @@ JUMP:JUMP
 LAND:LAND
 PAIN:PAIN
 PICKUP:PICKUP
+LIFT:PICKUP
 THROW:THROW
 FLYBEGIN:FLYBEGIN
 FLYEND:FLYEND
-) do for /f "tokens=1* delims=:" %%a in ("%%s") do echo "%nameonly: =_%" | findstr /bir ^"\^"%a_*\d*^" >nul && set hn=%%b&& EXIT /b
+) do for /f "tokens=1* delims=:" %%a in ("%%s") do echo "%nameonly: =_%" | findstr /bir ^"\^"%%a_*\d*^" >nul && set hn=%%b&& EXIT /b
 set "hn=%nameonly%"
 EXIT /b
 REM Power sounds not added
