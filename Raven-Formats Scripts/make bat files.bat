@@ -19,7 +19,7 @@ copy QuickBatch\ReadMe.md QuickBatch\!ReadMe.md
 (call :writeBAT SkinsHelper %default:MUA=XML2%)>SkinHelpers\SkinInstallerXML2.bat
 (call :writeBAT SkinsHelper %default%c)>SkinHelpers\SkinInstallerMUAconsoles.bat
 (call :writeBAT editZSSZSM json true false true false)>Zsnd\Zsound.bat
-(call :writeBAT update json true true true true "" %%%%~dp0x_voice.json)>Zsnd\build_x_voice.bat
+(call :writeBAT update json true true true true "" "" %%%%%%%%~dp0x_voice.json)>Zsnd\build_x_voice.bat
 goto eof
 
 :writeBAT

@@ -292,7 +292,12 @@ call set "outfile=%%outfile:false=%~dp0%%"
 set "outfile=%outfile:true=%"
 set "tem=%temp%\zsnd.tmp"
 call :defineJSON
-for %%i in ("%*") do set "zcn=%%~fi" & if "%%~xi"==".txt" goto ZsndLoad
+for %%i in ("%*") do (
+ set "zcn=%%~fi"
+ if /i "%%~xi"==".txt" goto ZsndLoad
+ for %%e in (.zss, .zsm) do if /i "%%~xi"=="%%e" set operation=extract& set inext=.zss, .zsm
+ if /i "%%~xi"==".json" set operation=combine& set inext=.json
+)
 EXIT /b
 :starteditJSON
 set inext=.json
@@ -471,7 +476,7 @@ EXIT /b 0
 
 :writerror
 set errfile=
-for /f "skip=2 delims=" %%e in ('find /i "error" "%rfo%" 2^>nul') do set "msg=%%e" & call :writeMsg>>"%erl%"
+for /f "delims=" %%e in ('findstr /i "error Errno" ^<"%rfo%" 2^>nul') do set "msg=%%e" & call :writeMsg>>"%erl%"
 if "%1" == "RF" EXIT /b 1
 for /f "delims=" %%e in ('type "%xco%"') do set "msg=%%e" & call :writeMsg>>"%erl%"
 EXIT /b 1
