@@ -32,7 +32,7 @@ REM Location of portable Zsnd? (folder where zsnd.py and hashes.json are in)
 set "zsndp=%~dp0zsnd"
 REM Use portable Zsnd? (Yes =true; No =false) (Still used for conversion)
 set usezsnd=false
-REM Extract to the input folder? (yes, extract at same location as file =true; no, extract to where Zsnd..bat is =false; can be a path ending with \ as well)
+REM Extract to the input folder? (yes, extract at same location as file =true; no, extract to where Zsound.bat is =false; can be a path ending with \ as well)
 set outfile=true
 
 REM addWAV and modify JSON Settings:

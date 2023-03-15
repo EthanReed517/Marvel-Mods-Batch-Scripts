@@ -18,7 +18,7 @@ copy QuickBatch\ReadMe.md QuickBatch\!ReadMe.md
 (call :writeBAT SkinsHelper %default%)>SkinHelpers\SkinInstaller.bat
 (call :writeBAT SkinsHelper %default:MUA=XML2%)>SkinHelpers\SkinInstallerXML2.bat
 (call :writeBAT SkinsHelper %default%c)>SkinHelpers\SkinInstallerMUAconsoles.bat
-(call :writeBAT editZSSZSM json true false true false)>Zsnd\Zsnd..bat
+(call :writeBAT editZSSZSM json true false true false)>Zsnd\Zsound.bat
 (call :writeBAT update json true true true true "" %%%%~dp0x_voice.json)>Zsnd\build_x_voice.bat
 goto eof
 
@@ -66,7 +66,7 @@ echo REM Location of portable Zsnd? (folder where zsnd.py and hashes.json are in
 echo set "zsndp=%%~dp0zsnd"
 echo REM Use portable Zsnd? (Yes =true; No =false) (Still used for conversion)
 echo set usezsnd=%4
-echo REM Extract to the input folder? (yes, extract at same location as file =true; no, extract to where Zsnd..bat is =false; can be a path ending with \ as well)
+echo REM Extract to the input folder? (yes, extract at same location as file =true; no, extract to where Zsound.bat is =false; can be a path ending with \ as well)
 echo set outfile=true
 echo.
 echo REM addWAV and modify JSON Settings:
