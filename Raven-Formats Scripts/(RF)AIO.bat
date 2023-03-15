@@ -1304,7 +1304,7 @@ for %%j in ("%oldjson%") do set "j=%%~nj"
 call :%j:~,7%Hash 2>nul && EXIT /b
 set "hash=%nameonly%"
 if %askhash%==file EXIT /b
-if %askhash%==char set "hash=CHAR/%jsonname%/%hash%" & EXIT /b
+if %askhash%==char call :charHash & EXIT /b
 set hash=%askhash%
 if not %hash%==true EXIT /b
 set hash=0
@@ -1835,6 +1835,53 @@ EXIT /b
 :stripQ
 if defined %1 call set "%1=%%%1:"=%%"
 EXIT /b
+
+
+:charHash
+call :cHS
+set "hash=CHAR/%jsonname%/%hn%"
+EXIT /b
+:cHS
+for %%s in (
+CANTGO:CANTGO
+CMDATTACKANY:CMDATTACKANY
+CMDATTACKTARGET:CMDATTACKTARGET
+CMDFOLLOW:CMDFOLLOW
+EPITAPH:EPITAPH
+ISEEYOU:ISEEYOU
+LEVELUP:LEVELUP
+LOWHEALTH:LOWHEALTH
+NOPOWER:NOPOWER
+NOWORK:NOWORK
+RESPAFFIRM:RESPAFFIRM
+TAUNTKD:TAUNTKD
+THROWTAUNT:THROWTAUNT
+TOOHEAVY:TOOHEAVY
+VICTORY:VICTORY
+XTREME:XTREME
+BORED:BORED
+6_STATS:STATS
+STATS:STATS
+SIGHT:SIGHT
+LOCKED:LOCKED
+CANTTALK:CANTTALK
+XTREME2:XTREME2
+DEATH:DEATH
+JUMP:JUMP
+LAND:LAND
+PAIN:PAIN
+PICKUP:PICKUP
+THROW:THROW
+FLYBEGIN:FLYBEGIN
+FLYEND:FLYEND
+) do for /f "tokens=1* delims=:" %%a in ("%%s") do echo "%nameonly: =_%" | findstr /bir ^"\^"%a_*\d*^" && set hn=%%b&& EXIT /b
+set "hn=%nameonly%"
+EXIT /b
+REM Power sounds not added
+REM P1_POWER
+REM P1_CHARGE
+REM P1_LOOP
+REM P1_IMPACT
 
 
 REM Unused code

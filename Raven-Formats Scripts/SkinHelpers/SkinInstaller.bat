@@ -1304,7 +1304,7 @@ for %%j in ("%oldjson%") do set "j=%%~nj"
 call :%j:~,7%Hash 2>nul && EXIT /b
 set "hash=%nameonly%"
 if %askhash%==file EXIT /b
-if %askhash%==char set "hash=CHAR/%jsonname%/%hash%" & EXIT /b
+if %askhash%==char call :charHash & EXIT /b
 set hash=%askhash%
 if not %hash%==true EXIT /b
 set hash=0
@@ -1622,6 +1622,7 @@ EXIT /b
 if not exist "%tem%" EXIT /b
 echo Generating sound database . . .
 call :PSfl PSjsonZSND %1 %2
+call :numberedBKP newjson
 echo.
 choice /m "Save configurations"
 if errorlevel 2 EXIT /b
@@ -1657,8 +1658,8 @@ call :PSrmI
 goto PSwriteJSON
 :PSforMI
 set "ic=^| sort -Descending ^| %% {if ($_ -and $_ -le $i) {$ix=1}}"
-echo   $a %ic:x=+%
-echo   $r = [array]$r + [array]$i
+echo   $a %ic:ix=oi+%
+echo   $r = [array]$r + [array]$oi
 call :PSsvI
 call :PSrmI
 echo   [int]$i = $l[1]
@@ -1697,8 +1698,8 @@ echo       $sf.samples = $sa + $sf.samples[$i..$sf.samples.count]
 echo     }
 EXIT /b
 :PSsvI
-echo   $so = @($sf.sounds ^| ? sample_index -eq $i)
-echo   $sa = @($sf.samples[$i])
+echo   $so = @($sf.sounds ^| ? sample_index -eq $oi)
+echo   $sa = @($sf.samples[$oi])
 EXIT /b
 :PSrmI
 echo     if ($oi -ge 0) {
@@ -1727,7 +1728,6 @@ echo   $line = (' ' * $ind) + (([Regex]::Replace($_, "\\u(?<Value>[a-zA-Z0-9]{4}
 echo   if ($_ -match "[\{\[]$rQ") {$ind += 4}
 echo   $line
 echo }), (New-Object System.Text.UTF8Encoding $False))
-set askbackup=%askbackup:true=false%& call :numberedBKP newjson >nul & set askbackup=%askbackup%
 EXIT /b
 REM Convert to JSON, with bad v5 formatting
 echo [IO.File]::WriteAllLines("%newjson%", ($sf ^| ConvertTo-Json), (New-Object System.Text.UTF8Encoding $False))
@@ -1835,6 +1835,53 @@ EXIT /b
 :stripQ
 if defined %1 call set "%1=%%%1:"=%%"
 EXIT /b
+
+
+:charHash
+call :cHS
+set "hash=CHAR/%jsonname%/%hn%"
+EXIT /b
+:cHS
+for %%s in (
+CANTGO:CANTGO
+CMDATTACKANY:CMDATTACKANY
+CMDATTACKTARGET:CMDATTACKTARGET
+CMDFOLLOW:CMDFOLLOW
+EPITAPH:EPITAPH
+ISEEYOU:ISEEYOU
+LEVELUP:LEVELUP
+LOWHEALTH:LOWHEALTH
+NOPOWER:NOPOWER
+NOWORK:NOWORK
+RESPAFFIRM:RESPAFFIRM
+TAUNTKD:TAUNTKD
+THROWTAUNT:THROWTAUNT
+TOOHEAVY:TOOHEAVY
+VICTORY:VICTORY
+XTREME:XTREME
+BORED:BORED
+6_STATS:STATS
+STATS:STATS
+SIGHT:SIGHT
+LOCKED:LOCKED
+CANTTALK:CANTTALK
+XTREME2:XTREME2
+DEATH:DEATH
+JUMP:JUMP
+LAND:LAND
+PAIN:PAIN
+PICKUP:PICKUP
+THROW:THROW
+FLYBEGIN:FLYBEGIN
+FLYEND:FLYEND
+) do for /f "tokens=1* delims=:" %%a in ("%%s") do echo "%nameonly: =_%" | findstr /bir ^"\^"%a_*\d*^" && set hn=%%b&& EXIT /b
+set "hn=%nameonly%"
+EXIT /b
+REM Power sounds not added
+REM P1_POWER
+REM P1_CHARGE
+REM P1_LOOP
+REM P1_IMPACT
 
 
 REM Unused code
