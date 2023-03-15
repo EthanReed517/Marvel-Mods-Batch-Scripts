@@ -87,8 +87,8 @@ echo REM (no, my portable Zsnd is new =false; yes, default, converts all WAVs =t
 echo set remHead=%6
 echo REM Read sample-reate, and flags, in addition to the hash in the source JSON? (yes =true; no, read hash only =false; no, don't read hash either =never)
 echo set asample=never
-echo REM Ask for a new hash? (yes =true; automatically generate a custom hash, eg. =REPLACE_THIS_HASH; automatically generate hash with filename =file)
-echo set askhash=file
+echo REM Ask for a new hash? (yes =true; automatically generate a custom hash, eg. =REPLACE_THIS_HASH; automatically generate hash with filename =file; automatically genereate with CHAR/[jsonname]/[filename] =char)
+echo set askhash=char
 echo REM Choose a sample_index number? (Yes =true; No, add at end =false; Yes, same for all =all)
 echo set chIndex=all
 echo REM Define a minimum index number (default =0; allow all minindx=)

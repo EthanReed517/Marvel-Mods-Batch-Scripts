@@ -53,8 +53,8 @@ REM (no, my portable Zsnd is new =false; yes, default, converts all WAVs =true)
 set remHead=false
 REM Read sample-reate, and flags, in addition to the hash in the source JSON? (yes =true; no, read hash only =false; no, don't read hash either =never)
 set asample=never
-REM Ask for a new hash? (yes =true; automatically generate a custom hash, eg. =REPLACE_THIS_HASH; automatically generate hash with filename =file)
-set askhash=file
+REM Ask for a new hash? (yes =true; automatically generate a custom hash, eg. =REPLACE_THIS_HASH; automatically generate hash with filename =file; automatically genereate with CHAR/[jsonname]/[filename] =char)
+set askhash=char
 REM Choose a sample_index number? (Yes =true; No, add at end =false; Yes, same for all =all)
 set chIndex=all
 REM Define a minimum index number (default =0; allow all minindx=)
@@ -292,6 +292,7 @@ call set "outfile=%%outfile:false=%~dp0%%"
 set "outfile=%outfile:true=%"
 set "tem=%temp%\zsnd.tmp"
 call :defineJSON
+for %%i in ("%*") do set "zcn=%%~fi" & if "%%~xi"==".txt" goto ZsndLoad
 EXIT /b
 :starteditJSON
 set inext=.json
@@ -1089,6 +1090,12 @@ call :numberedBKP zs
 %Zsnd% "%fullpath%" "%zs%" 2>"%rfo%" || call :writerror RF
 EXIT /b
 
+:ZsndPreConfig
+copy /y "%fullpath%" "%tem%"
+call :PSJZ F Upd
+call :comb%combine%
+EXIT /b
+
 :updatePost
 call :addConv
 for %%j in ("%oldjson%") do cd /d %%~dpj
@@ -1250,7 +1257,7 @@ goto askPlat
 echo ERROR: "%fullpath%" is not in the correct format. Expected: %formatW%>>"%erl%"
 EXIT /b 1
 :checkPlat
-if defined oldjson for /f "tokens=2 delims=:," %%p in ('findstr /ilc:"\"platform\":" "%oldjson%" 2^>nul') do for %%f in (%inext%) do call echo %%%%f:~,4%% | find /i %%p && set inext=%%f&& set formatW=%%f&& if "%xtnsonly%" NEQ "%%f" EXIT /b 1
+if defined oldjson for /f "tokens=2 delims=:," %%p in ('findstr /ilc:"\"platform\":" "%oldjson%" 2^>nul') do for %%f in (%inext%) do call echo %%%%f:~,4%% | find /i %%p >nul && set inext=%%f&& set formatW=%%f&& if "%xtnsonly%" NEQ "%%f" EXIT /b 1
 EXIT /b 0
 :srchInfo
 if defined predefined EXIT /b
@@ -1293,16 +1300,17 @@ if defined maxindx if %1 GTR %maxindx% EXIT /b 1
 EXIT /b 0
 
 :hashgen
-echo.
 for %%j in ("%oldjson%") do set "j=%%~nj"
 call :%j:~,7%Hash 2>nul && EXIT /b
 set "hash=%nameonly%"
 if %askhash%==file EXIT /b
+if %askhash%==char set "hash=CHAR/%jsonname%/%hash%" & EXIT /b
 set hash=%askhash%
 if not %hash%==true EXIT /b
 set hash=0
 set "gs=%namextns%"
 if not %asample%==never call :PSops Get sounds hash
+echo.
 set /p hash=Enter or paste a hash for "%namextns%", or press enter to use "%hash%": 
 EXIT /b
 :x_voiceHash
@@ -1310,6 +1318,7 @@ if defined ch EXIT /b 0
 call :HSSetup name in || set in=0
 set "hash=%in%"
 set hp=COMMON/MENUS/CHARACTER/
+echo.
 choice /c CBX /m "Is '%nameonly%' a name [c]allout or a [b]reak line (press [X] if it's something else)"
 if ERRORLEVEL 3 EXIT /b 0
 if ERRORLEVEL 1 set cp=AN_
@@ -1509,22 +1518,37 @@ echo Remove by ...
 echo F. Filename
 echo H. Hash
 choice /c FH
-if not ERRORLEVEL 2 goto byF
-call :PSops GidxH
-if ""=="%indx%" echo Could not find index of "%gs%".>>"%erl%" & EXIT /b
-echo %indx%>>"%tem%"
-EXIT /b 0
-:byF
+if ERRORLEVEL 2 goto byH
 for /f "skip=2 tokens=1* delims=: " %%a in ('find """file"":" "%oldjson%" ^| find "%gs%"') do set file=%%a
 set file=%file:~,-1%
 set file=%file:\\=\%
 echo -2 %file%>>"%tem%"
 call :PSJZ F writeJSON
 EXIT /b 1
+:byH
+call :PSops GidxH
+if ""=="%indx%" echo Could not find index of "%gs%".>>"%erl%" & EXIT /b
+echo %indx%>>"%tem%"
+EXIT /b 0
 
 :listIndex
 for /f "skip=2 tokens=2 delims=:, " %%a in ('find """sample_index"":" "%fullpath%"') do echo %%a
 pause
+EXIT /b
+
+:ZsndSave
+set /p zcn=Enter a file name: || EXIT /b
+set "zcn=%~dp0%zcn%.txt"
+call :numberedBKP zcn
+move "%tem%" "%zcn%"
+EXIT /b
+:ZsndLoad
+CLS
+echo "%zcn%":
+choice /m "Load configurations"
+if errorlevel 2 EXIT /b
+set operation=ZsndPreConfig
+set inext=.txt
 EXIT /b
 
 
@@ -1598,15 +1622,18 @@ EXIT /b
 if not exist "%tem%" EXIT /b
 echo Generating sound database . . .
 call :PSfl PSjsonZSND %1 %2
-EXIT /b
+echo.
+choice /m "Save configurations"
+if errorlevel 2 EXIT /b
+goto ZsndSave
 
 :PSjsonZSND
 echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
-echo $max_i = $sf.samples.length
+echo $max_i = $sf.samples.file.count
 echo $rQ = '(?=(?:[^^"]*"[^^"]*")*[^^"]*$)'
 echo (gc "%tem%" ^| %% {[PSCustomObject]@{index=[int]($_ -Split ' ')[0]; value=$_}} ^| Sort-Object -Property index -Descending).value ^| %% {
 echo   $l = ($_ -Split " +$rQ").Trim('"')
-echo   [int]$i = $l[0]
+echo   [int]$i, [int]$oi = $l[0]
 set ccb=}
 goto PSfor%1
 :PSforF
@@ -1614,18 +1641,15 @@ if ""=="%flgh%" set flgh=31
 set ra=/\*\*\*random\*\*\*/
 echo   if ($i -eq -2) {
 echo     $oi = $sf.samples.IndexOf(($sf.samples ^| ? file -eq $l[1])[0])
-echo     $sf.sounds = $sf.sounds ^| %% {
-echo       if ($_.sample_index -lt $oi) {$_}
-echo       if ($_.sample_index -gt $oi) {$_ ^| select hash, @{n="sample_index";e={[int]($_.sample_index-1)}}, flags}
-echo     }
-echo     $sf.samples = $sf.samples ^| ? file -ne $l[1]
+call :PSrmI
 echo   } else {
-echo     if ($i -lt 0 -or $i -ge $max_i) {$i = $sf.samples.length}
-echo     $hs = $sf.sounds.hash -match [Regex]::Escape($l[1]) ^| %% {if ($_ -match '%ra%') {[int]($_ -split ('/'))[-1]} else {0}} ^| sort
+echo     $hs = $sf.sounds.hash -match [Regex]::Escape($l[1]) ^| %% {if ($_ -match '%ra%') {[int]($_ -split ('/'))[-1]} elseif ($_) {0}} ^| sort
 echo     if ($hs -ne $null) {$l[1] = ($l[1] -ireplace '%ra%..?$', '') + '%ra:\=%' + ($hs[-1]+1)}
+echo     $hs = $null
+echo     if ($i -lt 0 -or $i -ge $max_i -and $i -ne 0) {$i = $sf.samples.file.count}
+echo     $so = @([PSCustomObject]@{hash=$l[1].ToUpper(); sample_index=$i; flags=%flgh%})
 echo     $sa = @([PSCustomObject]@{file=$l[2]; format=[int]$l[3]; sample_rate=[int]$l[4]})
 echo     if ($l[5]) {$sa ^| Add-Member -NotePropertyName flags -NotePropertyValue ([int]$l[5])}
-echo     $so = [PSCustomObject]@{hash=$l[1].ToUpper(); sample_index=$i; flags=%flgh%}
 set ccb=%ccb%}
 goto PS%2
 :PSforRI
@@ -1640,50 +1664,62 @@ call :PSrmI
 echo   [int]$i = $l[1]
 echo   $r %ic:x=-%
 echo   $a %ic:x=+%
-echo   $so = $so ^| select hash, @{n="sample_index";e={$i}}, flags
+echo   $so = @($so ^| select hash, @{n="sample_index";e={$i}}, flags)
 echo   $a = [array]$a + [array]$i
 :PSUpd
 :PSAdd
-call :PSaddFi
 call :PSaddHi
+call :PSaddFi
 goto PSwriteJSON
 :PSaddHi
 echo     $ro = 1
-echo     $sf.sounds = $sf.sounds ^| %% {
-echo       if ($_.sample_index -eq $i -and $ro) {$so; Clear-Variable ro}
-echo       if ($_.sample_index -lt $i) {$_}
-echo       else {$_ ^| select hash, @{n="sample_index";e={[int]($_.sample_index+1)}}, flags}
+echo     if ($sf.sounds.sample_index.count -eq 0) {
+echo       $sf.sounds = $so
+echo     } else {
+echo       $sf.sounds = @($sf.sounds ^| %% {
+echo         if ($_.sample_index -eq $i -and $ro) {$so; Clear-Variable ro}
+echo         if ($_.sample_index -lt $i) {$_}
+echo         else {$_ ^| select hash, @{n="sample_index";e={[int]($_.sample_index+1)}}, flags}
+echo       })
+echo       if ($i -ge $sf.samples.file.count) {$sf.sounds += $so}
 echo     }
-echo     if ($i -ge $max_i) {$sf.sounds += $so}
 EXIT /b
 :PSaddHiAlt
 REM Sorts all higher sample_indexes from below $i to above. Useless like this:
 echo     $sf.sounds = (if ($i -gt 0) {$sf.sounds ^| ? sample_index -lt $i}) + $sf.sounds ^| ? sample_index -ge $i
 EXIT /b
 :PSaddFi
-echo     if ($i -gt 0) {$sa = $sf.samples[0..($i-1)] + $sa}
-echo     $sf.samples = $sa + $sf.samples[$i..$sf.samples.length]
+echo     if ($sf.samples.file.count -eq 0) {
+echo       $sf.samples = $sa
+echo     } else {
+echo       if ($i -gt 0) {$sa = $sf.samples[0..($i-1)] + $sa}
+echo       $sf.samples = $sa + $sf.samples[$i..$sf.samples.count]
+echo     }
 EXIT /b
 :PSsvI
+echo   $so = @($sf.sounds ^| ? sample_index -eq $i)
 echo   $sa = @($sf.samples[$i])
-echo   $so = $sf.sounds ^| ? sample_index -eq $i
 EXIT /b
 :PSrmI
-if ""=="%remHashOnly%" echo   $sf.samples = $sf.samples[0..($i-1)] + $sf.samples[($i+1)..$sf.samples.length]
-echo   $sf.sounds = $sf.sounds ^| %% {
-echo     if ($_.sample_index -lt $i) {$_}
-echo     if ($_.sample_index -gt $i) {$_ ^| select hash, @{n="sample_index";e={[int]($_.sample_index-1)}}, flags}
-echo   }
+echo     if ($oi -ge 0) {
+echo       $sf.sounds = $sf.sounds ^| %% {
+echo         if ($_.sample_index -lt $oi) {$_}
+echo         if ($_.sample_index -gt $oi) {$_ ^| select hash, @{n="sample_index";e={[int]($_.sample_index-1)}}, flags}
+echo       }
+if ""=="%remHashOnly%" (
+echo       $t = $sf.samples[^($oi+1^)..$sf.samples.count]
+echo       $sf.samples = if ^($oi -gt 0^) {$sf.samples[0..^($t-1^)] + $t} else {$t}
+)
+echo       $max_i -= 1
+echo     }
 EXIT /b
 :PSconv
 call :PSaddFi
-echo %ccb% & set ccb=
-echo $sf.sounds += [PSCustomObject]@{hash='CONVERT'; sample_index=1; flags=%flgh%}
+echo.%ccb% & set ccb=
+echo $sf.sounds = @([PSCustomObject]@{hash='CONVERT'; sample_index=1; flags=%flgh%})
 :PSwriteJSON
 REM Convert to JSON, and fix bad formatting of v5 (newer versions aren't part of Win)
-echo(%ccb%
-echo if (!$sf.samples.file[0]) {$sf.samples = $sf.samples[1..$sf.samples.length]}
-echo if (!$sf.sounds.hash[0]) {$sf.sounds = $sf.sounds[1..$sf.sounds.length] ^| %% {$_ ^| select hash, @{n="sample_index";e={[int]($_.sample_index-1)}}, flags}}
+echo.%ccb%
 echo $ind = 0
 echo [IO.File]::WriteAllLines("%newjson%", (($sf ^| ConvertTo-Json) -split '\r?\n' ^| ForEach-Object {
 echo   if ($_ -match "[}\]]$rQ") {$ind = [Math]::Max($ind - 4, 0)}
@@ -1691,7 +1727,7 @@ echo   $line = (' ' * $ind) + (([Regex]::Replace($_, "\\u(?<Value>[a-zA-Z0-9]{4}
 echo   if ($_ -match "[\{\[]$rQ") {$ind += 4}
 echo   $line
 echo }), (New-Object System.Text.UTF8Encoding $False))
-call :numberedBKP newjson >nul
+set askbackup=%askbackup:true=false%& call :numberedBKP newjson >nul & set askbackup=%askbackup%
 EXIT /b
 REM Convert to JSON, with bad v5 formatting
 echo [IO.File]::WriteAllLines("%newjson%", ($sf ^| ConvertTo-Json), (New-Object System.Text.UTF8Encoding $False))
