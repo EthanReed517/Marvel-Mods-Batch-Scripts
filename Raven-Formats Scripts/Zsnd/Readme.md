@@ -13,11 +13,11 @@
 
 ## Instructions
 - Run Zsnd.
-  If a ZSM/ZSS file exists in the folder, all of them are extracted.
-  A .json file with the same name (.json extension instead of .zss/.zsm) is created by Zsnd.
+  If ZSM/ZSS files exist in the folder, all of them are extracted.
+  A JSON file with the same name (.json extension instead of .zss/.zsm) is created by Zsnd.
   A new BAT file with the name of the JSON file (.bat extension instead of .json) will be created.
   If no ZSM/ZSS file exist (and if none is dropped on the BAT), you're asked for a name and platform,
-  and an empty .json file will be created.
+  and an empty JSON file will be created.
 - Add and remove sound files to your hearts desire.
   You can make new folders and add sound files anywhere in the same folder and its sub-folders.
 - Run the new BAT file (the one with the same name as the JSON).
@@ -25,13 +25,14 @@
 - You'll be asked for details of any new file, so be sure that you know them.
   It's possible do set-up the BAT to include this information, so you're not asked each time.
   For example: If your files are always 22050hz mono (what you usually use in zsm-editor),
-  you can open the Zsnd..bat with a text editor (eg. Notepad) and change lines 64, 66, and 68:
-  64 to `set sr=22050`
-  66 to `set channels=1`
-  68 to `set loop=false`
-  Similarly, it's possible to define all other inputs in the BAT, except the hash.
-- ZSS/ZSM file is automatically created.
+  you can open the Zsound.bat with a text editor (eg. Notepad) and change lines 66, 68, and 70:
+  66 to `set sr=22050`
+  68 to `set channels=1`
+  70 to `set loop=false`
+  Similarly, it's possible to define all other inputs in the BAT.
+- ZSM/ZSS file is automatically created.
   (You'll be asked for the extension, if the filename doesn't end in `_m` or `_v` or is `x_voice` or `x_common`)
+- A JSON file is compiled to a ZSM/ZSS file when dragged & dropped onto the BAT file.
 
 ## Known issues
 - The BAT has a lot of features, but they haven't all been tested.
