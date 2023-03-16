@@ -117,6 +117,7 @@ call :start%operation% %~1
 del "%erl%" "%xco%" "%rfo%" "%tem%" "%tem%c" "%tem%m"
 if %allowfext%==true set inext=.*
 CLS
+if defined zsnd call :ZSTitle
 
 for %%p in (%*) do goto ccl
 set "f=%~dp0"
@@ -286,6 +287,7 @@ goto czs
 :startcombine
 set inext=.json
 :czs
+TITLE Zsnd
 call :checkTools zsnd || call :checkPython
 if defined zsndp ( if %usezsnd%==true set "outfile=%outfile:true=false%" & set Zsnd=py "%zsndp%\zsnd.py"
 ) else set remHead=false
@@ -293,8 +295,6 @@ call set "outfile=%%outfile:false=%~dp0%%"
 set "outfile=%outfile:true=%"
 set "tem=%temp%\zsnd.tmp"
 call :defineJSON
-TITLE Zsnd
-call :ZSTitle
 for %%i in ("%*") do (
  set "zcn=%%~fi"
  if /i "%%~xi"==".txt" goto ZsndLoad
@@ -1116,7 +1116,7 @@ EXIT /b
 :updatePost
 call :addConv
 for %%j in ("%oldjson%") do cd /d %%~dpj
-echo.
+echo.& echo|set /p=Removing 
 for /f "skip=2 tokens=1*" %%e in ('find /i """file"":" "%oldjson%" 2^>nul') do (
  set "fullpath=%%~f
  call :uChckRem
@@ -1126,13 +1126,14 @@ call :PSJZ F Upd
 call :comb%combine%
 EXIT /b
 :uChckRem
-echo|set /p=#
+echo|set /p=.
 if exist "%fullpath%" EXIT /b
 echo -2 "%fullpath:\\=\%">>"%tem%"
 EXIT /b
 
 :update
-echo|set /p=#
+if ""=="%add%" echo|set /p=Adding   & set add=1
+echo|set /p=.
 if ""=="%plat%" call :platW %xtnsonly%
 if ""=="%oldjson%" call :prepJSON
 for %%x in ("%oldjson%") do call set "f=%%fullpath:%%~dpx=%%"
@@ -1563,7 +1564,7 @@ if ERRORLEVEL 2 EXIT /b
 set /p zcn=Enter a file name: || EXIT /b
 set "zcn=%~dp0%zcn%.txt"
 call :numberedBKP zcn
-move "%tem%" "%zcn%"
+copy /y "%tem%" "%zcn%"
 if %savecfg%==only EXIT /b 0
 EXIT /b 1
 :ZsndLoad
@@ -1870,6 +1871,15 @@ set "hash=CHAR/%jsonname%/%hn%"
 EXIT /b
 :cHS
 for %%s in (
+DEATH:DEATH
+JUMP:JUMP
+LAND:LAND
+PAIN:PAIN
+PICKUP:PICKUP
+LIFT:PICKUP
+THROW:THROW
+FLYBEGIN:FLYBEGIN
+FLYEND:FLYEND
 CANTGO:CANTGO
 CMDATTACKANY:CMDATTACKANY
 CMDATTACKTARGET:CMDATTACKTARGET
@@ -1890,18 +1900,10 @@ BORED:BORED
 6_STATS:STATS
 STATS:STATS
 SIGHT:SIGHT
+STRUGGLE:STRUGGLE
 LOCKED:LOCKED
 CANTTALK:CANTTALK
 XTREME2:XTREME2
-DEATH:DEATH
-JUMP:JUMP
-LAND:LAND
-PAIN:PAIN
-PICKUP:PICKUP
-LIFT:PICKUP
-THROW:THROW
-FLYBEGIN:FLYBEGIN
-FLYEND:FLYEND
 ) do for /f "tokens=1* delims=:" %%a in ("%%s") do echo "%nameonly: =_%" | findstr /bir ^"\^"%%a_*\d*^" >nul && set hn=%%b&& EXIT /b
 set "hn=%nameonly%"
 EXIT /b
