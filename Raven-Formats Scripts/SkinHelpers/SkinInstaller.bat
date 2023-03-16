@@ -60,7 +60,7 @@ set chIndex=all
 REM Define a minimum index number (default =0; allow all minindx=)
 set minindx=0
 REM Save configurations to file? (Yes =true; No =false; Yes and don't update json =only)
-set savecfg=true
+set savecfg=false
 REM Pre-define sample information (leave undefined to get prompted):
 REM Sample rate PSP/PS2 standard =11025; all other standard =22050; music standard =41000; =44100
 set sr=
@@ -302,6 +302,9 @@ for %%i in ("%*") do (
  if /i "%%~xi"==".json" set operation=combine& set inext=.json
 )
 EXIT /b
+:startZsndPreConfig
+set inext=.txt
+goto czs
 :starteditJSON
 set inext=.json
 EXIT /b

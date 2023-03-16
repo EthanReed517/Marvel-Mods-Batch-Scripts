@@ -94,7 +94,7 @@ echo set chIndex=all
 echo REM Define a minimum index number (default =0; allow all minindx=)
 echo set minindx=0
 echo REM Save configurations to file? (Yes =true; No =false; Yes and don't update json =only)
-echo set savecfg=true
+echo set savecfg=false
 echo REM Pre-define sample information (leave undefined to get prompted):
 echo REM Sample rate PSP/PS2 standard =11025; all other standard =22050; music standard =41000; =44100
 echo set sr=
