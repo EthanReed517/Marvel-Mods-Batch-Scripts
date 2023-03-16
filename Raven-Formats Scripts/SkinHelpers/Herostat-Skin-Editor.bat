@@ -59,6 +59,8 @@ REM Choose a sample_index number? (Yes =true; No, add at end =false; Yes, same f
 set chIndex=all
 REM Define a minimum index number (default =0; allow all minindx=)
 set minindx=0
+REM Save configurations to file? (Yes =true; No =false; Yes and don't update json =only)
+set savecfg=true
 REM Pre-define sample information (leave undefined to get prompted):
 REM Sample rate PSP/PS2 standard =11025; all other standard =22050; music standard =41000; =44100
 set sr=
@@ -284,7 +286,6 @@ goto czs
 :startcombine
 set inext=.json
 :czs
-TITLE Zsnd
 call :checkTools zsnd || call :checkPython
 if defined zsndp ( if %usezsnd%==true set "outfile=%outfile:true=false%" & set Zsnd=py "%zsndp%\zsnd.py"
 ) else set remHead=false
@@ -292,6 +293,8 @@ call set "outfile=%%outfile:false=%~dp0%%"
 set "outfile=%outfile:true=%"
 set "tem=%temp%\zsnd.tmp"
 call :defineJSON
+TITLE Zsnd
+call :ZSTitle
 for %%i in ("%*") do (
  set "zcn=%%~fi"
  if /i "%%~xi"==".txt" goto ZsndLoad
@@ -684,7 +687,7 @@ if "%ns:~1%"=="" set ns=0%ns%
 set sn=%cn%%ns:~-2%
 for /f "delims=" %%i in ('dir /b "%MUApath%\actors\%sn%.igb"') do goto SH3pkg
 choice /m "Skin does not seem to exist. Continue creating a new one"
-if errorlevel 2 goto SkinsHelper3
+if ERRORLEVEL 2 goto SkinsHelper3
 :SH3pkg
 set in=defaultman
 for /f "delims=" %%p in ('dir /b "%tp%*_%cn%*.pkgb"') do set "nameonly=%%~np" & goto SH3pkg2
@@ -927,7 +930,7 @@ set ig=%on:~-3%00
 set on=%ig:~,-2%
 echo.
 choice /m "Old mod number: %on%. Confrm"
-if errorlevel 2 goto ModCloner1
+if ERRORLEVEL 2 goto ModCloner1
 set h=
 set psc=$null
 set "pcv=$on = '%on%'; $sn = $on + '*'; $ca = '$'"
@@ -981,8 +984,8 @@ if %hdf%==lxml set "psc=%psc%; $n = New-Object PSObject; $p.GetEnumerator() | so
 set "pcv=[string]$sn = $p.skin; $ca = $p.characteranims; $on = $sn.substring(0,$sn.length-2); if ($on -ne ($ca -replace '_.*')) {exit 1}"
 goto ModCloner2
 :MC2Error
-if errorlevel 3 echo Herostat problem. Skins are not hex-edited and herostat is not updated. & goto Errors
-if errorlevel 2 echo Old and new number are identical & goto Errors
+if ERRORLEVEL 3 echo Herostat problem. Skins are not hex-edited and herostat is not updated. & goto Errors
+if ERRORLEVEL 2 echo Old and new number are identical & goto Errors
 echo Skin and animation numbers don't match
 goto Errors
 EXIT /b
@@ -1021,9 +1024,21 @@ if not exist "%igGGC%" (call :OptHead 1 & call :optGGC 1)>"%igGGC%"
 EXIT /b
 
 
+
+:ZSTitle
+CLS
+echo ---------------------------------
+echo   Zsnd editor for ZSM/ZSS files
+echo ---------------------------------
+echo.
+EXIT /b
 :askSR
 REM Better would be automatic detection, if possible
-CLS
+set chd=%channels:1=(Mono)%
+set chd=%chd:2=(Stereo)%
+set chd=%chd:4=%
+if ""=="%channels%" set chd=
+call :ZSTitle
 echo Check file requirements for "%fullpath%":
 echo %Wformat%
 echo.
@@ -1042,9 +1057,6 @@ call :Wopt sr 22050 41000 44100 32000 11025
 goto askSR
 :Wopt2
 call :Wopt channels 1 2 4
-set chd=%channels:1=(Mono)%
-set chd=%chd:2=(Stereo)%
-set chd=%chd:4=%
 goto askSR
 :Wopt3
 call :Wopt loop true false
@@ -1074,7 +1086,7 @@ call :numberedBKP oj
 set "oj=%oj%.json"
 call :numberedBKP oj
 if defined outfile set "back=%cd%" & cd /d "%zsndp%"
-echo extracting . . .
+call :ZSTitle
 %Zsnd% -d "%fullpath%" "%oj%" 2>"%rfo%" || call :writerror RF
 if defined outfile cd /d "%back%"
 EXIT /b
@@ -1161,7 +1173,7 @@ set "pathonly=%~dp0" & call :checkW
 ))>"%tem%l"
 if ""=="%x%" EXIT /b
 if %x% EQU 1 goto autoJSON
-CLS
+call :ZSTitle
 type "%tem%l"
 :pickJSON
 echo.
@@ -1246,7 +1258,7 @@ choice /c 23 /m "Are the sounds for PS2 and PSP, or for PS3"
 if ERRORLEVEL 2 set formatW=PS3%formatW:~3%
 EXIT /b
 :askPlat
-CLS
+call :ZSTitle
 echo.
 echo %formatW%
 echo.
@@ -1407,7 +1419,7 @@ EXIT /b
 set dircmd=/b /a-d
 for %%i in ("%newjson%") do set xp=%%~dpi
 if ""=="%subfolder%" (
- CLS
+ call :ZSTitle
  echo.
  dir /ad "%xp%"
  echo.
@@ -1447,23 +1459,21 @@ set /a l=40-1
 PowerShell "$b=gc '%~f0'; $b[%l%]=$b[%l%] -replace '=[^""]*','=%pathname:'=''%.json'; $b[11]=$b[11] -replace '=.*','=update'; $b" >"%pathname%.bat"
 EXIT /b
 :editZSSZSMPost
-CLS
-if defined oj echo Each & goto eZZmsg
-echo.
-set /p fullpath=Enter or paste the file name to the ZSM/ZSS file, or drag and drop it here: 
+call :ZSTitle
+if defined oj echo|set /p=Each & goto eZZmsg
+echo Hint: Use a file path or name that is not an existing ZSM/ZSS file to create a new one.
+set /p fullpath=Enter or paste the file path to a ZSM/ZSS file, or drag and drop it here: 
 call :stripQ fullpath
 call :filesetup
-if exist "%fullpath%" (
- if /i "%xtsnonly:~1,-1%" NEQ "ZS" echo Wrong format & goto Errors
- call :extract
-) else (
- choice /m "Could not find '%fullpath%'. Create a new file"
- if ERRORLEVEL 2 goto editZSSZSMPost
- if ""=="%plat%" call :platW .none
- (call :writeNewJSON)>"%pathname%.json"
-)
+REM fixes a bug with the if chain
+set "ZS=%xtnsonly:~1,2%"
+if not exist "%fullpath%\" if exist "%fullpath%" if /i "%ZS%"=="ZS" call :editZSSZSM & call :ZSTitle & goto eZZmsg
+choice /m "Could not find ZSM/ZSS file '%fullpath%'. Create a new file"
+if ERRORLEVEL 2 goto editZSSZSMPost
+if ""=="%plat%" call :platW .none
+call :writeNewJSON >"%pathname%.json"
 call :mkZSbat
-CLS
+call :ZSTitle
 :eZZmsg
 echo ZSM/ZSS has been extracted, and a batch file with the same name has been created.
 echo Add sound files to the folder with the extracted ones,
@@ -1473,7 +1483,7 @@ EXIT /b
 :editJSON
 set "oldjson=%fullpath%"
 call :defineJSON
-CLS
+call :ZSTitle
 echo 1^) Create an additional hash for a sound sample.
 echo 2^) Remove index number^(s^), hash or file.
 echo 3^) Move index number^(s^) or file.
@@ -1522,7 +1532,7 @@ EXIT /b 0
 set gs=%*
 if ""=="%gs%" EXIT /b 1
 set "gs=%gs:"=%"
-CLS
+call :ZSTitle
 echo Remove by ...
 echo F. Filename
 echo H. Hash
@@ -1546,18 +1556,26 @@ pause
 EXIT /b
 
 :ZsndSave
+if %savecfg%==false EXIT /b 1
+call :ZSTitle
+choice /m "Save configurations"
+if ERRORLEVEL 2 EXIT /b
 set /p zcn=Enter a file name: || EXIT /b
 set "zcn=%~dp0%zcn%.txt"
 call :numberedBKP zcn
 move "%tem%" "%zcn%"
-EXIT /b
+if %savecfg%==only EXIT /b 0
+EXIT /b 1
 :ZsndLoad
-CLS
+call :ZSTitle
+echo Information: Configuration files are executed but not validated for duplicates or existing files.
+echo.
 echo "%zcn%":
 choice /m "Load configurations"
-if errorlevel 2 EXIT /b
+if ERRORLEVEL 2 EXIT /b
 set operation=ZsndPreConfig
 set inext=.txt
+set savecfg=false
 EXIT /b
 
 
@@ -1629,13 +1647,11 @@ EXIT /b
 
 :PSJZ
 if not exist "%tem%" EXIT /b
+call :ZsndSave && EXIT /b
 call :numberedBKP newjson
 echo Generating sound database . . .
 call :PSfl PSjsonZSND %1 %2
-echo.
-choice /m "Save configurations"
-if errorlevel 2 EXIT /b
-goto ZsndSave
+EXIT /b
 
 :PSjsonZSND
 echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
