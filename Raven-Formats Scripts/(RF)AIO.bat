@@ -1101,7 +1101,7 @@ if /i "%nameonly:~-2%" == "_m" ( set ext=zsm
 ) else if /i "%nameonly:~,7%" == "x_voice" ( set ext=zss
 ) else (
  echo.
- choice /c MV /m "Combine to [m]aster sounds or [v]oice file"
+ choice /c MV /m "Combine to [M] master sounds or [V] voice file"
  if ERRORLEVEL 2 (set ext=zss) else set ext=zsm
 )
 echo combining . . .
@@ -1111,6 +1111,9 @@ call :numberedBKP zs
 EXIT /b
 
 :ZsndPreConfig
+if ""=="%oldjson%" EXIT /b
+choice /c UN /m "[U] Update '%jsonname%.json' or start with a [N] new, empty file"
+if ERRORLEVEL 2 call :numberedBKP oldjson & call :writeNewJSON
 copy /y "%fullpath%" "%tem%"
 call :PSJZ F Upd
 call :comb%combine%
@@ -1206,7 +1209,7 @@ EXIT /b
 :blankJSON
 if not %askname%==forcefolder set askname=truefolder
 set "oldjson=%~dp0new_m.json"
-(call :writeNewJSON)>"%oldjson%"
+call :writeNewJSON
 EXIT /b
 
 :convertW
@@ -1219,7 +1222,7 @@ echo converting . . .
 set "bj=%oldjson%"
 set "oldjson=%cvd%.json"
 set "newjson=%oldjson%"
-(call :writeNewJSON)>"%oldjson%"
+call :writeNewJSON
 call :PSJZ F conv
 zsnd "%oldjson%" "%cvd%.zss" 2>"%rfo%" || call :writerror RF
 set "back=%cd%" & cd /d "%zsndp%"
@@ -1459,8 +1462,9 @@ EXIT /b
 call :extract
 :mkZSbat
 REM combine must be true
+if "%op%"=="" set op=update
 set /a l=40-1
-PowerShell "$b=gc '%~f0'; $b[%l%]=$b[%l%] -replace '=[^""]*','=%pathname:'=''%.json'; $b[11]=$b[11] -replace '=.*','=update'; $b" >"%pathname%.bat"
+PowerShell "$b=gc '%~f0'; $b[%l%]=$b[%l%] -replace '=[^""]*','=%pathname:'=''%.json'; $b[11]=$b[11] -replace '=.*','=%op%'; $b" >"%pathname%%jbs%.bat"
 EXIT /b
 :editZSSZSMPost
 call :ZSTitle
@@ -1475,8 +1479,11 @@ if not exist "%fullpath%\" if exist "%fullpath%" if /i "%ZS%"=="ZS" call :editZS
 choice /m "Could not find ZSM/ZSS file '%fullpath%'. Create a new file"
 if ERRORLEVEL 2 goto editZSSZSMPost
 if ""=="%plat%" call :platW .none
-call :writeNewJSON >"%pathname%.json"
+call :wNJ >"%pathname%.json"
 call :mkZSbat
+REM This is for a test for BloodyMares
+REM set op=ZsndPreConfig& set jbs=_config
+REM call :mkZSbat
 call :ZSTitle
 :eZZmsg
 echo ZSM/ZSS has been extracted, and a batch file with the same name has been created.
@@ -1584,6 +1591,10 @@ EXIT /b
 
 
 :writeNewJSON
+if ""=="%plat%" call :platW .none
+call :wNJ >"%oldjson%"
+EXIT /b
+:wNJ
 echo {
 echo     "platform": "%plat%",
 echo     "sounds": [
