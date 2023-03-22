@@ -199,7 +199,7 @@ ECHO.
 ECHO %operationtext%
 ECHO.
 CHOICE /C AS /M "Press 'A' to accept and continue with this process, press 'S' to switch"
-IF ERRORLEVEL 2 goto opswitcher
+IF ERRORLEVEL 2 GOTO opswitcher
 IF ERRORLEVEL 1 EXIT /b
 :opswitcher
 if ""=="%o%" set o=0
@@ -427,7 +427,7 @@ if defined extALL set "extension=%extALL%" & EXIT /b
 call :Formats
 if %x% GTR 1 (
  choice /m "Do you want to compile all remaining input files to %extension%"
- if not ERRORLEVEL 2 set extALL=%extension%
+ if not errorlevel 2 set extALL=%extension%
 )
 EXIT /b
 :FDform
@@ -590,8 +590,8 @@ if %m% LEQ 1 EXIT /b
 if defined newPKGn if not "%newPKGn%"=="ask" EXIT /b
 echo.
 choice /c NVY /m "Do you want to clone all remaining input packages to '%i%' - [N]o, Ne[v]er, [Y]es"
-if ERRORLEVEL 2 set m=0
-if ERRORLEVEL 3 set "newPKGn=%i%"
+if errorlevel 2 set m=0
+if errorlevel 3 set "newPKGn=%i%"
 EXIT /b
 
 :SHTitle
@@ -673,11 +673,15 @@ copy /y "%s3d%" "%t3d%"
 EXIT /b
 :SkinsHelper3
 if defined sn set cn=%sn:~,-2%& set fn=%sn:~-2%
+call :isNumber %fn% || set fn=
 call :SHTitle
-dir /b "%MUApath%\actors\*.igb" | findstr /r "^[0-9]*.igb$"
-echo.
-echo "%ch%": No skin number detected. All existing skins are listed above. 
+if "%fn%"=="" (
+ dir /b "%MUApath%\actors\*.igb" | findstr /ir "^[0-9]*.igb$"
+ echo.
+ echo "%ch%": No skin number detected. All existing skins are listed above.
+)
 call :asknum cn "for the character (mod number)"
+if "%cn:~1%"=="" set cn=0%cn%
 if %InstType%==mannequin set sn=%cn%01&EXIT /b
 set maxindx=99
 echo|set /p=%cn%XX
@@ -685,12 +689,11 @@ if defined fn ( echo , detected: %cn%%fn%
 ) else echo.
 call :asknum ns "for the skin"
 set maxindx=255
-if "%cn:~1%"=="" set cn=0%cn%
 if "%ns:~1%"=="" set ns=0%ns%
 set sn=%cn%%ns:~-2%
 for /f "delims=" %%i in ('dir /b "%MUApath%\actors\%sn%.igb"') do goto SH3pkg
 choice /m "Skin does not seem to exist. Continue creating a new one"
-if ERRORLEVEL 2 goto SkinsHelper3
+if errorlevel 2 goto SkinsHelper3
 :SH3pkg
 set in=defaultman
 for /f "delims=" %%p in ('dir /b "%tp%*_%cn%*.pkgb"') do set "nameonly=%%~np" & goto SH3pkg2
@@ -705,9 +708,9 @@ set /p "in=Press enter to accept, or enter the internal name here: "
 EXIT /b
 :MUApath
 if defined MUApath EXIT /b
-set "MUApath=%MUAOHSpath%"
+if "%hsFo%"=="" set "MUApath=%MUAOHSpath%"
 call :SHTitle
-if defined hsFo (
+if "%MUApath%"=="" (
  echo Please paste or enter a folder path for the installation of the skins ^(IGB files^).
  echo - Mod Organizer 2 ^(MO2^) users use an MO2 mod folder path.
  echo - Other users use the %EditGame:c=% installation folder path.
@@ -750,8 +753,8 @@ set p=$p = %sn%
 if defined sn call :readHsn skin sn && goto SkinEditor2
 if "%ch%"=="" ( call :readHS charactername ch || EXIT /b
 ) else call :HScheck || EXIT /b
-set "ch=^%ch%$"
-call :PSparseHS skin psc psc charactername match ch
+set "chr=^%ch%$"
+call :PSparseHS skin psc psc charactername match chr
 set "p=%psc%"
 :SkinEditor2
 set "psc=%p%; $p = 'skin[\s="":]{2,4}' + -join $p; try {$h = (dir -s  '%h%' | select-string -Pattern $p)[0]} catch {exit 1}; $h.path; "
@@ -933,7 +936,7 @@ set ig=%on:~-3%00
 set on=%ig:~,-2%
 echo.
 choice /m "Old mod number: %on%. Confrm"
-if ERRORLEVEL 2 goto ModCloner1
+if errorlevel 2 goto ModCloner1
 set h=
 set psc=$null
 set "pcv=$on = '%on%'; $sn = $on + '*'; $ca = '$'"
@@ -987,8 +990,8 @@ if %hdf%==lxml set "psc=%psc%; $n = New-Object PSObject; $p.GetEnumerator() | so
 set "pcv=[string]$sn = $p.skin; $ca = $p.characteranims; $on = $sn.substring(0,$sn.length-2); if ($on -ne ($ca -replace '_.*')) {exit 1}"
 goto ModCloner2
 :MC2Error
-if ERRORLEVEL 3 echo Herostat problem. Skins are not hex-edited and herostat is not updated. & goto Errors
-if ERRORLEVEL 2 echo Old and new number are identical & goto Errors
+if errorlevel 3 echo Herostat problem. Skins are not hex-edited and herostat is not updated. & goto Errors
+if errorlevel 2 echo Old and new number are identical & goto Errors
 echo Skin and animation numbers don't match
 goto Errors
 EXIT /b
@@ -1102,7 +1105,7 @@ if /i "%nameonly:~-2%" == "_m" ( set ext=zsm
 ) else (
  echo.
  choice /c MV /m "Combine to [M] master sounds or [V] voice file"
- if ERRORLEVEL 2 (set ext=zss) else set ext=zsm
+ if errorlevel 2 (set ext=zss) else set ext=zsm
 )
 echo combining . . .
 set "zs=%pathname%.%ext%"
@@ -1113,7 +1116,7 @@ EXIT /b
 :ZsndPreConfig
 if ""=="%oldjson%" EXIT /b
 choice /c UN /m "[U] Update '%jsonname%.json' or start with a [N] new, empty file"
-if ERRORLEVEL 2 call :numberedBKP oldjson & call :writeNewJSON
+if errorlevel 2 call :numberedBKP oldjson & call :writeNewJSON
 copy /y "%fullpath%" "%tem%"
 call :PSJZ F Upd
 call :comb%combine%
@@ -1262,7 +1265,7 @@ set formatW=%1
 EXIT /b
 :PS2orPS3
 choice /c 23 /m "Are the sounds for PS2 and PSP, or for PS3"
-if ERRORLEVEL 2 set formatW=PS3%formatW:~3%
+if errorlevel 2 set formatW=PS3%formatW:~3%
 EXIT /b
 :askPlat
 call :ZSTitle
@@ -1348,12 +1351,12 @@ set "hash=%in%"
 set hp=COMMON/MENUS/CHARACTER/
 echo.
 choice /c CBX /m "Is '%nameonly%' a name [c]allout or a [b]reak line (press [X] if it's something else)"
-if ERRORLEVEL 3 EXIT /b 0
-if ERRORLEVEL 1 set cp=AN_
-if ERRORLEVEL 2 set cp=BREAK_
+if errorlevel 3 EXIT /b 0
+if errorlevel 1 set cp=AN_
+if errorlevel 2 set cp=BREAK_
 set "hash=%hp%%cp%%in%"
 choice /m "Do you want to use '%hash%' for the hash of all remaining input files"
-if ERRORLEVEL 2 set ch=
+if errorlevel 2 set ch=
 EXIT /b 0
 :HSSetup
 if ""=="%MUAOHSpath%" (
@@ -1477,7 +1480,7 @@ REM fixes a bug with the if chain
 set "ZS=%xtnsonly:~1,2%"
 if not exist "%fullpath%\" if exist "%fullpath%" if /i "%ZS%"=="ZS" call :editZSSZSM & call :ZSTitle & goto eZZmsg
 choice /m "Could not find ZSM/ZSS file '%fullpath%'. Create a new file"
-if ERRORLEVEL 2 goto editZSSZSMPost
+if errorlevel 2 goto editZSSZSMPost
 if ""=="%plat%" call :platW .none
 call :wNJ >"%pathname%.json"
 call :mkZSbat
@@ -1501,10 +1504,10 @@ echo 3^) Move index number^(s^) or file.
 echo 4^) List index ^(just for fun^).
 echo.
 choice /c 1234 /m "What do you want to do with %namextns%"
-IF ERRORLEVEL 4 goto listIndex
-IF ERRORLEVEL 3 goto moveIndex
-IF ERRORLEVEL 2 goto removeIndex
-IF ERRORLEVEL 1 goto addHash
+if errorlevel 4 goto listIndex
+if errorlevel 3 goto moveIndex
+if errorlevel 2 goto removeIndex
+if errorlevel 1 goto addHash
 
 :moveIndex <sourceIndex or filename> <targetIndex>
 call :indexList %1
@@ -1527,7 +1530,7 @@ EXIT /b
 :mImore
 if not "%~2"=="" EXIT /b 1
 choice /m "%1 more"
-if ERRORLEVEL 2 EXIT /b 1
+if errorlevel 2 EXIT /b 1
 EXIT /b 0
 
 :removeIndex <index/filename/hash>
@@ -1548,7 +1551,7 @@ echo Remove by ...
 echo F. Filename
 echo H. Hash
 choice /c FH
-if ERRORLEVEL 2 goto byH
+if errorlevel 2 goto byH
 for /f "skip=2 tokens=1* delims=: " %%a in ('find """file"":" "%oldjson%" ^| find "%gs%"') do set file=%%a
 set file=%file:~,-1%
 set file=%file:\\=\%
@@ -1570,7 +1573,7 @@ EXIT /b
 if %savecfg%==false EXIT /b 1
 call :ZSTitle
 choice /m "Save configurations"
-if ERRORLEVEL 2 EXIT /b
+if errorlevel 2 EXIT /b
 set /p zcn=Enter a file name: || EXIT /b
 set "zcn=%~dp0%zcn%.txt"
 call :numberedBKP zcn
@@ -1583,7 +1586,7 @@ echo Information: Configuration files are executed but not validated for duplica
 echo.
 echo "%zcn%":
 choice /m "Load configurations"
-if ERRORLEVEL 2 EXIT /b
+if errorlevel 2 EXIT /b
 set operation=ZsndPreConfig
 set inext=.txt
 set savecfg=false
@@ -2013,7 +2016,7 @@ set /a n+=1
 if exist "%NB%.%n%.bak" goto numberedBKP
 if %askbackup%==true (
  choice /m "'%NB%' exists already. Do you want to make a backup"
- if ERRORLEVEL 2 EXIT /b 0
+ if errorlevel 2 EXIT /b 0
 )
 copy "%NB%" "%NB%.%n%.bak"
 set n=0
