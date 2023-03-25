@@ -636,6 +636,7 @@ set "s3d=%pathname% (3D Head).igb"
 set "t3d=%MUApath%\ui\hud\characters\%sn%.igb"
 call :numberedBKP ts
 copy /y "%fullpath%" "%ts%"
+if not exist "%sh%" for %%a in ("%pathonly:~,-1%") do set "sh=%%~dpahud\hud_head_%namextns%"
 if not exist "%sh%" (
  echo Please paste or enter the full path and filename to the HUD head file, including .igb extension.
  set /p sh=Enter path, or press enter to skip: 
@@ -852,8 +853,8 @@ EXIT /b
 if "%skin_01%"=="" goto SkinEditor3
 set skin_01=%cn%%skin_01:~-2%
 for /l %%n in (1,1,%sl%) do if defined skin_0%%n call :SE4 %%n
-set "psc=$h = gc '%h%'; $m = ($h | select-string -Pattern 'skin[\s="":]{2,4}%p%')[0]; $s = $h | select -skip ($m.linenumber-1); try {$e = ($s | select-string -Pattern '^((?!^\s*skin).)*$')[0].linenumber-1} catch {exit 1}"
-if %hdf%==lxml set "pcr=$n = New-Object PSObject; %pcs%$s = $n.psobject.properties.name | %% {$_ + ' = ' + $n.$_ + ' ;'}"
+set "psc=$h = gc '%h%'; $m = ($h | select-string -Pattern 'skin[\s="":]{2,4}%p%')[0]; $ind = ($m.line -split '(^\s*)')[1]; $s = $h | select -skip ($m.linenumber-1); try {$e = ($s | select-string -Pattern '^((?!^\s*skin).)*$')[0].linenumber-1} catch {exit 1}"
+if %hdf%==lxml set "pcr=$n = New-Object PSObject; %pcs%$s = $n.psobject.properties.name | %% {$ind + $_ + ' = ' + $n.$_ + ' ;'}"
 if %hdf%==json set "pcr=$n = New-Object PSObject; %pcs%$s = $n | ConvertTo-Json; $s = $s.substring(3,$s.length-6) + ','"
 if %hdf%==xml set "pcr=$n = ([xml]($m.line -replace '.$','/>')); %pcs%($n.stats.Attributes | Sort-Object { $_.Name }) | %% {$n.stats.Attributes.Append($_)}; $s = $n.outerxml -replace '/>$','>'; $e = 1"
 set "pco=$h = ($h | select -first ($m.linenumber-1)) + $s + ($h | select -skip ($e+$m.linenumber-1)); $hp = '%h%'; %PSout:var=h%"
