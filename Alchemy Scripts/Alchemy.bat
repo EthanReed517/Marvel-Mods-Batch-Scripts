@@ -232,7 +232,7 @@ mkdir "%~dp0animLists" 2>nul
 (call :OptHead 1 & call :optAnimExt 1)>%optSet%
 goto sgO
 :starthud_head_e
-set inext=.png, .tga
+set inext=.png, .tga, .gif
 goto sgO
 :startlogos_e
 set inext=.tga
@@ -900,6 +900,8 @@ REM For 256 MUA icons, the format is DXT, therefore the images extract to TGA on
 if /i "%xtnsonly%"==".tga" call :hudextract tga hud_head_0201 hud_conversation 1 true
 REM For 128 MUA icons, the template is PNG compatible, and extracts to PNG
 if /i "%xtnsonly%"==".png" call :hudextract png hud_head_0000 hud_conversation 5
+REM For animated HUD heads, the template is PNG compatible, but gif needs to be converted
+if /i "%xtnsonly%"==".gif" call :hudextract png hud_head_gif hud_conversation 5 gif
 del "%~dp0hud_conversation*"
 EXIT /b
 
@@ -912,7 +914,8 @@ mkdir "%hudp%"
 (call :OptHead 1 & call :OptExt 1 %1 true false false)>%optSet%
 %sgOptimizer% "%~dp0%2.igb" "%hudp%\%nameonly%.igb" %optSet%
 if not "%hudp%"=="%pathname%" xcopy /i /y "%hudp%" "%pathname%" & rmdir /s /q "%hudp%"
-copy /y "%fullpath%" "%pathname%\%3.%1"
+if "%5"=="gif" ( "%~dp0magick.exe" "%fullpath%" "%pathname%\%3_%%04d.%1"
+) else copy /y "%fullpath%" "%pathname%\%3.%1"
 set sfolder=
 set format=RGBA_DXT%4
 if "%5"=="true" (set optcnt=3) else set optcnt=2
