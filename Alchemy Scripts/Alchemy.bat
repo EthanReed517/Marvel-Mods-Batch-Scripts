@@ -909,16 +909,17 @@ EXIT /b
 set "sfolder=%nameonly%"
 if "%sfolder%"=="%3" EXIT /b
 set "hudp=%~dp0%sfolder%"
-call :numberedBKP hudp
+call :numberedBKP hudp x /i
 mkdir "%hudp%"
 (call :OptHead 1 & call :OptExt 1 %1 true false false)>%optSet%
 %sgOptimizer% "%~dp0%2.igb" "%hudp%\%nameonly%.igb" %optSet%
 if not "%hudp%"=="%pathname%" xcopy /i /y "%hudp%" "%pathname%" & rmdir /s /q "%hudp%"
+set optcnt=2
+if "%5"=="true" set optcnt=3& for %%a in (128:1, 64:2, 32:3, 16:4, 8:5, 4:6, 2:7, 1:8) do for /f "tokens=1-2 delims=:" %%m in ("%%a") do "%~dp0magick.exe" "%fullpath%" -resize %%mx%%m "%pathname%\%3-%%n.%1"
 if "%5"=="gif" ( "%~dp0magick.exe" "%fullpath%" "%pathname%\%3_%%04d.%1"
 ) else copy /y "%fullpath%" "%pathname%\%3.%1"
 set sfolder=
 set format=RGBA_DXT%4
-if "%5"=="true" (set optcnt=3) else set optcnt=2
 (call :OptHead %optcnt% & call :OptExt 1 png false true false & call :optConv 2)>"%pathname%\%operation:~0,-2%_i.ini"
 if "%5"=="true" (call :optMipmap 3)>>"%pathname%\%operation:~0,-2%_i.ini"
 REM Injecting the images from batch fails. Has to be made manually in Finalizer.
@@ -1200,7 +1201,7 @@ if %askbackup%==true (
  choice /m "'%NB%' exists already. Do you want to make a backup"
  if ERRORLEVEL 2 EXIT /b
 )
-copy "%NB%" "%NB%.%n%.bak"
+%2copy "%NB%" "%NB%.%n%.bak" %3
 set n=0
 EXIT /b 0
 
