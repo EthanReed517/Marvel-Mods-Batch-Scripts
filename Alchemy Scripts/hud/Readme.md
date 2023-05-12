@@ -20,7 +20,7 @@
 8. Copy or move the HUD head to a new location and remove the remaining files ([video](https://www.youtube.com/watch?v=PyRXGYM1eyo&t=160))
 
 ### HUD Heads with Transparent Backgrounds
-- Use the transparent HUD cration tools and follow the [common instructions](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Alchemy%20Scripts/hud#Common%20Instructions).
+- Use the transparent HUD cration tools and follow the [common instructions](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Alchemy%20Scripts/hud#Common_Instructions).
 - Alternatively, Follow the common instructions until step 6 and ...
 7. Create the alpha attributes as pictured in the video below:
 
@@ -31,7 +31,7 @@
 
 ### PNG
 - Any PNG image works, but I recommend to use an image with a size around 128x128, as other dimensions will be scaled in-game.
-- Follow the [common instructions](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Alchemy%20Scripts/hud#Common%20Instructions) as pictured in the video below:
+- Follow the [common instructions](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Alchemy%20Scripts/hud#Common_Instructions) as pictured in the video below:
 
 [![MarvelMods Tutorial: Create HUD Heads With Alchemy 5 for MUA](https://img.youtube.com/vi/PyRXGYM1eyo/mqdefault.jpg)](https://www.youtube.com/watch?v=PyRXGYM1eyo&t=180)
 
@@ -44,7 +44,7 @@
 ### GIF
 - Only GIF files with 16 frames work at the moment.
 - A size between 128x128 and 256x256 is recommended.
-- Follow the [common instructions](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Alchemy%20Scripts/hud#Common%20Instructions).
+- Follow the [common instructions](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Alchemy%20Scripts/hud#Common_Instructions).
 - If the GIF doesn't have full frames (some incomplete images) do following between steps 3 and 4:
 3. - Get 16 full frames as PNG images and sort them in a sequence
    - Name them identical to the images that were created from the GIF
