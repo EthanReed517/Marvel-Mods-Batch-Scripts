@@ -105,7 +105,7 @@ REM Extract/combine animations with wrong names as well? (Yes =true; No =false)
 set extall=false
 REM Remove extract TXT files? (Yes =true; No =false)
 set remext=false
-REM Always use the first folder name when combining animations? (Yes =true; No =false)
+REM Auto name when combining: Always use the first folder name? ( =true); Always use the first file name? ( =file); (No =false)
 set autonm=false
 REM Enter an IGB file for the skeleton. (Use the first input file "skeleton="; use fightstyle default incl. ponytail =_fightstyle_default)
 REM Can include path relative to the BAT. Eg. skeleton=skeletons\humanWponytail\elektra.igb
@@ -686,7 +686,7 @@ EXIT /b
 
 :listAnimations
 echo Listing animations from %namextns% . . .
-(call :IntAnimations list)>"%~dp0animLists\animList-%nameonly%.txt"
+call :IntAnimations list >"%~dp0animLists\animList-%nameonly%.txt"
 EXIT /b
 :listFiles
 echo %nameonly: =_%\%animname%
@@ -731,7 +731,7 @@ echo create_animation_database				%nameonly: =_%
 call :%1Load
 :IntAnimations
 call :EnbCompr
-(call :Optimizer)>"%pathname%.txt"
+call :Optimizer >"%pathname%.txt"
 for /f tokens^=2^ delims^=^" %%a in ('findstr /b "Skipping" ^<"%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
 del "%pathname%.txt"
 EXIT /b
@@ -778,6 +778,7 @@ call :checktxt combine || EXIT /b
 if defined outanim goto combineAnimationFiles
 set "AnimProcess=%~dp0combine.txt"
 for %%a in ("%pathonly:~0,-1%") do set outanim=%%~na
+if %autonm%==file set "outanim=%nameonly%"
 if %autonm%==false set /p outanim=Please enter the name you want to save your new animation set as (without extension). Press enter to use "%outanim%": 
 set outanim=%outanim:&=_%
 set outanim=%outanim: =_%
@@ -790,7 +791,8 @@ echo Creating combine list for "%outanim%" . . .
 call :writeTop "%coskin: =_%" >"%AnimProcess%"
 :combineAnimationFiles
 if "%coskin%"=="true" find "igSkin" "%fullpath%" | findstr "\<igSkin\>" && call :loadActorDB "%namextns: =_%" >>"%AnimProcess%" && goto moveToAP
-(call :load_actor %outpath%%namextns%)>>"%AnimProcess%"
+call :load_actor %outpath%%namextns% >>"%AnimProcess%"
+set "animname=%nameonly%"
 if %animfn%==false (
  call :IntAnimations aname
 ) else (
@@ -806,14 +808,13 @@ call :numberedBKP AP
 copy "%fullpath%" "%AP%"
 EXIT /b
 :anameFiles
-set "animname=%nameonly%"
 if %extall%==false call :EnbCompr & call :animNames %animname% || choice /m "'%animname%' is not in shared_anims. Continue"
 if ERRORLEVEL 2 EXIT /b
 for %%i in ("%coskin%") do if not "%%~ni"=="false" if "%nameonly%" == "%%~ni" EXIT /b
-(call :extrFiles)>>"%AnimProcess%"
+call :extrFiles >>"%AnimProcess%"
 EXIT /b
 :combineAnimationsPost
-(call :animCombine)>>"%AnimProcess%"
+call :animCombine >>"%AnimProcess%"
 goto animationProducer
 :combineAnimAllTxt
 call :txtChck || EXIT /b 1

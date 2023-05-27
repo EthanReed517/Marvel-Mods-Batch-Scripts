@@ -137,7 +137,7 @@ echo REM Extract/combine animations with wrong names as well? (Yes =true; No =fa
 echo set extall=false
 echo REM Remove extract TXT files? (Yes =true; No =false)
 echo set remext=false
-echo REM Always use the first folder name when combining animations? (Yes =true; No =false)
+echo REM Auto name when combining: Always use the first folder name? ( =true); Always use the first file name? ( =file); (No =false)
 echo set autonm=false
 echo REM Enter an IGB file for the skeleton. (Use the first input file "skeleton="; use fightstyle default incl. ponytail =_fightstyle_default)
 echo REM Can include path relative to the BAT. Eg. skeleton=skeletons\humanWponytail\elektra.igb
