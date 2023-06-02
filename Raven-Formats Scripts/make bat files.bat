@@ -2,24 +2,24 @@
 
 set zsnd=false false false
 set default=json false %zsnd% MUA
+set XC=lxml false %zsnd% MUA txt
 mkdir QuickBatch Zsnd SkinHelpers 2>nul
+copy QuickBatch\ReadMe.md QuickBatch\!ReadMe.md
 (call :writeBAT compile %default%)>QuickBatch\(RF)Compile.bat
 (call :writeBAT decompile json false %zsnd%)>QuickBatch\(RF)DecompileJSON.bat
 (call :writeBAT decompile xml false %zsnd%)>QuickBatch\(RF)DecompileTrueXML.bat
 (call :writeBAT edit %default%)>QuickBatch\(RF)Edit.bat
 (call :writeBAT convert %default%)>QuickBatch\(XCtoRF)Convert.bat
-(call :writeBAT compile lxml false %zsnd% txt)>(XC)Compile.bat
-(call :writeBAT decompile lxml false %zsnd% txt)>QuickBatch\(XC)Decompile.bat
-(call :writeBAT edit lxml false %zsnd% txt)>QuickBatch\(XC)Edit.bat
-copy QuickBatch\ReadMe.md QuickBatch\!ReadMe.md
+(call :writeBAT compile %XC%)>(XC)Compile.bat
+(call :writeBAT decompile %XC%)>QuickBatch\(XC)Decompile.bat
+(call :writeBAT edit %XC%)>QuickBatch\(XC)Edit.bat
 (call :writeBAT PackageCloner %default%)>PackageCloner.bat
 (call :writeBAT ModCloner %default%)>ModRenumberer.bat
-(call :writeBAT Herostat-Skin-Editor lxml false %zsnd% txt)>SkinHelpers\Herostat-Skin-Editor.bat
+(call :writeBAT Herostat-Skin-Editor %XC%)>SkinHelpers\Herostat-Skin-Editor.bat
 (call :writeBAT SkinsHelper %default%)>SkinHelpers\SkinInstaller.bat
 (call :writeBAT SkinsHelper %default:MUA=XML2%)>SkinHelpers\SkinInstallerXML2.bat
-(call :writeBAT SkinsHelper %default%c)>SkinHelpers\SkinInstallerMUAconsoles.bat
 (call :writeBAT editZSSZSM json true false true false)>Zsnd\Zsound.bat
-(call :writeBAT update json true true true true "" "" %%%%%%%%~dp0x_voice.json)>Zsnd\build_x_voice.bat
+(call :writeBAT update json true true true true MUA "" %%%%%%%%~dp0x_voice.json)>Zsnd\build_x_voice.bat
 goto eof
 
 :writeBAT
@@ -32,7 +32,7 @@ echo REM -----------------------------------------------------------------------
 echo.
 echo REM Settings:
 echo.
-call :RFsettings %1 %2 %3 %4 %5 %6 %7 %8 %9
+call :RFsettings %*
 echo.
 echo REM -----------------------------------------------------------------------------
 more +%l% "(RF)AIO.bat"
@@ -54,6 +54,8 @@ echo REM Always compile to this format if the format couldn't be detected (eg. =
 echo set extALL=
 echo REM Delete decompiled files? (yes =true; no =false)
 echo set deletedec=false
+echo REM For which platform? (for PC =PC; for PS2 =PS2; for original Xbox =Xbox; XML2 for GameCube =GC; for PSP =PSP; MUA for Wii =Wii; MUA for Xbox360 =360; MUA for PS3 =PS3; MUA RE for PC =Steam; MUA RE for Xbox One =X1; MUA RE for PS4 =PS4)
+echo set ForPltfrm=PC
 echo REM Ask before backing up existing files? (yes =true; no =false; always replace, not safe! =replace)
 echo set askbackup=false
 echo REM Include subfolders (recursive mode)? (yes =true; no =false)
@@ -115,7 +117,7 @@ echo.
 echo REM SkinsHelper settings:
 echo REM Edit herostats to add or (re)name a skin? (yes =true; no =false)
 echo set EditStat=true
-echo REM For XML2 or MUA? (XML2 =XML2; MUA =MUA; MUA console version = MUAc) (Make a batch for each game)
+echo REM For XML2 or MUA? (XML2 =XML2; MUA =MUA)
 echo set EditGame=%7
 echo REM Type to install? (mannequin =mannequin; skin =skin, NPC skin =npc) (Make separate batch file)
 echo set InstType=skin

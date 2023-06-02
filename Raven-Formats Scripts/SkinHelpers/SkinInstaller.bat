@@ -20,6 +20,8 @@ REM Always compile to this format if the format couldn't be detected (eg. =xmlb)
 set extALL=
 REM Delete decompiled files? (yes =true; no =false)
 set deletedec=false
+REM For which platform? (for PC =PC; for PS2 =PS2; for original Xbox =Xbox; XML2 for GameCube =GC; for PSP =PSP; MUA for Wii =Wii; MUA for Xbox360 =360; MUA for PS3 =PS3; MUA RE for PC =Steam; MUA RE for Xbox One =X1; MUA RE for PS4 =PS4)
+set ForPltfrm=PC
 REM Ask before backing up existing files? (yes =true; no =false; always replace, not safe! =replace)
 set askbackup=false
 REM Include subfolders (recursive mode)? (yes =true; no =false)
@@ -81,7 +83,7 @@ set cloneNC=true
 REM SkinsHelper settings:
 REM Edit herostats to add or (re)name a skin? (yes =true; no =false)
 set EditStat=true
-REM For XML2 or MUA? (XML2 =XML2; MUA =MUA; MUA console version = MUAc) (Make a batch for each game)
+REM For XML2 or MUA? (XML2 =XML2; MUA =MUA)
 set EditGame=MUA
 REM Type to install? (mannequin =mannequin; skin =skin, NPC skin =npc) (Make separate batch file)
 set InstType=skin
@@ -97,6 +99,7 @@ set "tem=%temp%\%operation%.tmp"
 set "rfo=%temp%\RFoutput.log"
 set "xco=%temp%\XCoutput.log"
 set optSet="%temp%\%operation%.ini"
+set optSetT="%temp%\%operation%T.ini"
 set "erl=%~dp0error.log"
 if ""=="%customext%" set customext=%decformat:lxml=xml%
 if "%operation%" == "ask" call :askop
@@ -113,8 +116,9 @@ set .xma=XENO 1 XMA: Xbox 360, %unk%
 set .vag=PS2 0 VAG 16bit (WAV converted with FPacker or MFAudio)
 set .dsp=GCUB 0 DSP 16bit (Nintendo Gamecube DSPADPCM for GC and Wii)
 
+call :%ForPltfrm%Setup
 call :start%operation% %~1
-del "%erl%" "%xco%" "%rfo%" "%tem%" "%tem%c" "%tem%m"
+del "%erl%" "%xco%" "%rfo%" "%tem%" "%tem%c" "%tem%m" %optSetT%
 if %allowfext%==true set inext=.*
 CLS
 if defined zsnd call :ZSTitle
@@ -188,9 +192,13 @@ for %%i in ("%fullpath%") do (
 )
 EXIT /b
 :VAR
+set "b=%fullpath%"
 call set "fullpath=%%%2%%"
 call :filesetup
-goto %1
+call :%1
+set "fullpath=%b%"
+call :filesetup
+EXIT /b
 
 
 :askop
@@ -259,6 +267,59 @@ set operation=SkinsHelper
 set operationtext=Add skins with HUDs to the game or mod folder.
 EXIT /b 0
 
+:PCSetup
+call :platW .wav
+set ConsGen=PC
+EXIT /b
+:WiiSetup
+if %EditGame%==XML2 goto PlatEr
+call :platW .dsp
+set t=PSP _X_
+set z=600000
+set ConsGen=Wii
+EXIT /b
+:PSPSetup
+call :platW .vag
+set t=GAMECUBE DXT
+set z=300000
+set ConsGen=PSP
+EXIT /b
+:GCSetup
+if %EditGame%==MUA goto PlatEr
+call :platW .dsp
+set t=PSP
+goto 6Setup
+:XboxSetup
+call :platW .xbadpcm
+goto 6Setup
+:PS2Setup
+set t=PSP GAMECUBE DXT
+call :platW .vag
+:6Setup
+set z=300000
+set ConsGen=6th
+EXIT /b
+:PS3Setup
+call :platW .vag
+set t=PSP GAMECUBE _X_
+set ConsGen=7th
+goto 7Setup
+:360Setup
+call :platW .xma
+set ConsGen=7th
+goto 7Setup
+:SteamSetup
+:X1Setup
+:PS4Setup
+set t=PSP GAMECUBE _X_
+set ConsGen=8th
+:7Setup
+if %EditGame%==XML2 goto PlatEr
+EXIT /b
+:PlatEr
+echo No support for %EditGame% on %ForPltfrm%.
+goto Errors
+
 :starteditZSSZSM
 :startextract
 set inext=.zss, .zsm
@@ -287,6 +348,7 @@ goto czs
 :startcombine
 set inext=.json
 :czs
+if %ConsGen%==8th echo Zsnd doesn't support the Remastered version of MUA. & goto Errors
 TITLE Zsnd
 call :checkTools zsnd || call :checkPython
 if defined zsndp ( if %usezsnd%==true set "outfile=%outfile:true=false%" & set Zsnd=py "%zsndp%\zsnd.py"
@@ -364,7 +426,7 @@ EXIT /b
 
 :convert
 set XC=%deletedec%
-call :checkVersion && goto convertRF
+call :checkVersion fullpath && goto convertRF
 if %decformat%==lxml EXIT /b 0
 call :checkExist json
 if ""=="%conv%" call :checkConv
@@ -388,7 +450,8 @@ del "%fullpath%"
 set "fullpath=%d%"
 EXIT /b 0
 :checkVersion
-set /p version=<"%fullpath%"
+call set "v=%%%1%%"
+set /p version=<"%v%"
 set "version=%version%"
 if "%version:~,1%" == "<" ( set version=xml
 ) else if "%version:~0,1%" == "{" ( set version=json
@@ -597,7 +660,7 @@ EXIT /b
 :SHTitle
 CLS
 echo -----------------------------
-echo    Skin Installer for %EditGame:c=%
+echo    Skin Installer for %EditGame%
 echo -----------------------------
 echo.
 EXIT /b
@@ -609,12 +672,13 @@ call :isNumber %ch:&=_% && set nn=n&set sn=%ch%
 call :trimmer %ch:&=;;%
 set "ch=%trim:;;=&%"
 set "ch=%ch:_= %"
+call :getSkinInfo
 if %InstType%==npc set EditStat=false
-if %InstType%==mannequin set EditGame=%EditGame:XML2=MUA%
-if %EditStat%==false call :MUApath & goto SkinsHelper2
+if %EditGame%==XML2 set InstType=%InstType:mannequin=skin%
+if %EditStat%==false goto SH3
 set maxindx=99
 call :SHTitle
-call :HSSetup charactername ch %nn% || set EditStat=false|| goto SkinsHelper2
+call :HSSetup charactername ch %nn% || goto SH3
 call :MUApath
 if %InstType%==mannequin goto Mannequin
 call :SkinEditor "%ch%"
@@ -627,15 +691,17 @@ set sn=%cn%%ns%
 call :PSparseHS name set in charactername match ch
 :SkinsHelper2
 mkdir "%MUApath%\actors" "%MUApath%\hud" 2>nul
-if %EditStat%==false call :SkinsHelper3
+for %%i in ("%fullpath%") do set size=%%~zi
 set "ts=%MUApath%\actors\%sn%.igb"
 set "sh=%pathonly%hud_head_%namextns%"
 set "th=%MUApath%\hud\hud_head_%sn%.igb"
 set "tp=%MUApath%\packages\generated\characters\"
 set "s3d=%pathname% (3D Head).igb"
 set "t3d=%MUApath%\ui\hud\characters\%sn%.igb"
+if exist "%ts%" call set ConsGen=%%ConsGen:PC=%EditGame%%%
 call :numberedBKP ts
 copy /y "%fullpath%" "%ts%"
+call :SH2_%cn% 2>nul
 if not exist "%sh%" for %%a in ("%pathonly:~,-1%") do set "sh=%%~dpahud\hud_head_%namextns%"
 if not exist "%sh%" (
  echo Please paste or enter the full path and filename to the HUD head file, including .igb extension.
@@ -645,22 +711,105 @@ call :stripQ sh
 if exist "%sh%" call :numberedBKP th & copy /y "%sh%" "%th%"
 if %EditGame%%InstType%==XML2skin call :SH23dHead
 set fullpath=
-if exist "%tp%%in%_%sn%.pkgb" goto SkinsHelper5
-for /f "delims=" %%p in ('dir /b "%tp%%in%_%cn%*.pkgb"') do set "fullpath=%tp%%%p" & call :xml ne && goto SkinsHelper4
-echo.
+set a=8
+set g=2
+call :SHTitle
+goto SH4%ConsGen%
+:SH4PC SkinsHelper4
+call :SH4%EditStat% 2>nul
+if exist "%tp%%in%_%sn%.pkgb" goto SH4%EditGame%
+for /f "delims=" %%p in ('dir /b "%tp%%in%_%cn%*.pkgb"') do set "fullpath=%tp%%%p" & call :xml ne && goto SH4cln
 echo INFORMATION: A package file was not detected, and no package was found, which could be cloned, or no compiler found for cloning. Manual herostat and package modifications may be required to make powers and HUD work properly for this skin.
 pause
-goto SkinsHelper5
-:SkinsHelper4
+goto SH4%EditGame%
+:SH4false
+set in=defaultman
+for /f "delims=" %%p in ('dir /b "%tp%*_%cn%*.pkgb"') do set "nameonly=%%~np" & goto SH4p2
+goto SH4p3
+:SH4p2
+call :readNumber || goto SH4p3
+set "in=%pkgnm:~,-5%"
+if "_"=="%in:~-1%" set "in=%in:~,-1%"
+:SH4p3
+echo Internal name detected: '%in%'.
+set /p "in=Press enter to accept, or enter the internal name here: "
+EXIT /b
+:SH4cln
 call :filesetup
 set m=1
 set newPKGn=%ns%
 call :clonePKG
-:SkinsHelper5
-if not %EditGame%==MUA EXIT /b
-call :sgO ne || EXIT /b
-set "fullpath=%ts%" & call :SkinEditFN
+goto SH4%EditGame%
+:SH48th
+REM Not sure if the RE has same specs as 360, but Steam does AFAIK.
+:SH47th
+if %ForPltfrm%==PS3 ( echo Textures should be in DXT1 format and use green normal maps in DXT 5 format, if any.
+) else echo Textures should be in DXT5 format and use blue normal maps, if any.
+echo.
+set z=100000000
+goto ConsSpec
+:SH4PSP
+goto ConsSpec
+:SH4Wii
+set g=1
+goto ConsSpec
+:SH4XML2
+set t=
+set z=100000000
+:SH46th
+set a=6
+set g=1
+goto ConsSpec
+:ConsSpec
+set AV=unknown
+for /f usebackq %%v in (`PowerShell "try {$bytes  = [System.IO.File]::ReadAllBytes('%ts%'); '{0:X}' -f $bytes[0x2C]} catch {'unknown'}"`) do set AV=%%v
+echo INFORMATION: Make sure the skin and head or mannequin meet all specifications for %ForPltfrm%. Use other tools to make them compatible if necessary.
+echo.
+set al=OK
+set sl=OK
+set gl=OK
+set tl=OK
+if %AV% GTR %a% set al=XX& if %AV% NEQ unknown echo WARNING: The skin is Alchemy version %AV:8=3.5% and not compatible with %ForPltfrm%.
+set AV=%AV:4=2.5%
+set AV=%AV:6=3.2%
+set AV=%AV:8=3.5%
+if %size% GTR %z% set sl=XX& echo INFORMATION: The file size is %size% bytes and possibly over the limit.
+if %g%==1 echo %iGA%|find "2" >nul && set set gl=XX
+if ""=="%t%" set t=PSP GAMECUBE
+echo %iGTF%|findstr /i "%t%" >nul && set tl=XX
+set he=OK
+if %a%==6 set he=XX
+if /i "%targetName%"=="%nameonly%" set he=OK
+if /i "%targetName%"=="Bip01" set he=XX
+echo.
+echo Statistics for %namextns%:
+echo [%al%] Alchemy version:  %AV%
+echo [%sl%] File size:        %size% bytes
+if defined targetName (
+echo [%gl%] Geometry formats: %iGA%
+  echo [??] Vertex count:     %Gvc%
+  echo [OK] Geometry count:   %Gc%
+echo [%tl%] Texture formats:  %iGTF%
+  echo [??] Biggest Texture:  %TW%x%TH%
+  echo [OK] Texture count:    %Tc%
+  echo [OK] Has mip-maps:     %MM%
+echo [%he%] igSkin name:      %targetName%
+)
+pause
+if %ConsGen%==8th goto SH4PC
+REM add possible FB package edits here.
+if %a%==6 goto SH5nh
+:SH4MUA SkinsHelper5
+call :sgO ne || goto SH5nh
+set "fullpath=%ts%"
+call :SkinEditFN gn
 REM HUDs are not optimized for now, as they need the texture renamed, not igSkin.
+EXIT /b
+:SH5nh
+if /i "%targetName%"=="%nameonly%" EXIT /b
+echo.
+echo INFORMATION: "%namextns%" might not be hex-edited.
+pause
 EXIT /b
 :SH23dHead
 if not exist "%s3d%" (
@@ -672,10 +821,38 @@ mkdir "%MUApath%\ui\hud\characters" 2>nul
 call :numberedBKP t3d
 copy /y "%s3d%" "%t3d%"
 EXIT /b
+:SH2_198
+echo 198 is Emma Frost's number.
+set xsn=Diamond Form
+set a=4
+if %ns:~-1%==9 set a=1
+goto SH2xs
+:SH2_13
+echo 13 is Human Torch's number.
+set xsn=Flame On
+set a=10
+:SH2xs
+echo Please paste or enter the full path and filename to the %xsn% skin for %sn%.igb, including .igb extension.
+set /p xs=Enter path, or press enter to skip: || EXIT /b
+call :sgO
+call :stripQ xs
+call :numberedBKP xs
+set /a xn=100%ns% %% 100 + %a%
+if "%xn:~1%"=="" set xn=0%xn%
+set "fullpath=%MUApath%\actors\%cn%%xn%.igb"
+copy /y "%xs%" "%fullpath%"
+call :SkinEditFN
+EXIT /b
+:SH3
+set EditStat=false
+call :MUApath
+call :SkinsHelper3
+goto SkinsHelper2
 :SkinsHelper3
 if defined sn set cn=%sn:~,-2%& set fn=%sn:~-2%
 call :isNumber %fn% || set fn=
 call :SHTitle
+if ""=="%ch%" set "ch=%nameonly%"
 if "%fn%"=="" (
  dir /b "%MUApath%\actors\*.igb" | findstr /ir "^[0-9]*.igb$"
  echo.
@@ -692,20 +869,9 @@ call :asknum ns "for the skin"
 set maxindx=255
 if "%ns:~1%"=="" set ns=0%ns%
 set sn=%cn%%ns:~-2%
-for /f "delims=" %%i in ('dir /b "%MUApath%\actors\%sn%.igb"') do goto SH3pkg
+for /f "delims=" %%i in ('dir /b "%MUApath%\actors\%sn%.igb"') do EXIT /b
 choice /m "Skin does not seem to exist. Continue creating a new one"
 if errorlevel 2 goto SkinsHelper3
-:SH3pkg
-set in=defaultman
-for /f "delims=" %%p in ('dir /b "%tp%*_%cn%*.pkgb"') do set "nameonly=%%~np" & goto SH3pkg2
-goto SH3pkg3
-:SH3pkg2
-call :readNumber || goto SH3pkg3
-set "in=%pkgnm:~,-5%"
-if "_"=="%in:~-1%" set "in=%in:~,-1%"
-:SH3pkg3
-echo Internal name detected: '%in%'.
-set /p "in=Press enter to accept, or enter the internal name here: "
 EXIT /b
 :MUApath
 if defined MUApath EXIT /b
@@ -714,7 +880,8 @@ call :SHTitle
 if "%MUApath%"=="" (
  echo Please paste or enter a folder path for the installation of the skins ^(IGB files^).
  echo - Mod Organizer 2 ^(MO2^) users use an MO2 mod folder path.
- echo - Other users use the %EditGame:c=% installation folder path.
+ echo - Console users use an extracted FB package folder path.
+ echo - Other users use the %EditGame% installation folder path.
  set /p MUApath=Enter path: 
 )
 call :stripQ MUApath
@@ -726,6 +893,7 @@ set mn=%MUApath%\ui\models\mannequin\%sn:~,-2%01.igb
 mkdir "%MUApath%\ui\models\mannequin" 2>nul
 call :numberedBKP mn
 copy /y "%fullpath%" "%mn%"
+REM This might require a spec check as well
 EXIT /b
 
 :SkinsHelperPost
@@ -736,7 +904,7 @@ pause
 :HSETitle
 CLS
 echo -----------------------------------
-echo    Herostat Skin Editor for %EditGame:c=%
+echo    Herostat Skin Editor for %EditGame%
 echo -----------------------------------
 echo.
 if defined h (
@@ -751,7 +919,7 @@ set pcs=
 set "ch=%~1"
 set "sn=%~2"
 set p=$p = %sn%
-if defined sn call :readHsn skin sn && goto SkinEditor2
+if defined sn call :isNumber %sn% && set "ss=^%sn:~,-2%\d\d$" && call :readHsn skin sn && goto SkinEditor2
 if "%ch%"=="" ( call :readHS charactername ch || EXIT /b
 ) else call :HScheck || EXIT /b
 set "chr=^%ch%$"
@@ -759,10 +927,11 @@ call :PSparseHS skin psc psc charactername match chr
 set "p=%psc%"
 :SkinEditor2
 set "psc=%p%; $p = 'skin[\s="":]{2,4}' + -join $p; try {$h = (dir -s  '%h%' | select-string -Pattern $p)[0]} catch {exit 1}; $h.path; "
-if %hdf% NEQ xml set "psc=%psc%$s = ((gc $h.path) -replace '\s;$' | select -skip ($h.linenumber-1)) -join ""`n"" -replace '(?=\n.*sounddir(\s=|"":))[\s\S]+'; "
+if %hdf% NEQ xml set "psc=%psc%$s = ((gc $h.path) -replace '\s;$' | select -skip ($h.linenumber-1)) -join ""`n"" -replace '(?!\s*""?skin)\n[\s\S]+'; "
 if %hdf%==lxml set "psc=%psc%$s"
-if %hdf%==json set "psc=%psc%$s = $s -split '\n'; $s[-1] = $s[-1] -replace '.$'; '{' + $s + '}' | ConvertFrom-Json"
-if %hdf%==xml set "psc=%psc%([xml]($h.line -replace '(.*(?=skin=))(.*)((?= sounddir=).*)','<skins $2 />')).skins"
+if %hdf%==json set "psc=%psc%$s = $s -split '\n'; $s[-1] = $s[-1] -replace '.$'; ('{' + $s + '}' | ConvertFrom-Json).psobject.properties | %% {$_.Name + ' = ' + $_.Value}"
+if %hdf%==xml set "psc=%psc%([xml]($h.line -replace '.*(?=skin=)(.*?""? (?!skin_))\w.*','<skins $1 />')).skins.attributes | %% {$_.LocalName + ' = ' + $_.Value}"
+REM The \w character in the regex makes sure that only quote-space followed by another attribute is found, and not the end. However, the question mark already makes sure to find the first occurrence of non-skin followed quote-space.
 set si=
 CLS
 echo Reading "%h%" . . .
@@ -797,7 +966,7 @@ pause
 goto SkinEditor3
 :SE2count
 if "%si%"=="" set si=0& set ns= & EXIT /b 0
-if /i "%n:~,4%" NEQ "skin" EXIT /b
+if /i "%n:~,4%" NEQ "skin" EXIT /b 1
 if %EditGame%==XML2 goto SE2XML2
 if defined ns ( set /a si+=1 & set ns=
 ) else set ns=_name
@@ -837,7 +1006,10 @@ set skin_0%n%=
 set skin_0%n%_name=
 goto SkinEditor3
 :listSkins
-if %EditGame%==XML2 (set sl=9) else set sl=6
+set sl=6
+if %ConsGen%==6th set sl=4
+REM Wii, PSP and PS3 allow 6 skins according to jayglass. 6 are confirmed on the 360.
+if %EditGame%==XML2 set sl=9
 set o=0
 set SHo=
 set to=123456789
@@ -894,8 +1066,7 @@ EXIT /b 0
 :HScheckD
 set xmlbd=
 set hdf=lxml
-call :checkVersion || EXIT /b 0
-set hdf=%version%
+call :checkVersion h && set hdf=%version%
 EXIT /b 0
 :HScCe
 echo "%h%" can't be decompiled, %xm% not found.
@@ -905,12 +1076,10 @@ EXIT /b 1
 :readHsn
 REM For other uses: If the herostat has 1 char, skin will always be set to variable, regardless of the argument
 call :HScheck || EXIT /b
+if defined ss call :PSparseHS %1 set %2 skin match ss && EXIT /b
 CLS
 call :PSparseHS skin print %2 && EXIT /b
-if defined sn ( call :isNumber %sn% && set "ss=^%sn:~,-2%\d\d$"
-) else set /p ss=Choose a skin number from the list above by entering its number [supports regular expressions]: || EXIT /b
-call :PSparseHS %1 set %2 skin match ss && EXIT /b
-set sn=
+set /p ss=Choose a skin number from the list above by entering its number [supports regular expressions]: || EXIT /b
 goto readHsn
 
 :MCTitle
@@ -985,7 +1154,7 @@ for %%e in ("%erl%") do if %%~ze LSS 8 del %%e
 if defined ccl EXIT /b
 GOTO End
 :ModClonerH
-call :readHS charactername ch || goto MChsError
+call :readHS charactername ch || goto Errors
 call :PSparseHS . psc psc charactername match ch
 if %hdf%==lxml set "psc=%psc%; $n = New-Object PSObject; $p.GetEnumerator() | sort -Property name | %% {$n | Add-Member NoteProperty $_.name $_.value}; $p = $n"
 set "pcv=[string]$sn = $p.skin; $ca = $p.characteranims; $on = $sn.substring(0,$sn.length-2); if ($on -ne ($ca -replace '_.*')) {exit 1}"
@@ -1004,24 +1173,70 @@ call :isNumber %ig%
 EXIT /b
 
 :SkinEditFN
-set "outfile=%temp%\temp.igb"
+set optcnt=0
 call :filesetup
-call :getSkinName
+if "%1"=="" call :getSkinName
+if %EditGame%==XML2 if %ConsGen% NEQ PSP goto SH5nh
+goto SE%ConsGen%
+:SE6th
+goto SH5nh
+:SEPSP
+call :writeOpt optCGA
+:SEWii
+goto SEmain
+:SE7th
+:SE8th
+call :writeOpt optCGA
+:SEPC
+REM For PC choice / m "Do you want to convert to igGeometryAttr2"
+REM findstr "igActorInfo" <"%infile%" >nul || call :checkAlchemy animdb2actor && %animdb2actor% "%infile%" "%infile%"
+findstr "igGlobalColorStateAttr" <"%infile%" >nul 2>nul || call :writeOpt optGGC
+:SEmain
 set "newName=%nameonly%"
 if /i "%targetName%"=="%newName%" EXIT /b
-if /i "%targetName%"=="Bip01" EXIT /b
-if %EditGame%==XML2 echo INFORMATION: "%namextns%" is not hex-edited. & pause & EXIT /b
-(call :OptHead 2 & call :OptRen 1 & call :optGGC 2)>%optSet%
+if /i "%targetName%"=="Bip01" goto SH5nh
+call :writeOpt OptRen
+(call :OptHead %optcnt% & type %optSetT%)>%optSet%
+del %optSetT%
 set "outfile=%fullpath%"
 goto Optimizer
 
 :getSkinName
 set "igSS=%temp%\igStatisticsSkin.ini"
 if not exist "%igSS%" (call :OptHead 1 & call :OptSkinStats 1)>"%igSS%"
-( %sgOptimizer% "%fullpath%" "%outfile%" "%igSS%" )>"%temp%\%nameonly%.txt"
+( %sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%igSS%" )>"%temp%\%nameonly%.txt"
 set targetName=
 for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\%nameonly%.txt"') do set targetName=%%a
 del "%temp%\%nameonly%.txt"
+EXIT /b
+
+:getSkinInfo
+call :sgO ne || EXIT /b
+set "iini=%temp%\SkinInfo.ini"
+if not exist "%iini%" (call :OptHead 3 & call :OptTexInfo 1 0x00000117 & call :OptGeoInfo 2 0x00500000 & call :OptSkinStats 3)>%iini%
+( %sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%iini%" )>"%temp%\%nameonly%.txt"
+set Gc=0
+set iGA=
+for /f "tokens=3 delims=|" %%g in ('findstr "igGeometryAttr" ^<"%temp%\%nameonly%.txt"') do call :gSIga %%g
+set Gvc=0
+for /f "tokens=4 delims= " %%v in ('findstr /ilc:" vertex total: " ^<"%temp%\%nameonly%.txt"') do set /a Gvc+=%%v
+set Tc=0
+set ao=0
+set MM=false
+for /f "tokens=1-5 delims=|" %%t in ('findstr "IG_GFX_TEXTURE_FORMAT_" ^<"%temp%\%nameonly%.txt"') do call :gSIt %%u %%v %%w %%x
+for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\%nameonly%.txt"') do set targetName=%%a
+del "%temp%\%nameonly%.txt"
+EXIT /b
+:gSIga
+set /a Gc+=1
+echo %iGA%|find "%1 " >nul || set iGA=%iGA%%1 
+EXIT /b
+:gSIt
+set /a Tc+=1
+set /a an=%1*%2
+if %an% GTR %ao% set ao=%an% & set TW=%1&set TH=%2
+echo %iGTF%|find "%3 " >nul || set iGTF=%iGTF%%3 
+echo %5|find /i "Mip" >nul && set MM=true
 EXIT /b
 
 :genGColorFix
@@ -1260,13 +1475,15 @@ EXIT /b 0
 :platW
 call set formatW=%%%1%%
 if ""=="%formatW%" call :platSw1
-if /i %1==.vag call :PS2orPS3
+set PS=%ForPltfrm:~2%
+if /i %1==.vag if %ForPltfrm:~,2% NEQ PS call :PS2orPS3
+if /i %1==.vag set formatW=PS%PS:P=2%%formatW:~3%
 for /f "tokens=1,2*" %%p in ("%formatW%") do set plat=%%p& set format=%%q& set Wformat=%%r
 set formatW=%1
 EXIT /b
 :PS2orPS3
 choice /c 23 /m "Are the sounds for PS2 and PSP, or for PS3"
-if errorlevel 2 set formatW=PS3%formatW:~3%
+set /a PS=1+%errorlevel%
 EXIT /b
 :askPlat
 call :ZSTitle
@@ -1364,8 +1581,9 @@ if ""=="%MUAOHSpath%" (
  echo Please paste or enter a folder path.
  echo - OpenHeroSelect ^(OHS^) users use the path to the OHS folder.
  echo - Other users ^(eg. XMLBCUI, QuickBatch^) use the path to ...
- echo   ... the Mod Organizer 2 ^(MO2^) %EditGame:c=% mod folder ...
- echo   ... or the %EditGame:c=% installation folder ^(non-MO2 users^) ...
+ echo   ... the Mod Organizer 2 ^(MO2^) %EditGame% mod folder ...
+ echo   ... or an extracted FB package folder ^(console users^) ...
+ echo   ... or the %EditGame% installation folder ^(non-MO2 PC users^) ...
  echo   ... containing the data folder with the currently used herostat.engb.
  set /p "MUAOHSpath=Enter path: " || goto HSSE
 )
@@ -1373,25 +1591,21 @@ call :stripQ MUAOHSpath
 set %2=
 set "h=%MUAOHSpath%\data\herostat.engb"
 call :checkOHS
-if defined hsFo ( if "%hsFo:~1,1%"==":" ( set "h=%hsFo%\*.*"
-) else set "h=%MUAOHSpath%\%EditGame:c=%\%hsFo%\*.*"
-) else if not exist "%h%" EXIT /b 1
+if not defined hsFo if not exist "%h%" EXIT /b 1
 call :readHS%3 %1 %2 || goto HSSE
 if defined %2 EXIT /b 0
 :HSSE
-if not %1==name EXIT b 1
+if not %1==name EXIT /b 1
 set %2=
 set /p %2=Enter the internal name for "%nameonly%": || EXIT /b
 EXIT /b 0
 :readHS
 REM For other uses: If the herostat has 1 char, charactername will always be set to variable, regardless of the argument
 call :HScheck || EXIT /b
+if defined cs call :PSparseHS %1 set %2 charactername match cs && EXIT /b
 CLS
 call :PSparseHS charactername print %2 && EXIT /b
-if defined ch ( set "cs=^%ch%"
-) else set /p cs=Choose a character from the list above by entering its name [supports regular expressions]: || EXIT /b
-call :PSparseHS %1 set %2 charactername match cs && EXIT /b
-set ch=
+set /p cs=Choose a character from the list above by entering its name [supports regular expressions]: || EXIT /b
 goto readHS
 
 :writefile
@@ -1825,17 +2039,26 @@ REM Powershell index (eg. [0]) does not work with property paths, because it's r
 REM (((gc -raw '%h%') -split '(?=stats\s{\r[\S\s]*)')[5] -split '\n') | %% {if ($_ -match '^[{\r]') {$t=$_.trim().trim('{ '); if ($p) {$l+='.'}; $l+=$t; if ($m) {if (!$m.$l) {$m.$p+=@{$t=@{}}}} else {$m=@{$t=@{}}}; $p=$l} elseif ($_ -match '}\r') {$p = $p -replace '\.(\w+)$',''} else {$m.$p+=($_.trim().trim('; ') | ConvertFrom-StringData)}}
 
 :checkOHS
-if exist "%MUAOHSpath%\%EditGame:c=%\config.ini" (
+if exist "%MUAOHSpath%\%EditGame%\config.ini" (
  call :readOHS herostatFolder hsFo || set hsFo=xml
- EXIT /b 0
+ goto HSSOHS
 )
-if exist "%MUAOHSpath%\%EditGame:c=%\xml" set hsFo=xml& EXIT /b 0
+if exist "%MUAOHSpath%\%EditGame%\xml" set hsFo=xml& goto HSSOHS
 set hsFo=
 EXIT /b 1
 :readOHS
-for /f "tokens=1* delims=:, " %%a in ('type "%MUAOHSpath%\%EditGame:c=%\config.ini" ^| find """%1"": "') do for %%m in (%%b) do set "%2=%%~m" & EXIT /b
+for /f "tokens=1* delims=:, " %%a in ('type "%MUAOHSpath%\%EditGame%\config.ini" ^| find """%1"": "') do for %%m in (%%b) do set "%2=%%~m" & EXIT /b
 EXIT /b 1
+:HSSOHS
+if "%hsFo:~1,1%"==":" ( set "h=%hsFo%\*.*"
+) else set "h=%MUAOHSpath%\%EditGame%\%hsFo%\*.*"
+EXIT /b 0
 
+
+:writeOpt
+set /a optcnt+=1
+(call :%1 %optcnt%)>>%optSetT%
+EXIT /b
 
 :Optimizer
 %sgOptimizer% "%infile%" "%outfile%" %optSet% || goto Errors
@@ -1847,13 +2070,25 @@ echo optimizationCount = %1
 echo hierarchyCheck = true
 EXIT /b
 
+:OptGeoInfo
+echo [OPTIMIZATION%1]
+echo name = igStatisticsGeometry
+goto OptInfo
+:OptTexInfo
+echo [OPTIMIZATION%1]
+echo name = igStatisticsTexture
+echo useFullPath = false
+:OptInfo
+echo separatorString = ^|
+echo columnMaxWidth = -1
+echo showColumnsMask = %2
+echo sortColumn = -1
+EXIT /b
+
 :OptSkinStats
 echo [OPTIMIZATION%1]
 echo name = igStatisticsSkin
-echo separatorString = ^|
-echo columnMaxWidth = -1
-echo showColumnsMask = 0x00000006
-echo sortColumn = -1
+call :OptInfo %1 0x00000006
 EXIT /b
 
 :OptRen
@@ -1867,6 +2102,25 @@ EXIT /b
 :optGGC
 echo [OPTIMIZATION%1]
 echo name = igGenerateGlobalColor
+EXIT /b
+
+:optCGA
+echo [OPTIMIZATION%1]
+echo name = igConvertGeometryAttr
+echo accessMode = 3
+echo storeBoundingVolume = false
+EXIT /b
+
+:optConv
+echo %format% | find /i "DXT" >nul && set "order=DX" || set "order=DEFAULT"
+echo [OPTIMIZATION%1]
+echo name = igConvertImage
+echo format = IG_GFX_TEXTURE_FORMAT_%format%
+echo sourceFormat = invalid
+echo order = IG_GFX_IMAGE_ORDER_%order%
+echo isExclude = %isExclude%
+echo convertIfSmaller = false
+echo imageListFilename = %convertlist%
 EXIT /b
 
 
@@ -2037,5 +2291,5 @@ if exist "%erl%" (
 )
 pause
 :cleanup
-del "%xco%" "%rfo%" "%tem%" "%tem%l" "%tem%c" "%tem%m" "%tem%.%dex%" "%temp%\temp.igb" %optSet%
+del "%xco%" "%rfo%" "%tem%" "%tem%l" "%tem%c" "%tem%m" "%tem%.%dex%" "%temp%\temp.igb" %optSet% %optSetT%
 EXIT
