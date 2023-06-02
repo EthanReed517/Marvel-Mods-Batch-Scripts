@@ -788,10 +788,10 @@ echo [%sl%] File size:        %size% bytes
 if defined targetName (
 echo [%gl%] Geometry formats: %iGA%
   echo [??] Vertex count:     %Gvc%
-  echo [OK] Geometry count:   %Gc%
-echo [%tl%] Texture formats:  %iGTF%
-  echo [??] Biggest Texture:  %TW%x%TH%
-  echo [OK] Texture count:    %Tc%
+  echo [OK] Geometry count:   %Gn%
+echo [%tl%] Texture formats:  %iGTF:IG_GFX_TEXTURE_FORMAT_=%
+  echo [??] Biggest Texture:  %TX%x%TY%
+  echo [OK] Texture count:    %Tn%
   echo [OK] Has mip-maps:     %MM%
 echo [%he%] igSkin name:      %targetName%
 )
@@ -1066,7 +1066,8 @@ EXIT /b 0
 :HScheckD
 set xmlbd=
 set hdf=lxml
-call :checkVersion h && set hdf=%version%
+call :checkVersion h
+if %errorlevel%==0 set hdf=%version%
 EXIT /b 0
 :HScCe
 echo "%h%" can't be decompiled, %xm% not found.
@@ -1215,12 +1216,12 @@ call :sgO ne || EXIT /b
 set "iini=%temp%\SkinInfo.ini"
 if not exist "%iini%" (call :OptHead 3 & call :OptTexInfo 1 0x00000117 & call :OptGeoInfo 2 0x00500000 & call :OptSkinStats 3)>%iini%
 ( %sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%iini%" )>"%temp%\%nameonly%.txt"
-set Gc=0
+set Gn=0
 set iGA=
 for /f "tokens=3 delims=|" %%g in ('findstr "igGeometryAttr" ^<"%temp%\%nameonly%.txt"') do call :gSIga %%g
 set Gvc=0
 for /f "tokens=4 delims= " %%v in ('findstr /ilc:" vertex total: " ^<"%temp%\%nameonly%.txt"') do set /a Gvc+=%%v
-set Tc=0
+set Tn=0
 set ao=0
 set MM=false
 for /f "tokens=1-5 delims=|" %%t in ('findstr "IG_GFX_TEXTURE_FORMAT_" ^<"%temp%\%nameonly%.txt"') do call :gSIt %%u %%v %%w %%x
@@ -1228,13 +1229,13 @@ for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\
 del "%temp%\%nameonly%.txt"
 EXIT /b
 :gSIga
-set /a Gc+=1
+set /a Gn+=1
 echo %iGA%|find "%1 " >nul || set iGA=%iGA%%1 
 EXIT /b
 :gSIt
-set /a Tc+=1
+set /a Tn+=1
 set /a an=%1*%2
-if %an% GTR %ao% set ao=%an% & set TW=%1&set TH=%2
+if %an% GTR %ao% set ao=%an% & set TX=%1&set TY=%2
 echo %iGTF%|find "%3 " >nul || set iGTF=%iGTF%%3 
 echo %5|find /i "Mip" >nul && set MM=true
 EXIT /b
