@@ -476,6 +476,12 @@ REM ui\menus\mlm_blank.igb
 REM ui\menus\debug.* & pkgb
 REM ui\menus\pause.igb
 
+echo Removing unused scripts. . .
+del >nul 2>nul ^
+scripts\act1\omega\omega3\reed.py ^
+scripts\act2\murder\murder4\blade_button.py ^
+scripts\common\shop.py ^
+
 goto End
 
 :XML2
