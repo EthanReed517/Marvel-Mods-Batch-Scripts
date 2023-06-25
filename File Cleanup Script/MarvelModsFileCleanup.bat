@@ -480,7 +480,7 @@ echo Removing unused scripts. . .
 del >nul 2>nul ^
 scripts\act1\omega\omega3\reed.py ^
 scripts\act2\murder\murder4\blade_button.py ^
-scripts\common\shop.py ^
+scripts\common\shop.py
 
 goto End
 
