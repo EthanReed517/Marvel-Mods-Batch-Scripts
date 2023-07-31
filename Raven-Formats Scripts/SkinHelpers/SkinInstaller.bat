@@ -101,6 +101,7 @@ set "xco=%temp%\XCoutput.log"
 set optSet="%temp%\%operation%.ini"
 set optSetT="%temp%\%operation%T.ini"
 set "erl=%~dp0error.log"
+set igTF=IG_GFX_TEXTURE_FORMAT_
 if ""=="%customext%" set customext=%decformat:lxml=xml%
 if "%operation%" == "ask" call :askop
 if defined sr if defined channels if defined loop set predefined=true
@@ -673,14 +674,13 @@ call :trimmer %ch:&=;;%
 set "ch=%trim:;;=&%"
 set "ch=%ch:_= %"
 call :getSkinInfo
-if %InstType%==npc set EditStat=false
-if %EditGame%==XML2 set InstType=%InstType:mannequin=skin%
+if /i %InstType%==npc set EditStat=false
 if %EditStat%==false goto SH3
 set maxindx=99
 call :SHTitle
 call :HSSetup charactername ch %nn% || goto SH3
 call :MUApath
-if %InstType%==mannequin goto Mannequin
+if /i %InstType%==mannequin goto Mannequin
 call :SkinEditor "%ch%"
 call :SHTitle
 call :listSkins
@@ -701,7 +701,6 @@ set "t3d=%MUApath%\ui\hud\characters\%sn%.igb"
 if exist "%ts%" call set ConsGen=%%ConsGen:PC=%EditGame%%%
 call :numberedBKP ts
 copy /y "%fullpath%" "%ts%"
-call :SH2_%cn% 2>nul
 if not exist "%sh%" for %%a in ("%pathonly:~,-1%") do set "sh=%%~dpahud\hud_head_%namextns%"
 if not exist "%sh%" (
  echo Please paste or enter the full path and filename to the HUD head file, including .igb extension.
@@ -709,18 +708,21 @@ if not exist "%sh%" (
 )
 call :stripQ sh
 if exist "%sh%" call :numberedBKP th & copy /y "%sh%" "%th%"
-if %EditGame%%InstType%==XML2skin call :SH23dHead
+if /i %EditGame%%InstType%==XML2skin call :SH23dHead
 set fullpath=
 set a=8
 set g=2
 call :SHTitle
 goto SH4%ConsGen%
+:SH48th
 :SH4PC SkinsHelper4
+if /i %InstType%==npc goto SH4%EditGame%
 call :SH4%EditStat% 2>nul
 if exist "%tp%%in%_%sn%.pkgb" goto SH4%EditGame%
 for /f "delims=" %%p in ('dir /b "%tp%%in%_%cn%*.pkgb"') do set "fullpath=%tp%%%p" & call :xml ne && goto SH4cln
 echo INFORMATION: A package file was not detected, and no package was found, which could be cloned, or no compiler found for cloning. Manual herostat and package modifications may be required to make powers and HUD work properly for this skin.
 pause
+if %ConsGen%==8th goto SH48thS
 goto SH4%EditGame%
 :SH4false
 set in=defaultman
@@ -739,8 +741,9 @@ call :filesetup
 set m=1
 set newPKGn=%ns%
 call :clonePKG
+call :SHTitle
 goto SH4%EditGame%
-:SH48th
+:SH48thS
 REM Not sure if the RE has same specs as 360, but Steam does AFAIK.
 :SH47th
 if %ForPltfrm%==PS3 ( echo Textures should be in DXT1 format and use green normal maps in DXT 5 format, if any.
@@ -774,29 +777,29 @@ set AV=%AV:4=2.5%
 set AV=%AV:6=3.2%
 set AV=%AV:8=3.5%
 if %size% GTR %z% set sl=XX& echo INFORMATION: The file size is %size% bytes and possibly over the limit.
-if %g%==1 echo %iGA%|find "2" >nul && set set gl=XX
+if %g%==1 echo %igGA%|find "2" >nul && set set gl=XX
 if ""=="%t%" set t=PSP GAMECUBE
-echo %iGTF%|findstr /i "%t%" >nul && set tl=XX
+echo %igGTF%|findstr /i "%t%" >nul && set tl=XX
 set he=OK
 if %a%==6 set he=XX
-if /i "%targetName%"=="%nameonly%" set he=OK
+if /i "%targetName%"=="%sn%" set he=OK
 if /i "%targetName%"=="Bip01" set he=XX
+if /i %InstType%==mannequin set he=OK&& set targetName=%sn%
 echo.
-echo Statistics for %namextns%:
+echo Statistics for "%namextns%":
 echo [%al%] Alchemy version:  %AV%
 echo [%sl%] File size:        %size% bytes
 if defined targetName (
-echo [%gl%] Geometry formats: %iGA%
+echo [%gl%] Geometry formats: %igGA%
   echo [??] Vertex count:     %Gvc%
   echo [OK] Geometry count:   %Gn%
-echo [%tl%] Texture formats:  %iGTF:IG_GFX_TEXTURE_FORMAT_=%
+echo [%tl%] Texture formats:  %igGTF:IG_GFX_TEXTURE_FORMAT_=%
   echo [??] Biggest Texture:  %TX%x%TY%
   echo [OK] Texture count:    %Tn%
   echo [OK] Has mip-maps:     %MM%
 echo [%he%] igSkin name:      %targetName%
 )
 pause
-if %ConsGen%==8th goto SH4PC
 REM add possible FB package edits here.
 if %a%==6 goto SH5nh
 :SH4MUA SkinsHelper5
@@ -804,22 +807,16 @@ call :sgO ne || goto SH5nh
 set "fullpath=%ts%"
 call :SkinEditFN gn
 REM HUDs are not optimized for now, as they need the texture renamed, not igSkin.
-EXIT /b
+goto SH2f
 :SH5nh
-if /i "%targetName%"=="%nameonly%" EXIT /b
+if /i "%targetName%"=="%sn%" goto SH2f
 echo.
-echo INFORMATION: "%namextns%" might not be hex-edited.
+echo INFORMATION: %sn%.igb might not be hex-edited.
 pause
-EXIT /b
-:SH23dHead
-if not exist "%s3d%" (
- echo Please paste or enter the full path and filename to the 3D head file, including .igb extension.
- set /p s3d=Enter path, or press enter to skip: || EXIT /b
-)
-call :stripQ s3d
-mkdir "%MUApath%\ui\hud\characters" 2>nul
-call :numberedBKP t3d
-copy /y "%s3d%" "%t3d%"
+:SH2f
+if /i %InstType%==mannequin EXIT /b
+if /i %InstType%==npc EXIT /b
+call :SH2_%cn% 2>nul
 EXIT /b
 :SH2_198
 echo 198 is Emma Frost's number.
@@ -841,12 +838,22 @@ set /a xn=100%ns% %% 100 + %a%
 if "%xn:~1%"=="" set xn=0%xn%
 set "fullpath=%MUApath%\actors\%cn%%xn%.igb"
 copy /y "%xs%" "%fullpath%"
-call :SkinEditFN
+goto SkinEditFN
+:SH23dHead
+if not exist "%s3d%" (
+ echo Please paste or enter the full path and filename to the 3D head file, including .igb extension.
+ set /p s3d=Enter path, or press enter to skip: || EXIT /b
+)
+call :stripQ s3d
+mkdir "%MUApath%\ui\hud\characters" 2>nul
+call :numberedBKP t3d
+copy /y "%s3d%" "%t3d%"
 EXIT /b
 :SH3
 set EditStat=false
 call :MUApath
 call :SkinsHelper3
+if /i %InstType%==mannequin goto Mannequin
 goto SkinsHelper2
 :SkinsHelper3
 if defined sn set cn=%sn:~,-2%& set fn=%sn:~-2%
@@ -860,7 +867,7 @@ if "%fn%"=="" (
 )
 call :asknum cn "for the character (mod number)"
 if "%cn:~1%"=="" set cn=0%cn%
-if %InstType%==mannequin set sn=%cn%01&EXIT /b
+if /i %InstType%==mannequin set sn=%cn%01&EXIT /b
 set maxindx=99
 echo|set /p=%cn%XX
 if defined fn ( echo , detected: %cn%%fn%
@@ -887,13 +894,14 @@ if "%MUApath%"=="" (
 call :stripQ MUApath
 EXIT /b
 :Mannequin
-if %EditStat%==false ( call :SkinsHelper3
-) else call :PSparseHS skin set sn charactername match ch
-set mn=%MUApath%\ui\models\mannequin\%sn:~,-2%01.igb
-mkdir "%MUApath%\ui\models\mannequin" 2>nul
-call :numberedBKP mn
-copy /y "%fullpath%" "%mn%"
-REM This might require a spec check as well
+set mq=mannequin
+if %EditGame%==XML2 set mq=characters
+if %EditStat%==true call :PSparseHS skin set sn charactername match ch
+set ts=%MUApath%\ui\models\%mq%\%sn:~,-2%01.igb
+mkdir "%MUApath%\ui\models\%mq%" 2>nul
+call :numberedBKP ts
+copy /y "%fullpath%" "%ts%"
+goto SH4%ConsGen%
 EXIT /b
 
 :SkinsHelperPost
@@ -1189,17 +1197,21 @@ goto SEmain
 :SE8th
 call :writeOpt optCGA
 :SEPC
+if /i %InstType%==mannequin goto SErun
 REM For PC choice / m "Do you want to convert to igGeometryAttr2"
 REM findstr "igActorInfo" <"%infile%" >nul || call :checkAlchemy animdb2actor && %animdb2actor% "%infile%" "%infile%"
 findstr "igGlobalColorStateAttr" <"%infile%" >nul 2>nul || call :writeOpt optGGC
 :SEmain
+if /i %InstType%==mannequin goto SErun
 set "newName=%nameonly%"
-if /i "%targetName%"=="%newName%" EXIT /b
+if /i "%targetName%"=="%newName%" goto SErun
 if /i "%targetName%"=="Bip01" goto SH5nh
 call :writeOpt OptRen
 (call :OptHead %optcnt% & type %optSetT%)>%optSet%
 del %optSetT%
 set "outfile=%fullpath%"
+:SErun
+if optcnt==0 EXIT /b
 goto Optimizer
 
 :getSkinName
@@ -1217,26 +1229,26 @@ set "iini=%temp%\SkinInfo.ini"
 if not exist "%iini%" (call :OptHead 3 & call :OptTexInfo 1 0x00000117 & call :OptGeoInfo 2 0x00500000 & call :OptSkinStats 3)>%iini%
 ( %sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%iini%" )>"%temp%\%nameonly%.txt"
 set Gn=0
-set iGA=
+set igGA=
 for /f "tokens=3 delims=|" %%g in ('findstr "igGeometryAttr" ^<"%temp%\%nameonly%.txt"') do call :gSIga %%g
 set Gvc=0
 for /f "tokens=4 delims= " %%v in ('findstr /ilc:" vertex total: " ^<"%temp%\%nameonly%.txt"') do set /a Gvc+=%%v
 set Tn=0
 set ao=0
 set MM=false
-for /f "tokens=1-5 delims=|" %%t in ('findstr "IG_GFX_TEXTURE_FORMAT_" ^<"%temp%\%nameonly%.txt"') do call :gSIt %%u %%v %%w %%x
+for /f "tokens=1-5 delims=|" %%t in ('findstr "%igTF%" ^<"%temp%\%nameonly%.txt"') do call :gSIt %%u %%v %%w %%x
 for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\%nameonly%.txt"') do set targetName=%%a
 del "%temp%\%nameonly%.txt"
 EXIT /b
 :gSIga
 set /a Gn+=1
-echo %iGA%|find "%1 " >nul || set iGA=%iGA%%1 
+echo %igGA%|find "%1 " >nul || set igGA=%igGA%%1 
 EXIT /b
 :gSIt
 set /a Tn+=1
 set /a an=%1*%2
 if %an% GTR %ao% set ao=%an% & set TX=%1&set TY=%2
-echo %iGTF%|find "%3 " >nul || set iGTF=%iGTF%%3 
+echo %igGTF%|find "%3 " >nul || set igGTF=%igGTF%%3 
 echo %5|find /i "Mip" >nul && set MM=true
 EXIT /b
 
@@ -2116,7 +2128,7 @@ EXIT /b
 echo %format% | find /i "DXT" >nul && set "order=DX" || set "order=DEFAULT"
 echo [OPTIMIZATION%1]
 echo name = igConvertImage
-echo format = IG_GFX_TEXTURE_FORMAT_%format%
+echo format = %igTF%%format%
 echo sourceFormat = invalid
 echo order = IG_GFX_IMAGE_ORDER_%order%
 echo isExclude = %isExclude%
