@@ -34,3 +34,10 @@
 - Converter, testing, assistance - [BaconWizard17](https://github.com/EthanReed517)
 - Batch files - [ak2yny](https://github.com/ak2yny)
 
+
+### Build Instructions:
+
+- Download [(RF)AIO.bat](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Raven-Formats%20Scripts/(RF)AIO.bat) & [make bat files.bat](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Raven-Formats%20Scripts/make%20bat%20files.bat)
+- Put these two files into a new, empty folder
+- Run 'make bat files.bat'
+
