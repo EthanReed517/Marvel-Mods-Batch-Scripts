@@ -716,7 +716,7 @@ call :SHTitle
 goto SH4%ConsGen%
 :SH48th
 :SH4PC SkinsHelper4
-if /i %InstType%==npc goto SH4%EditGame%
+if /i %InstType% NEQ skin goto SH4%EditGame%
 call :SH4%EditStat% 2>nul
 if exist "%tp%%in%_%sn%.pkgb" goto SH4%EditGame%
 for /f "delims=" %%p in ('dir /b "%tp%%in%_%cn%*.pkgb"') do set "fullpath=%tp%%%p" & call :xml ne && goto SH4cln
@@ -932,7 +932,7 @@ if "%ch%"=="" ( call :readHS charactername ch || EXIT /b
 ) else call :HScheck || EXIT /b
 set "chr=^%ch%$"
 call :PSparseHS skin psc psc charactername match chr
-set "p=%psc%"
+set "p=%psc%; [array]$pa = $p; $p = $pa[0]"
 :SkinEditor2
 set "psc=%p%; $p = 'skin[\s="":]{2,4}' + -join $p; try {$h = (dir -s  '%h%' | select-string -Pattern $p)[0]} catch {exit 1}; $h.path; "
 if %hdf% NEQ xml set "psc=%psc%$s = ((gc $h.path) -replace '\s;$' | select -skip ($h.linenumber-1)) -join ""`n"" -replace '(?!\s*""?skin)\n[\s\S]+'; "
@@ -1064,7 +1064,7 @@ call set "pcs=%pcs%$n.stats.SetAttribute('%2','%%%1%%'); "
 EXIT /b
 
 :HScheck
-for /f "delims=" %%i in ('dir /s "%h%"') do echo %%~xi|findstr /eil ".xml .txt .json" >nul && goto HScheckD
+for /f "delims=" %%i in ('dir /b /s "%h%"') do echo %%~xi|findstr /eil ".xml .txt .json" >nul && set "hrs=%%~fi" && goto HScheckD
 if [%xmlb%]==[] call :xml ne || goto HScCe
 call :VAR decompile h || goto HScheckD
 set "h=%h%.%customext%"
@@ -1074,7 +1074,7 @@ EXIT /b 0
 :HScheckD
 set xmlbd=
 set hdf=lxml
-call :checkVersion h
+call :checkVersion hrs
 if %errorlevel%==0 set hdf=%version%
 EXIT /b 0
 :HScCe
@@ -1211,7 +1211,7 @@ call :writeOpt OptRen
 del %optSetT%
 set "outfile=%fullpath%"
 :SErun
-if optcnt==0 EXIT /b
+if %optcnt%==0 EXIT /b
 goto Optimizer
 
 :getSkinName
