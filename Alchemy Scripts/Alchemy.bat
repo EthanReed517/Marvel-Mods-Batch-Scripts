@@ -5,7 +5,7 @@ REM ----------------------------------------------------------------------------
 
 REM Settings:
 
-REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; make HUD heads from images =hud_head_e; same for team logos =logos_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; =ask)
+REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; make HUD heads from images =hud_head_e; same for team logos =logos_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
 set operation=ask
 REM Create mip-maps? (=true or =false), useful for lower resolutions only - to ask for each input file, use =ask at the operation settings
 set mipmaps=false
@@ -108,7 +108,7 @@ set remext=false
 REM Auto name when combining: Always use the first folder name? ( =true); Always use the first file name? ( =file); (No =false)
 set autonm=false
 REM Enter an IGB file for the skeleton. (Use the first input file "skeleton="; use fightstyle default incl. ponytail =_fightstyle_default)
-REM Can include path relative to the BAT. Eg. skeleton=skeletons\humanWponytail\elektra.igb
+REM Can be skin or animation. Can include path relative to the BAT. Eg. skeleton=skeletons\humanWponytail\elektra.igb
 set skeleton=_fightstyle_default
 REM Use name of files for animations? (Yes, they match the anim. name =true; No, scan the files for anim. names =false)
 set animfn=true
@@ -239,6 +239,7 @@ set inext=.tga
 goto sgO
 :startfixSkins
 call :checkTools animdb2actor || EXIT
+:startremInfo
 :startIGBconverter
 :startMaterialInfo
 :startExtract
@@ -407,10 +408,7 @@ if %subfolder%==true set "sfolder=%nameonly%" & mkdir "%pathname%"
 if %refExtTex%==true set "outfile=%fullpath%"
 (call :OptHead 1 & call :OptExt 1 %iformat% %refExtTex% false %enm%)>%optSet%
 call :Optimizer
-if %remMipMap%==true goto remMM
-EXIT /b
-
-:remMM
+if %remMipMap%==false EXIT /b
 set "sf=%sfolder%\"
 for %%m in ("%pathonly%%sf%*.tga", "%pathonly%%sf%*.png") do for /l %%a in (1,1,20) do if exist "%%~dpnm-%%a%%~xm" del "%%~dpnm-%%a%%~xm"
 EXIT /b
@@ -434,7 +432,7 @@ EXIT /b
 call :fTi 0x00000011
 EXIT /b
 :fTi
-(call :OptHead 1 & call :OptInfo 1 %1) >%optSet%
+(call :OptHead 1 & call :OptTexInfo 1 %1) >%optSet%
 (call :Optimizer)>"%pathname%.txt"
 EXIT /b
 
@@ -601,14 +599,13 @@ call :isNumber %maxHeight% && call :isNumber %maxWidth% && EXIT /b
 EXIT /b 1
 
 :i2iOptSet
-type nul>%optSetT%
 set optcnt=0
 if not %maxHeight%==false call :writeOpt optRes
 if %convert%==true call :writeOpt optConv
 if %mipmaps%==true call :writeOpt optMipmap
 if not %optcnt% GTR 0 EXIT /b
-(call :optHead %optcnt%)>%optSet%
-type %optSetT%>>%optSet%
+(call :OptHead %optcnt% & type %optSetT%)>%optSet%
+del %optSetT%
 set createINI=false
 goto Optimizer
 
@@ -660,7 +657,7 @@ goto Optimizer
 :getSkinName
 set "igSS=%temp%\igStatisticsSkin.ini"
 if not exist "%igSS%" (call :OptHead 1 & call :OptSkinStats 1)>"%igSS%"
-( %sgOptimizer% "%fullpath%" "%outfile%" "%igSS%" )>"%temp%\%nameonly%.txt"
+( %sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%igSS%" )>"%temp%\%nameonly%.txt"
 set targetName=
 for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\%nameonly%.txt"') do set targetName=%%a
 del "%temp%\%nameonly%.txt"
@@ -775,6 +772,7 @@ EXIT /b
 
 :combineAnimations
 call :checktxt combine || EXIT /b
+if "%skeleton%"=="%namextns%" EXIT /b
 if defined outanim goto combineAnimationFiles
 set "AnimProcess=%~dp0combine.txt"
 for %%a in ("%pathonly:~0,-1%") do set outanim=%%~na
@@ -887,10 +885,9 @@ EXIT /b 0
 
 :fixSkins
 rem findstr "igActorInfo" <"%fullpath%" >nul 2>nul && EXIT /b
-set "infile=%~dp0%nameonly: =_%.igb"
-if /i not "%fullpath%" == "%infile%" if not exist "%infile%" set of=dd
-if "%of%" == "dd" ( set "of=%infile%"
-) else set "of=%pathname%_scene.igb"
+set "of=%~dp0%nameonly: =_%.igb"
+if /i "%fullpath%"=="%of%" set "of=%pathname%_scene.igb"
+if exist "%of%" set "of=%pathname%_scene.igb"
 %animdb2actor% "%fullpath%" "%of%"
 choice /m "View %namextns%"
 if not errorlevel 2 "%of%"
@@ -1000,8 +997,8 @@ set /a sv+=1
 REM Write internal texture info to "%tem%" and call the dialogue
 set "subf=%pathonly%" & if %SubfoldAuto%==true set subf=
 del "%tem%" "%tem:~,-4%T.txt" "%tem:~,-4%N.txt" %optSetT% 2>nul
-call :fTi 0x00000091
-for /f "tokens=1* delims=|" %%a in ('findstr "%igTF%" ^<"%pathname%.txt"') do set mi=%%b & call :filterDiff %%a
+call :fTi 0x00000111
+for /f "tokens=1,3 delims=|" %%a in ('findstr "%igTF%" ^<"%pathname%.txt"') do set mi=%%b & call :filterDiff %%a
 if %dc%==1 call :MapSelect 0 & goto mapsWO
 set to=0123456789
 call set options=%%to:~,%dc%%%
@@ -1057,23 +1054,11 @@ echo %nr% %* %sfx%
 set /a dc+=1
 EXIT /b
 :filterDiff
-call :chMM %* && EXIT /b
+echo %mi%|find /i "Mip"|find /i /v "Mip00" >nul && EXIT /b
 if exist "%tem%" findstr /bei /c:"%*" <"%tem%" >nul && set duplicate=found
 echo %*>> "%tem%"
 set /a dc+=1
 EXIT /b
-:chMM
-for %%m in ("%*") do set "pm=%%~nm" & echo "%%~nm" | find """%pm:~,-3%" || EXIT /b 1
-for /f "tokens=1-2 delims=|" %%y in ("%mi%") do (
- set mz=%%z
- set mf=%%y
- if 0%mz% LSS %%z EXIT /b 1
- if not "%mf%"=="%%y" EXIT /b 1
-)
-for %%m in (%*) do set mm=m%%~nm
-for %%m in (%mm:-= %) do set mm=%%m
-if "%mm:~2%"=="" if %mm% LEQ 30 if %mm% GEQ 0 EXIT /b 0
-EXIT /b 1
 
 :MapSelect
 call :mapsR %1
@@ -1260,7 +1245,7 @@ EXIT /b
 
 :animationProducer
 REM the animationProducer needs the file locally and without spaces.
-if "%operation%" == "extractAnimations" copy "%~dp0_combine.bat" "%outpath%" & if "%skeleton%" == "_fightstyle_default" copy "%~dp0_fightstyle_default" "%outpath%"
+if "%operation%"=="extractAnimations" copy "%~dp0_combine.bat" "%outpath%" & if "%skeleton%"=="_fightstyle_default" copy "%~dp0_fightstyle_default" "%outpath%"
 cd /d "%~dp0"
 %animationProducer% "%AnimProcess%"
 if %errorlevel% NEQ 0 goto Errors
@@ -1287,7 +1272,7 @@ EXIT /b
 echo %format% | find /i "DXT" >nul && set "order=DX" || set "order=DEFAULT"
 echo [OPTIMIZATION%1]
 echo name = igConvertImage
-echo format = IG_GFX_TEXTURE_FORMAT_%format%
+echo format = %igTF%%format%
 echo sourceFormat = invalid
 echo order = IG_GFX_IMAGE_ORDER_%order%
 echo isExclude = %isExclude%
@@ -1326,23 +1311,25 @@ echo minSize = 1
 echo imageListFilename = 
 EXIT /b
 
-:OptInfo
+:OptGeoInfo
+echo [OPTIMIZATION%1]
+echo name = igStatisticsGeometry
+goto OptInfo
+:OptTexInfo
 echo [OPTIMIZATION%1]
 echo name = igStatisticsTexture
+echo useFullPath = false
+:OptInfo
 echo separatorString = ^|
 echo columnMaxWidth = -1
 echo showColumnsMask = %2
 echo sortColumn = -1
-echo useFullPath = false
 EXIT /b
 
 :OptSkinStats
 echo [OPTIMIZATION%1]
 echo name = igStatisticsSkin
-echo separatorString = ^|
-echo columnMaxWidth = -1
-echo showColumnsMask = 0x00000006
-echo sortColumn = -1
+call :OptInfo %1 0x00000006
 EXIT /b
 
 :OptRen
