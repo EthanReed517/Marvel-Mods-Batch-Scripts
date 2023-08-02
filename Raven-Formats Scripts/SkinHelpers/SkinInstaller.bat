@@ -674,6 +674,7 @@ call :trimmer %ch:&=;;%
 set "ch=%trim:;;=&%"
 set "ch=%ch:_= %"
 call :getSkinInfo
+for %%i in ("%fullpath%") do set size=%%~zi
 if /i %InstType%==npc set EditStat=false
 if %EditStat%==false goto SH3
 set maxindx=99
@@ -691,7 +692,6 @@ set sn=%cn%%ns%
 call :PSparseHS name set in charactername match ch
 :SkinsHelper2
 mkdir "%MUApath%\actors" "%MUApath%\hud" 2>nul
-for %%i in ("%fullpath%") do set size=%%~zi
 set "ts=%MUApath%\actors\%sn%.igb"
 set "sh=%pathonly%hud_head_%namextns%"
 set "th=%MUApath%\hud\hud_head_%sn%.igb"
@@ -741,7 +741,6 @@ call :filesetup
 set m=1
 set newPKGn=%ns%
 call :clonePKG
-call :SHTitle
 goto SH4%EditGame%
 :SH48thS
 REM Not sure if the RE has same specs as 360, but Steam does AFAIK.
@@ -759,10 +758,10 @@ goto ConsSpec
 :SH4XML2
 set t=
 set z=100000000
+call :SHTitle
 :SH46th
 set a=6
 set g=1
-goto ConsSpec
 :ConsSpec
 set AV=unknown
 for /f usebackq %%v in (`PowerShell "try {$bytes  = [System.IO.File]::ReadAllBytes('%ts%'); '{0:X}' -f $bytes[0x2C]} catch {'unknown'}"`) do set AV=%%v
@@ -772,12 +771,14 @@ set al=OK
 set sl=OK
 set gl=OK
 set tl=OK
+if ""=="%a%" set a=8
+if ""=="%z%" set z=infinite
 if %AV% GTR %a% set al=XX& if %AV% NEQ unknown echo WARNING: The skin is Alchemy version %AV:8=3.5% and not compatible with %ForPltfrm%.
 set AV=%AV:4=2.5%
 set AV=%AV:6=3.2%
 set AV=%AV:8=3.5%
 if %size% GTR %z% set sl=XX& echo INFORMATION: The file size is %size% bytes and possibly over the limit.
-if %g%==1 echo %igGA%|find "2" >nul && set set gl=XX
+if "%g%"=="1" echo %igGA%|find "2" >nul && set gl=XX
 if ""=="%t%" set t=PSP GAMECUBE
 echo %igGTF%|findstr /i "%t%" >nul && set tl=XX
 set he=OK
@@ -803,6 +804,7 @@ pause
 REM add possible FB package edits here.
 if %a%==6 goto SH5nh
 :SH4MUA SkinsHelper5
+call :SHTitle
 call :sgO ne || goto SH5nh
 set "fullpath=%ts%"
 call :SkinEditFN gn
@@ -814,8 +816,7 @@ echo.
 echo INFORMATION: %sn%.igb might not be hex-edited.
 pause
 :SH2f
-if /i %InstType%==mannequin EXIT /b
-if /i %InstType%==npc EXIT /b
+if /i %InstType% NEQ skin EXIT /b
 call :SH2_%cn% 2>nul
 EXIT /b
 :SH2_198
@@ -901,8 +902,8 @@ set ts=%MUApath%\ui\models\%mq%\%sn:~,-2%01.igb
 mkdir "%MUApath%\ui\models\%mq%" 2>nul
 call :numberedBKP ts
 copy /y "%fullpath%" "%ts%"
+call :SHTitle
 goto SH4%ConsGen%
-EXIT /b
 
 :SkinsHelperPost
 call :SHTitle
