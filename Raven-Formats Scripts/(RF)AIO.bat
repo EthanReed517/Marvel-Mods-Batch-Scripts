@@ -118,6 +118,8 @@ set .vag=PS2 0 VAG 16bit (WAV converted with FPacker or MFAudio)
 set .dsp=GCUB 0 DSP 16bit (Nintendo Gamecube DSPADPCM for GC and Wii)
 
 call :%ForPltfrm%Setup
+REM There is an issue with this call on some machines. This comment should fix that.
+
 call :start%operation% %~1
 del "%erl%" "%xco%" "%rfo%" "%tem%" "%tem%c" "%tem%m" %optSetT%
 if %allowfext%==true set inext=.*
