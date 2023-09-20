@@ -5,4 +5,4 @@
 ## Requirement:
 - Alchemy 5 command line tools (bin folder), Alchemy 5 libraries (DLL folder), and registered variables. [Link Alchemy 5](https://marvelmods.com/forum/index.php/topic,11158.msg202243.html#msg202243)
 
-## [Release](https://marvelmods.com/forum/index.php/topic,10969.msg200476.html#msg200476)
+## [Release](https://marvelmods.com/forum/index.php/topic,10969.msg204310.html#msg204310)
