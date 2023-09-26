@@ -363,7 +363,7 @@ call :defineJSON
 for %%i in ("%*") do (
  set "zcn=%%~fi"
  if /i "%%~xi"==".txt" goto ZsndLoad
- for %%e in (.zss, .zsm) do if /i "%%~xi"=="%%e" set operation=extract& set inext=.zss, .zsm
+ for %%e in (.zss, .zsm) do if /i "%%~xi"=="%%e" if /i not %operation%==editZSSZSM set operation=extract& set inext=.zss, .zsm
  if /i "%%~xi"==".json" set operation=combine& set inext=.json
 )
 EXIT /b
@@ -1697,7 +1697,7 @@ call :extract
 :mkZSbat
 REM combine must be true
 if "%op%"=="" set op=update
-set /a l=40-1
+set /a l=42-1
 PowerShell "$b=gc '%~f0'; $b[%l%]=$b[%l%] -replace '=[^""]*','=%pathname:'=''%.json'; $b[11]=$b[11] -replace '=.*','=%op%'; $b" >"%pathname%%jbs%.bat"
 EXIT /b
 :editZSSZSMPost
@@ -1979,7 +1979,7 @@ echo         if ($_.sample_index -gt $oi) {$_ ^| select hash, @{n="sample_index"
 echo       }
 if ""=="%remHashOnly%" (
 echo       $t = $sf.samples[^($oi+1^)..$sf.samples.count]
-echo       $sf.samples = if ^($oi -gt 0^) {$sf.samples[0..^($t-1^)] + $t} else {$t}
+echo       $sf.samples = if ^($oi -gt 0^) {$sf.samples[0..^($oi-1^)] + $t} else {$t}
 )
 echo       $max_i -= 1
 echo     }
