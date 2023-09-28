@@ -871,13 +871,13 @@ if "%fn%"=="" (
 call :asknum cn "for the character (mod number)"
 if "%cn:~1%"=="" set cn=0%cn%
 if /i %InstType%==mannequin set sn=%cn%01&EXIT /b
-set maxindx=99
 echo|set /p=%cn%XX
 if defined fn ( echo , detected: %cn%%fn%
 ) else echo.
+set maxindx=99
 call :asknum ns "for the skin"
-set maxindx=255
 if "%ns:~1%"=="" set ns=0%ns%
+set maxindx=255
 set sn=%cn%%ns:~-2%
 for /f "delims=" %%i in ('dir /b "%MUApath%\actors\%sn%.igb"') do EXIT /b
 choice /m "Skin does not seem to exist. Continue creating a new one"
@@ -897,10 +897,14 @@ if "%MUApath%"=="" (
 call :stripQ MUApath
 EXIT /b
 :Mannequin
-set mq=mannequin
-if %EditGame%==XML2 set mq=characters
 if %EditStat%==true call :PSparseHS skin set sn charactername match ch
-set ts=%MUApath%\ui\models\%mq%\%sn:~,-2%01.igb
+set mq=mannequin
+set mn=01
+if %EditGame%==XML2 (
+ set mq=characters
+ if %sn:~-2% GTR 9 set mn=%sn:~-2%
+)
+set ts=%MUApath%\ui\models\%mq%\%sn:~,-2%%mn%.igb
 mkdir "%MUApath%\ui\models\%mq%" 2>nul
 call :numberedBKP ts
 copy /y "%fullpath%" "%ts%"
@@ -1260,7 +1264,6 @@ set "igGGC=%temp%\igGenerateGlobalColor.ini"
 if not exist "%igGGC%" (call :OptHead 1 & call :optGGC 1)>"%igGGC%"
 %sgOptimizer% "%fullpath%" "%fullpath%" "%igGGC%"
 EXIT /b
-
 
 
 :ZSTitle
@@ -1905,8 +1908,9 @@ EXIT /b
 :PSjsonZSND
 echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
 echo $max_i = $sf.samples.file.count
+echo $end = 0
 echo $rQ = '(?=(?:[^^"]*"[^^"]*")*[^^"]*$)'
-echo (gc "%tem%" ^| %% {[PSCustomObject]@{index=[int]($_ -Split ' ')[0]; hash=($_ -Split ' ')[1]; value=$_}} ^| Sort-Object -Property @{Expression = 'index'; Descending = $true}, @{Expression = 'hash'}).value ^| %% {
+echo (gc "%tem%" ^| %% {[PSCustomObject]@{index=[int]($_ -Split ' ')[0]; hash=($_ -Split ' ')[1]; file=($_ -Split ' ')[2]; value=$_}} ^| Sort-Object -Property @{Expression = 'index'; Descending = $true}, @{Expression = 'hash'; Descending = $true}, @{Expression = 'file'; Descending = $true}).value ^| %% {
 echo   $l = ($_ -Split " +$rQ").Trim('"')
 echo   [int]$i, [int]$oi = $l[0]
 set ccb=}
@@ -1917,7 +1921,7 @@ echo   if ($i -eq -2) {
 echo     $oi = $sf.samples.IndexOf(($sf.samples ^| ? file -eq $l[1])[0])
 call :PSrmI
 echo   } else {
-echo     if ($i -lt 0 -or $i -ge $max_i -and $i -ne 0) {$i = $sf.samples.file.count}
+echo     if ($i -lt 0 -or $i -ge $max_i -and $i -ne 0) {$i = $sf.samples.file.count; $end += 1}
 echo     $so = @([PSCustomObject]@{hash=$l[1].ToUpper(); sample_index=$i; flags=%flgh%})
 echo     $sa = @([PSCustomObject]@{file=$l[2]; format=[int]$l[3]; sample_rate=[int]$l[4]})
 echo     if ($l[5]) {$sa ^| Add-Member -NotePropertyName flags -NotePropertyValue ([int]$l[5])}
@@ -1990,6 +1994,11 @@ echo.%ccb% & set ccb=
 echo $sf.sounds = @([PSCustomObject]@{hash='CONVERT'; sample_index=1; flags=%flgh%})
 :PSwriteJSON
 echo.%ccb%
+REM Fix order of files added at the end
+echo if ($end -gt 0) {
+echo   $sf.samples = $sf.samples[0..^($sf.samples.count-$end-1^)] + $sf.samples[^($sf.samples.count-1^)..^($sf.samples.count-$end^)]
+echo   $sf.sounds = $sf.sounds[0..^($sf.sounds.count-$end-1^)] + ^( $sf.sounds[^($sf.sounds.count-1^)..^($sf.sounds.count-$end^)] ^| select hash, @{n="sample_index";e={$sf.sounds.sample_index[($sf.sounds.count-$end+($sf.sounds.count-$_.sample_index-1))]}}, flags ^)
+echo }
 REM Fix random index
 set ra=/\*\*\*random\*\*\*/
 echo $hs = $sf.sounds ^| select @{n="hash";e={($_.hash -ireplace '%ra%\d\d?$')}}, sample_index, flags
@@ -2059,15 +2068,15 @@ if exist "%MUAOHSpath%\%EditGame%\config.ini" (
  call :readOHS herostatFolder hsFo || set hsFo=xml
  goto HSSOHS
 )
-if exist "%MUAOHSpath%\%EditGame%\xml" set hsFo=xml& goto HSSOHS
-set hsFo=
-EXIT /b 1
+set hsFo=xml
+goto HSSOHS
 :readOHS
 for /f "tokens=1* delims=:, " %%a in ('type "%MUAOHSpath%\%EditGame%\config.ini" ^| find """%1"": "') do for %%m in (%%b) do set "%2=%%~m" & EXIT /b
 EXIT /b 1
 :HSSOHS
-if "%hsFo:~1,1%"==":" ( set "h=%hsFo%\*.*"
-) else set "h=%MUAOHSpath%\%EditGame%\%hsFo%\*.*"
+if not "%hsFo:~1,1%"==":" set "hsFo=%MUAOHSpath%\%EditGame%\%hsFo%"
+if not exist "%hsFo%" set hsFo=& EXIT /b 1
+set "h=%hsFo%\*.*"
 EXIT /b 0
 
 
@@ -2193,13 +2202,19 @@ LOCKED:LOCKED
 CANTTALK:CANTTALK
 XTREME2:XTREME2
 ) do for /f "tokens=1* delims=:" %%a in ("%%s") do echo "%nameonly: =_%" | findstr /bir ^"\^"%%a_*\d*^" >nul && set hn=%%b&& EXIT /b
-set "hn=%nameonly%"
-EXIT /b
-REM Power sounds not added
+REM Power sounds not added:
 REM P1_POWER
 REM P1_CHARGE
 REM P1_LOOP
 REM P1_IMPACT
+set "hn=%nameonly%"
+for /l %%e in (5 -1 1) do call :isEnd %%e && EXIT /b
+EXIT /b
+:isEnd
+call set "end=%%hn:~-%1%%"
+for /f "delims=1234567890_- " %%n in ("%end%") do EXIT /b 1
+call set "hn=%%hn:~0,-%1%%"
+EXIT /b 0
 
 
 REM Unused code
