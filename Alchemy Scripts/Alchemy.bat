@@ -150,15 +150,15 @@ set askallsz=true
 set isExclude=exclude
 CLS
 
-for %%p in (%*) do goto ccl
+if not "%~1"=="" goto Args
 set "f=%~dp0"
 set "fullpath=%f:~0,-1%"
 call :isfolder
 GOTO End
 
-:ccl
-if not defined ccl call :convCCL ccl
-for %%p in (%ccl%) do (
+:Args
+if ""=="%args%" call :convCCL args
+for %%p in (%args%) do (
  set fullpath=%%~p
  2>nul pushd "%%~p" && call :isfolder || call :isfiles
 )
@@ -167,6 +167,7 @@ GOTO End
 :isfolder
 cd /d "%fullpath:"=%"
 call :rec%recursive%
+if "%inext%"==".n/a" goto %operation%
 for /f "delims=" %%i in ('dir %inext:.=*.% 2^>nul ') do (
  set "fullpath=%dp%%%~i"
  call :isfiles

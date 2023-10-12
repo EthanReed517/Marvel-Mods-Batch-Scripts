@@ -126,15 +126,15 @@ if %allowfext%==true set inext=.*
 CLS
 if defined zsnd call :ZSTitle
 
-for %%p in (%*) do goto ccl
+if not "%~1"=="" goto Args
 set "f=%~dp0"
 set "fullpath=%f:~0,-1%"
 call :isfolder
 GOTO End
 
-:ccl
-if ""=="%ccl%" call :convCCL ccl
-for %%p in (%ccl%) do (
+:Args
+if ""=="%args%" call :convCCL args
+for %%p in (%args%) do (
  set fullpath=%%~p
  2>nul pushd "%%~p" && call :isfolder || call :isfiles
 )
@@ -143,6 +143,7 @@ GOTO End
 :isfolder
 cd /d "%fullpath:"=%"
 call :rec%recursive%
+if "%inext%"==".n/a" goto %operation%
 for /f "delims=" %%i in ('dir %inext:.=*.% 2^>nul') do (
  set "fullpath=%dp%%%~i"
  call :isfiles
@@ -384,11 +385,8 @@ goto xml
 set minindx=0
 set maxindx=255
 del "%erl%" "%xco%" "%rfo%" "%tem%"
-call :xml
-for %%p in (%*) do call :convCCL ccl
-for %%p in (%ccl%) do 2>nul pushd "%%~p" && cd /d "%%~p" && call :ModCloner
-if defined ccl GOTO End
-goto ModCloner
+set inext=.n/a
+goto xml
 :startHerostat-Skin-Editor
 set inext=.%rf: =b, .%b, .xml, .txt, .json
 set minindx=0
@@ -1167,8 +1165,7 @@ if defined xmlbd call :VAR compile h
 call :sgO
 for %%i in (actors\*.igb) do set "fullpath=%%~fi" & call :SkinEditFN
 for %%e in ("%erl%") do if %%~ze LSS 8 del %%e
-if defined ccl EXIT /b
-GOTO End
+EXIT /b
 :ModClonerH
 call :readHS charactername ch || goto Errors
 call :PSparseHS . psc psc charactername match ch
@@ -2240,10 +2237,11 @@ REM Old Zsnd code:
 :JsonNBA2kSreader var
 REM full line as var linein
 set %~1=
-if "%linein:~-1%" == ";" (set d==) else set d=:
+set d=:
+if "%linein:~-1%" == ";" set d==
 for /f "tokens=1* delims=%d%" %%u in ("%linein%") do set "v=%%v"
-call :fixQ v
-set v=%v:""="%
+set "le=%v:~-1%"
+if "%le:"=q%"==";" set v="%v:~1,-2%"
 for /f "delims=" %%v in (%v%) do set "v=%%~v"
 EXIT /b
 :findLineJSON var; line; searchfile as oldjson

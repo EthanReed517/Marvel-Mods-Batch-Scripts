@@ -5,7 +5,7 @@ REM ----------------------------------------------------------------------------
 REM Settings:
 
 REM What operation should be made? (=extractFB; =buildFB; =buildCFG; =updateCFG; =buildFBnew; =ask; =detect)
-set operation=extractFB
+set operation=detect
 REM Allow all file formats, when dragging&dropping files? (=true; =false)
 set allowfext=false
 REM Include subfolders (recursive mode)? (yes =true; no =false)
@@ -13,11 +13,11 @@ set recursive=false
 
 REM Extract options
 REM Use subfolders? (=true; =false)
-set subfolder=false
+set subfolder=true
 REM Delete PKG files? (=true; =false; =ask)
 set deletepkg=false
 REM Copy build batch? (=true; =false)
-set copybuild=false
+set copybuild=true
 
 REM -----------------------------------------------------------------------------
 
