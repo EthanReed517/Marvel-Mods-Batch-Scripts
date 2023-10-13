@@ -2284,6 +2284,7 @@ set Zsnd=Zsnd
 EXIT /b 0
 :checkConv
 call :checkTools py
+if exist "%~dp0OpenHeroSelect.exe" set conv="%~dp0OpenHeroSelect.exe" -c
 if exist "%~dp0xml2json.exe" set conv="%~dp0xml2json.exe"
 if defined py if exist "%~dp0converter.py" set conv=py "%~dp0converter.py"
 if ""=="%conv%" echo Converter not found. Check the Readme.>>"%erl%"
