@@ -30,11 +30,11 @@ REM Path to MUA, or a MUA MO2 mod folder, or OpenHeroSelect? (for herostat names
 set "MUAOHSpath="
 
 REM Zsnd settings:
-REM Location of portable Zsnd? (folder where zsnd.py and hashes.json are in)
+REM Location of portable Zsnd? (folder where zsnd.py/zsnd.exe and hashes.json are in)
 set "zsndp=%~dp0zsnd"
 REM Use portable Zsnd? (Yes =true; No =false) (Still used for conversion)
 set usezsnd=false
-REM Extract to the input folder? (yes, extract at same location as file =true; no, extract to where Zsound.bat is =false; can be a path ending with \ as well)
+REM Extract to the input folder? (yes, extract at same location as file, doesn't work for portable Zsnd =true; no, extract to where Zsound.bat is =false; can be a path ending with \ as well)
 set outfile=true
 
 REM addWAV and modify JSON Settings:
@@ -353,10 +353,8 @@ goto czs
 set inext=.json
 :czs
 if %ConsGen%==8th echo Zsnd doesn't support the Remastered version of MUA. & goto Errors
+call :pZScheck
 TITLE Zsnd
-call :checkTools zsnd || call :checkPython
-if defined zsndp ( if %usezsnd%==true set "outfile=%outfile:true=false%" & set Zsnd=py "%zsndp%\zsnd.py"
-) else set remHead=false
 call set "outfile=%%outfile:false=%~dp0%%"
 set "outfile=%outfile:true=%"
 set "tem=%temp%\zsnd.tmp"
@@ -367,6 +365,18 @@ for %%i in ("%*") do (
  for %%e in (.zss, .zsm) do if /i "%%~xi"=="%%e" if /i not %operation%==editZSSZSM set operation=extract& set inext=.zss, .zsm
  if /i "%%~xi"==".json" set operation=combine& set inext=.json
 )
+EXIT /b
+:pZScheck
+if %remHead%%usezsnd%==falsefalse goto :nZS
+if exist "%zsndp%\zsnd.py" call :checkTools py && set zspe=py zsnd.py
+if exist "%zsndp%\zsnd.exe" set zspe=zsnd
+if "%zspe%"=="" set remHead=false& goto :nZS
+if %usezsnd%==false goto :nZS
+set Zsnd=%zspe%
+set "outfile=%outfile:true=false%"
+EXIT /b
+:nZS
+call :checkTools zsnd || call :checkPython
 EXIT /b
 :startZsndPreConfig
 set inext=.txt
@@ -1461,7 +1471,7 @@ call :writeNewJSON
 call :PSJZ F conv
 zsnd "%oldjson%" "%cvd%.zss" 2>"%rfo%" || call :writerror RF
 set "back=%cd%" & cd /d "%zsndp%"
-py zsnd.py -d "%cvd%.zss" "%oldjson%"
+%zspe% -d "%cvd%.zss" "%oldjson%"
 cd /d "%back%"
 del "%oldjson%" "%cvd%.zss"
 set "oldjson=%bj%"
