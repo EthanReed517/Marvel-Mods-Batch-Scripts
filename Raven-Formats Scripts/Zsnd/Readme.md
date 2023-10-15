@@ -34,11 +34,11 @@
 - ZSM/ZSS file is automatically created.
   (You'll be asked for the extension, if the filename doesn't end in `_m` or `_v` or isn't `x_voice` or `x_common`)
 
-### To extract ZSS and ZSM files:
+#### To extract ZSS and ZSM files:
 - Drop them on Zsound.bat.
 - An additional batch file is created as explained above. It can be removed if not needed.
 
-### To combine JSON to ZSS or ZSM files:
+#### To combine JSON to ZSS or ZSM files:
 - Drop the JSON files on Zsound.bat.
 - You'll be asked for the extension, if the filename doesn't end in `_m` or `_v` or isn't `x_voice` or `x_common`
 
