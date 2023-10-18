@@ -57,6 +57,8 @@ REM Read sample-reate, and flags, in addition to the hash in the source JSON? (y
 set asample=true
 REM Ask for a new hash? (yes =true; automatically generate a custom hash, eg. =REPLACE_THIS_HASH; automatically generate hash with filename =file; automatically genereate with CHAR/[jsonname]/[filename] =char)
 set askhash=char
+REM Uppercase hashes? (all uppercase =ToUpper; all lowercase =ToLower)
+set hshcase=ToUpper
 REM Choose a sample_index number? (Yes =true; No, add at end =false; Yes, same for all =all)
 set chIndex=all
 REM Define a minimum index number (default =0; allow all minindx=)
@@ -121,7 +123,7 @@ call :%ForPltfrm%Setup
 REM There is an issue with this call on some machines. This comment should fix that.
 
 call :start%operation% %~1
-del "%erl%" "%xco%" "%rfo%" "%tem%" "%tem%c" "%tem%m" %optSetT%
+del "%erl%" "%xco%" "%rfo%" "%tem%" "%tem%c" "%tem%m" "%cvd%.json" "%cvd%.zss" %optSetT%
 if %allowfext%==true set inext=.*
 CLS
 if defined zsnd call :ZSTitle
@@ -163,6 +165,7 @@ set "fullpath=%fullpath:"=%"
 call :filesetup
 if not "%inext%"==".*" echo %xtnsonly%|findstr /eil "%inext:,=%" >nul || EXIT /b
 call :%operation%
+set any=true
 EXIT /b
 
 :convCCL
@@ -334,9 +337,15 @@ goto conW
 :startconvertW
 set inext=.wav
 :conW
-set "cvd=%~dp0converted"
-for /f %%c in ('dir /b "%cvd%\" 2^>nul') do call :numberedBKP cvd
 if %askname%==new set oldjson=
+set "cvd=%~dp0converted"
+for /f %%c in ('dir /b "%cvd%\" 2^>nul') do goto conW2
+goto czs
+:conW2
+set /a n+=1
+if exist "%cvd%.%n%" goto conW2
+set "cvd=%cvd%.%n%"
+set n=0
 goto czs
 :startravenAudio
 set inext=.wav
@@ -368,9 +377,9 @@ for %%i in ("%*") do (
 EXIT /b
 :pZScheck
 if %remHead%%usezsnd%==falsefalse goto :nZS
-if exist "%zsndp%\zsnd.py" call :checkTools py && set zspe=py zsnd.py
-if exist "%zsndp%\zsnd.exe" set zspe=zsnd
-if "%zspe%"=="" set remHead=false& goto :nZS
+if exist "%zsndp%\zsnd.py" call :checkTools py && set zspe=py "%zsndp%\zsnd.py"
+if exist "%zsndp%\zsnd.exe" set zspe="%zsndp%\zsnd.exe"
+if [%zspe%]==[] set remHead=false& goto :nZS
 if %usezsnd%==false goto :nZS
 set Zsnd=%zspe%
 set "outfile=%outfile:true=false%"
@@ -1340,10 +1349,10 @@ if defined outfile cd /d "%back%"
 EXIT /b
 
 :combine
-if /i "%nameonly:~-2%" == "_m" ( set ext=zsm
-) else if /i "%nameonly:~-2%" == "_v" ( set ext=zss
-) else if /i "%nameonly:~,8%" == "x_common" ( set ext=zsm
-) else if /i "%nameonly:~,7%" == "x_voice" ( set ext=zss
+if /i "%nameonly:~-2%"=="_m" ( set ext=zsm
+) else if /i "%nameonly:~-2%"=="_v" ( set ext=zss
+) else if /i "%nameonly:~,8%"=="x_common" ( set ext=zsm
+) else if /i "%nameonly:~,7%"=="x_voice" ( set ext=zss
 ) else (
  echo.
  choice /c MV /m "Combine to [M] master sounds or [V] voice file"
@@ -1352,6 +1361,7 @@ if /i "%nameonly:~-2%" == "_m" ( set ext=zsm
 echo combining . . .
 set "zs=%pathname%.%ext%"
 call :numberedBKP zs
+cd /d "%pathonly%"
 %Zsnd% "%fullpath%" "%zs%" 2>"%rfo%" || call :writerror RF
 EXIT /b
 
@@ -1366,7 +1376,7 @@ EXIT /b
 
 :updatePost
 call :addConv
-for %%j in ("%oldjson%") do cd /d %%~dpj
+cd /d "%jp%"
 echo.& echo|set /p=Removing 
 for /f "skip=2 tokens=1*" %%e in ('find /i """file"":" "%oldjson%" 2^>nul') do (
  set "fullpath=%%~f
@@ -1382,17 +1392,28 @@ if exist "%fullpath%" EXIT /b
 echo -2 "%fullpath:\\=\%">>"%tem%"
 EXIT /b
 
-:update
-if ""=="%add%" echo|set /p=Adding   & set add=1
-echo|set /p=.
+:updatePre
+if defined add EXIT /b
+set add=1
 if ""=="%plat%" call :platW %xtnsonly%
-if ""=="%oldjson%" call :prepJSON
-for %%x in ("%oldjson%") do call set "f=%%fullpath:%%~dpx=%%"
+call :ZSTitle
+echo The update process may take a while. This window can be minimized to run the process in the background.
+echo.
+echo|set /p=Adding   
+goto prepJSON
+:update
+call :updatePre
+echo|set /p=.
+call set "f=%%fullpath:%jp%=%%"
 find """file"":" "%oldjson%" | find "%f:\=\\%" >nul && EXIT /b
 
 :addWAV
 call :setupW
-goto checkW
+:checkW
+if defined oldjson EXIT /b
+set t="%pathonly:~,-1%" 
+echo %pl%|find %t:"="""% >nul || set pl=%pl%%t%
+EXIT /b
 :addWAVPost
 REM possibly add option to add more files separately? Would mean that %tem% can't be deleted.
 call :prepJSON
@@ -1400,16 +1421,13 @@ call :addConv
 call :PSJZ F Add
 call :comb%combine%
 EXIT /b
-:checkW
-if defined oldjson EXIT /b
-set t="%pathonly:~,-1%" 
-echo %pl%|find %t:"="""% >nul || set pl=%pl%%t%
-EXIT /b
 :addConv
-if %remHead%==true call :convertWPost
-if ""=="%PSf%" EXIT /b
+if %remHead%==false EXIT /b
+call :convertWPost
 for /f usebackq^ tokens^=1-5^ delims^=^" %%c in ("%tem%") do set "hash=%%~d" & set "fullpath=%%~f" & call :filesetup & call :cM%movewhr% %%c "%%g"
 move /y "%tem%c" "%tem%"
+move "%cvd%\*" "%jp%%infolder%"
+rd /s /q "%cvd%"
 EXIT /b
 :combtrue
 call :VAR combine newjson
@@ -1441,15 +1459,20 @@ EXIT /b
 set "fn=%t:"=%.json"
 call :listJSON
 if "%oldjson%"=="" call :blankJSON
+if not exist "%oldjson%" call :writeNewJSON
 call :defineJSON
 if %askname%==update EXIT /b
 if %askname:~-6%==folder for %%j in ("%fn%") do set "jsonname=%%~nj"
 if %askname:~,4%==true set /p jsonname=Enter a name for the new sound file, or just press enter to use "%jsonname%": 
-for %%j in ("%oldjson%") do set "newjson=%%~dpj%jsonname%.json"
+set "newjson=%jp%%jsonname%.json"
 EXIT /b
 :defineJSON
+call :setJP
 set "newjson=%oldjson%"
-for %%j in ("%oldjson%") do set "jsonname=%%~nj"
+set "jsonname=%jn%"
+EXIT /b
+:setJP
+for %%j in ("%oldjson%") do set "jp=%%~dpj" & set jn=%%~nj
 EXIT /b
 :blankJSON
 if not %askname%==forcefolder set askname=truefolder
@@ -1457,26 +1480,27 @@ set "oldjson=%~dp0new_m.json"
 call :writeNewJSON
 EXIT /b
 
-:convertW
-if %remHead%==false echo Conversion requirements not met. Check portable Zsnd. & goto Errors
-goto setupW
-
 :convertWPost
-move /y "%tem%c" "%tem%"
-echo converting . . .
 set "bj=%oldjson%"
+set "bnj=%newjson%"
 set "oldjson=%cvd%.json"
 set "newjson=%oldjson%"
+echo converting . . .
 call :writeNewJSON
 call :PSJZ F conv
+set "back=%cd%"
+if defined jp cd /d "%jp%"
 zsnd "%oldjson%" "%cvd%.zss" 2>"%rfo%" || call :writerror RF
-set "back=%cd%" & cd /d "%zsndp%"
+cd /d "%zsndp%"
 %zspe% -d "%cvd%.zss" "%oldjson%"
 cd /d "%back%"
 del "%oldjson%" "%cvd%.zss"
 set "oldjson=%bj%"
-set PSf=c
+set "newjson=%bnj%"
 EXIT /b
+
+:convertW
+if %remHead%==false echo Conversion requirements not met. Check portable Zsnd. & goto Errors
 
 :setupW
 call :formatW || EXIT /b
@@ -1488,10 +1512,9 @@ if %loop%==true set /a flags+=1
 call :hashgen
 call :askindx
 set "file=%fullpath%"
-if defined newjson for %%j in ("%newjson%") do call set "file=%%file:%%~dpj=%%"
-if %remHead%==true (call :writefile)>>"%tem%c"
+if defined newjson call set "file=%%file:%jp%=%%"
 call :M%movewhr%
-(call :writefile)>>"%tem%"
+call :writefile >>"%tem%"
 EXIT /b
 :formatW
 call :checkPlat || goto fWwrong
@@ -1575,8 +1598,8 @@ if defined maxindx if %1 GTR %maxindx% EXIT /b 1
 EXIT /b 0
 
 :hashgen
-for %%j in ("%oldjson%") do set "j=%%~nj"
-call :%j:~,7%Hash 2>nul && EXIT /b
+call :setJP
+call :%jn:~,7%Hash 2>nul && EXIT /b
 set "hash=%nameonly%"
 if %askhash%==file EXIT /b
 if %askhash%==char call :charHash & EXIT /b
@@ -1589,18 +1612,17 @@ echo.
 set /p hash=Enter or paste a hash for "%namextns%", or press enter to use "%hash%": 
 EXIT /b
 :x_voiceHash
-if defined ch EXIT /b 0
+if defined in EXIT /b 0
 call :HSSetup name in || set in=0
-set "hash=%in%"
-set hp=COMMON/MENUS/CHARACTER/
 echo.
 choice /c CBX /m "Is '%nameonly%' a name [c]allout or a [b]reak line (press [X] if it's something else)"
-if errorlevel 3 EXIT /b 0
 if errorlevel 1 set cp=AN_
 if errorlevel 2 set cp=BREAK_
+set hp=COMMON/MENUS/CHARACTER/
 set "hash=%hp%%cp%%in%"
+if errorlevel 3 set "hash=%in%"
 choice /m "Do you want to use '%hash%' for the hash of all remaining input files"
-if errorlevel 2 set ch=
+if errorlevel 2 set in=
 EXIT /b 0
 :HSSetup
 if ""=="%MUAOHSpath%" (
@@ -1640,7 +1662,7 @@ echo %indx% "%hash%" "%file%" %format% %sr% %flags%
 EXIT /b
 
 :cMdestination
-call :M%movewhr%
+call :Mdest
 echo %1 "%hash%" "%file%" %~2 >>"%tem%c"
 EXIT /b
 :cMsource
@@ -1653,32 +1675,34 @@ if exist "%cvd%\%namextns%" (move /y "%cvd%\%namextns%" "%pathonly%") else (
  echo  Manually move them to the correct folder, as defined in the JSON file.
 )>>"%erl%"
 EXIT /b
-:Mdestination
-if ""=="%jsonname%" set PSf=nj & EXIT /b
+:Mdest
 set "infolder=%jsonname%"
 set "tp="%newjson:~,-5%\"
-if /i "%j:~,7%"=="x_voice" call :askxv
+if /i "%jn:~,7%"=="x_voice" ( call :askxv
+) else if ""=="%jsonname%" call :askxv
 set "file=%infolder%\%namextns%"
-if %remHead%==true ren "%cvd%" "%infolder%" & EXIT /b
 mkdir "%tp%" 2>nul
-REM move or copy?
+EXIT /b
+:Mdestination
+if %remHead%==true EXIT /b
+call :Mdest
+REM move or copy? Converted files are copied.
 move "%fullpath%" "%tp%"
 :Msource
 :Mreplace
 EXIT /b
 :askxv
 set dircmd=/b /a-d
-for %%i in ("%newjson%") do set xp=%%~dpi
 if ""=="%subfolder%" (
  call :ZSTitle
  echo.
- dir /ad "%xp%"
+ dir /ad "%jp%"
  echo.
  set /p subfolder=Choose an existing folder from the list by entering the name exactly as displayed. Entering a different name creates a new folder: 
- goto askx_voice
+ goto askxv
 )
 set "infolder=%subfolder%"
-set "tp=%xp%%infolder%\"
+set "tp=%jp%%infolder%\"
 EXIT /b
 
 :countindex (var name for file)
@@ -1907,7 +1931,7 @@ EXIT /b
 :PSJZ
 if not exist "%tem%" EXIT /b
 call :ZsndSave && EXIT /b
-call :numberedBKP newjson
+for %%n in ("%newjson%") do if %%~zn GTR 200 call :numberedBKP newjson
 echo Generating sound database . . .
 call :PSfl PSjsonZSND %1 %2
 EXIT /b
@@ -1929,14 +1953,14 @@ echo     $oi = $sf.samples.IndexOf(($sf.samples ^| ? file -eq $l[1])[0])
 call :PSrmI
 echo   } else {
 echo     if ($i -lt 0 -or $i -ge $max_i -and $i -ne 0) {$i = $sf.samples.file.count; $end += 1}
-echo     $so = @([PSCustomObject]@{hash=$l[1].ToUpper(); sample_index=$i; flags=%flgh%})
+echo     $so = @([PSCustomObject]@{hash=$l[1].%hshcase%(); sample_index=$i; flags=%flgh%})
 echo     $sa = @([PSCustomObject]@{file=$l[2]; format=[int]$l[3]; sample_rate=[int]$l[4]})
 echo     if ($l[5]) {$sa ^| Add-Member -NotePropertyName flags -NotePropertyValue ([int]$l[5])}
 set ccb=%ccb%}
 goto PS%2
 :PSforRI
 call :PSrmI
-goto PSwriteJSON
+goto PSfixZ
 :PSforMI
 set "ic=^| sort -Descending ^| %% {if ($_ -and $_ -le $i) {$ix=1}}"
 echo   $a %ic:ix=oi+%
@@ -1952,7 +1976,7 @@ echo   $a = [array]$a + [array]$i
 :PSAdd
 call :PSaddHi
 call :PSaddFi
-goto PSwriteJSON
+goto PSfixZ
 :PSaddHi
 echo     $ro = 1
 echo     if ($sf.sounds.sample_index.count -eq 0) {
@@ -1997,21 +2021,30 @@ echo     }
 EXIT /b
 :PSconv
 call :PSaddFi
-echo.%ccb% & set ccb=
-echo $sf.sounds = @([PSCustomObject]@{hash='CONVERT'; sample_index=1; flags=%flgh%})
-:PSwriteJSON
+echo.%ccb%
+echo $sf.sounds = @([PSCustomObject]@{hash='CONVERT'; sample_index=0; flags=%flgh%})
+goto PSwriteJSON
+:PSfixZ
 echo.%ccb%
 REM Fix order of files added at the end
+set "sarev=$sf.samples[^($sf.samples.count-1^)..^($sf.samples.count-$end^)]"
+set "sorev=^( $sf.sounds[^($sf.sounds.count-1^)..^($sf.sounds.count-$end^)] ^| select hash, @{n="sample_index";e={$sf.sounds.sample_index[($sf.sounds.count-$end+($sf.sounds.count-$_.sample_index-1))]}}, flags ^)"
 echo if ($end -gt 0) {
-echo   $sf.samples = $sf.samples[0..^($sf.samples.count-$end-1^)] + $sf.samples[^($sf.samples.count-1^)..^($sf.samples.count-$end^)]
-echo   $sf.sounds = $sf.sounds[0..^($sf.sounds.count-$end-1^)] + ^( $sf.sounds[^($sf.sounds.count-1^)..^($sf.sounds.count-$end^)] ^| select hash, @{n="sample_index";e={$sf.sounds.sample_index[($sf.sounds.count-$end+($sf.sounds.count-$_.sample_index-1))]}}, flags ^)
+echo   if ($sf.samples.count-$end -gt 0) {
+echo     $sf.samples = $sf.samples[0..^($sf.samples.count-$end-1^)] + %sarev%
+echo     $sf.sounds = $sf.sounds[0..^($sf.sounds.count-$end-1^)] + %sorev%
+echo   } else {
+echo     $sf.samples = %sarev%
+echo     $sf.sounds = %sorev%
+echo   }
 echo }
 REM Fix random index
 set ra=/\*\*\*random\*\*\*/
 echo $hs = $sf.sounds ^| select @{n="hash";e={($_.hash -ireplace '%ra%\d\d?$')}}, sample_index, flags
 echo $ra = $hs.hash ^| select -unique ^| %% {if (($hs.hash -eq $_).count -gt 1) {$_}}
 echo $d = @([PSCustomObject]@{hash=''; i=0})
-echo $sf.sounds = Foreach ($s in $hs) {if ($ra -eq $s.hash) {$i = $d.hash.IndexOf($s.hash); if ($i -gt 0) {$d[$i].i++} else {$d += [PSCustomObject]@{hash=$s.hash; i=0}; $i=-1}; $s ^| select @{n="hash";e={($s.hash + '%ra:\=%' + $d[$i].i).ToUpper()}}, sample_index, flags} else {$s}}
+echo [array]$sf.sounds = Foreach ($s in $hs) {if ($ra -eq $s.hash) {$i = $d.hash.IndexOf($s.hash); if ($i -gt 0) {$d[$i].i++} else {$d += [PSCustomObject]@{hash=$s.hash; i=0}; $i=-1}; $s ^| select @{n="hash";e={($s.hash + '%ra:\=%' + $d[$i].i).%hshcase%()}}, sample_index, flags} else {$s}}
+:PSwriteJSON
 REM Convert to JSON, and fix bad formatting of v5 (newer versions aren't part of Win)
 echo $ind = 0
 echo [IO.File]::WriteAllLines("%newjson%", (($sf ^| ConvertTo-Json) -split '\r?\n' ^| ForEach-Object {
@@ -2319,7 +2352,7 @@ EXIT /b 0
 
 
 :End
-call :%operation%Post
+if defined any call :%operation%Post
 CLS
 if not exist "%erl%" goto cleanup
 :Errors

@@ -189,6 +189,7 @@ call :filesetup
 if not "%inext%"==".*" echo %xtnsonly%|findstr /eil "%inext:,=%" >nul || EXIT /b
 call :%operation%
 if %delInputFiles%==true del "%fullpath%"
+set any=true
 EXIT /b
 
 :convCCL
@@ -1498,7 +1499,7 @@ EXIT /b 1
 
 
 :End
-call :%operation%Post
+if defined any call :%operation%Post
 CLS
 if not exist "%erl%" goto cleanup
 :Errors

@@ -19,7 +19,7 @@ copy QuickBatch\ReadMe.md QuickBatch\!ReadMe.md
 (call :writeBAT SkinsHelper %default%)>SkinHelpers\SkinInstaller.bat
 (call :writeBAT SkinsHelper %default:MUA=XML2%)>SkinHelpers\SkinInstallerXML2.bat
 (call :writeBAT editZSSZSM json true false true false)>Zsnd\Zsound.bat
-(call :writeBAT update json true true true true MUA "" %%%%%%%%~dp0x_voice.json)>Zsnd\build_x_voice.bat
+(call :writeBAT addWAV json true true true true MUA "" %%%%%%%%~dp0x_voice.json)>Zsnd\build_x_voice.bat
 goto eof
 
 :writeBAT
@@ -91,6 +91,8 @@ echo REM Read sample-reate, and flags, in addition to the hash in the source JSO
 echo set asample=never
 echo REM Ask for a new hash? (yes =true; automatically generate a custom hash, eg. =REPLACE_THIS_HASH; automatically generate hash with filename =file; automatically genereate with CHAR/[jsonname]/[filename] =char)
 echo set askhash=char
+echo REM Uppercase hashes? (all uppercase =ToUpper; all lowercase =ToLower)
+echo set hshcase=ToUpper
 echo REM Choose a sample_index number? (Yes =true; No, add at end =false; Yes, same for all =all)
 echo set chIndex=all
 echo REM Define a minimum index number (default =0; allow all minindx=)
