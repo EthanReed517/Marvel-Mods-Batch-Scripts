@@ -9,7 +9,7 @@ REM What operation should be made? (=decompile; =compile; =edit; =convert; =ask;
 REM (Operations for Zsnd: =extract; =combine; =update; =editZSSZSM; =editJSON; add sound files =addWAV; convert WAV files for old versions of Zsnd =convertW; convert multi-channel sounds =ravenAudio)
 REM (Operations that use Raven-Formats: =PackageCloner; =ModCloner; =Herostat-Skin-Editor; =SkinsHelper)
 REM (Alchemy operations used by other operations: =genGColorFix; =SkinEditFN)
-set operation=SkinsHelper
+set operation=addWAV
 REM Set the decompile/convert format: (JSON =json; true XML =xml; NBA2kStuff's XML =lxml)
 set decformat=json
 REM Rename the decompiled extension to below? (enter the extension, eg.: =txt; don't rename: customext=)
@@ -33,15 +33,15 @@ REM Zsnd settings:
 REM Location of portable Zsnd? (folder where zsnd.py/zsnd.exe and hashes.json are in)
 set "zsndp=%~dp0zsnd"
 REM Use portable Zsnd? (Yes =true; No =false) (Still used for conversion)
-set usezsnd=false
+set usezsnd=true
 REM Extract to the input folder? (yes, extract at same location as file, doesn't work for portable Zsnd =true; no, extract to where Zsound.bat is =false; can be a path ending with \ as well)
 set outfile=true
 
 REM addWAV and modify JSON Settings:
 REM Specify a JSON file to add the sounds to. This is useful for x_voice for example.
-set "oldjson="
+set "oldjson=%~dp0x_voice.json"
 REM Automatically combine to ZSS/ZSM at the end? (Yes =true; No =false)
-set combine=false
+set combine=true
 REM For the new file: Do you want to be asked for a new name? (ask, even if a JSON has been found or selected =true; ask, always create new json =new; auto name if JSON exists =false; update if JSON exists =update; take the name of the input folder instead of the JSON, behaves like false =folder; always take the folder name, will never ask =forcefolder)
 REM For other Zsnd operations, it will take the names of ZSS/ZSM or JSON files respectively.
 set askname=false
@@ -52,7 +52,7 @@ REM WARNING for destination: Avoid identical names if dropping files from multip
 set movewhr=destination
 REM Remove the header of WAV files? (only useful for old versions of Zsnd).
 REM (no, my portable Zsnd is new =false; yes, default, converts all WAVs =true)
-set remHead=false
+set remHead=true
 REM Read sample-reate, and flags, in addition to the hash in the source JSON? (yes =true; no, read hash only =false; no, don't read hash either =never)
 set asample=never
 REM Ask for a new hash? (yes =true; automatically generate a custom hash, eg. =REPLACE_THIS_HASH; automatically generate hash with filename =file; automatically genereate with CHAR/[jsonname]/[filename] =char)

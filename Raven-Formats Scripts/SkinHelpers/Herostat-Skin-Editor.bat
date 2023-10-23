@@ -106,7 +106,7 @@ set "erl=%~dp0error.log"
 set igTF=IG_GFX_TEXTURE_FORMAT_
 if ""=="%customext%" set customext=%decformat:lxml=xml%
 if "%operation%" == "ask" call :askop
-if defined sr if defined channels if defined loop set predefined=true
+if defined sr if defined channels if defined loop set predefined=true& set flags=%channels:4=34%
 REM Powershell commands
 set PSout=[System.IO.File]::WriteAllLines($varp, $var, (New-Object System.Text.UTF8Encoding $False))
 set PSbkp=$var ^| %% {if (Test-Path $_) {$b = $_; $i = 1; while ($true) {if (Test-Path $b) {$b = $_ + '.' + $i + '.bak'; $i++} else {Break}}; copy $_ $b}}
@@ -379,7 +379,7 @@ EXIT /b
 if %remHead%%usezsnd%==falsefalse goto :nZS
 if exist "%zsndp%\zsnd.py" call :checkTools py && set zspe=py "%zsndp%\zsnd.py"
 if exist "%zsndp%\zsnd.exe" set zspe="%zsndp%\zsnd.exe"
-if [%zspe%]==[] set remHead=false& goto :nZS
+if not defined zspe set remHead=false& goto :nZS
 if %usezsnd%==false goto :nZS
 set Zsnd=%zspe%
 set "outfile=%outfile:true=false%"
@@ -1370,7 +1370,7 @@ if ""=="%oldjson%" EXIT /b
 choice /c UN /m "[U] Update '%jsonname%.json' or start with a [N] new, empty file"
 if errorlevel 2 call :numberedBKP oldjson & call :writeNewJSON
 copy /y "%fullpath%" "%tem%"
-call :PSJZ F Upd
+call :PSJZ F Add
 call :comb%combine%
 EXIT /b
 
@@ -1383,7 +1383,7 @@ for /f "skip=2 tokens=1*" %%e in ('find /i """file"":" "%oldjson%" 2^>nul') do (
  call :uChckRem
 )
 echo.
-call :PSJZ F Upd
+call :PSJZ F Add
 call :comb%combine%
 EXIT /b
 :uChckRem
@@ -1426,7 +1426,9 @@ if %remHead%==false EXIT /b
 call :convertWPost
 for /f usebackq^ tokens^=1-5^ delims^=^" %%c in ("%tem%") do set "hash=%%~d" & set "fullpath=%%~f" & call :filesetup & call :cM%movewhr% %%c "%%g"
 move /y "%tem%c" "%tem%"
-move "%cvd%\*" "%jp%%infolder%"
+if %movewhr% NEQ destination EXIT /b
+if "%cvd%\"=="%tp%" EXIT /b
+move "%cvd%\*" "%tp%"
 rd /s /q "%cvd%"
 EXIT /b
 :combtrue
@@ -1625,6 +1627,7 @@ choice /m "Do you want to use '%hash%' for the hash of all remaining input files
 if errorlevel 2 set in=
 EXIT /b 0
 :HSSetup
+if defined inm goto HSSE
 if ""=="%MUAOHSpath%" (
  echo Please paste or enter a folder path.
  echo - OpenHeroSelect ^(OHS^) users use the path to the OHS folder.
@@ -1646,6 +1649,7 @@ if defined %2 EXIT /b 0
 if not %1==name EXIT /b 1
 set %2=
 set /p %2=Enter the internal name for "%nameonly%": || EXIT /b
+set inm=m
 EXIT /b 0
 :readHS
 REM For other uses: If the herostat has 1 char, charactername will always be set to variable, regardless of the argument
@@ -1664,11 +1668,11 @@ EXIT /b
 :cMdestination
 call :Mdest
 echo %1 "%hash%" "%file%" %~2 >>"%tem%c"
+for /f "tokens=3" %%f in ("%~2") do if %%f GTR 1 del "%cvd%\%namextns%"
 EXIT /b
 :cMsource
-if %remHead%==true call :numberedBKP fullpath
+call :numberedBKP fullpath
 :cMreplace
-if %remHead%==false EXIT /b
 if exist "%cvd%\%namextns%" (move /y "%cvd%\%namextns%" "%pathonly%") else (
  echo The converted "%namextns%" could not be found. This is probably due to a too long total file and path name. 
  echo  Check the "converted" folder for any ill-named files and rename them according to the input file. 
@@ -1686,10 +1690,9 @@ EXIT /b
 :Mdestination
 if %remHead%==true EXIT /b
 call :Mdest
+if /i "%format%%xtnsonly%"=="0.wav" EXIT /b
 REM move or copy? Converted files are copied.
 move "%fullpath%" "%tp%"
-:Msource
-:Mreplace
 EXIT /b
 :askxv
 set dircmd=/b /a-d
@@ -1718,9 +1721,8 @@ if ""=="%ravenAudio%" call :checkTools ravenAudio || echo ravenAudio not found. 
 %ravenAudio% "%fullpath%" "%out%"
 EXIT /b
 :rAdestination
-if defined tp goto rAsource
-if ""=="%subfolder%" set /p subfolder=Enter a folder to copy the files to. Press enter to use 'converted': || set subfolder=converted
-set "out=%~dp0%subfolder%\%namextns%"
+call :Mdest
+set "out=%tp%\%namextns%"
 EXIT /b
 :rAsource
 call :numberedBKP fullpath
@@ -1785,7 +1787,7 @@ move /y "%tem%m" "%tem%"
 call :PSJZ MI
 EXIT /b
 :mIask
-call :asknum nindx "(lowest index number to move the selection [%indx%] to)"
+call :asknum nindx "(lowest index number to move the selection [%i%] to)"
 if %indx% EQU %nindx% set nindx=& goto mIask
 EXIT /b
 :mIn
@@ -1895,7 +1897,7 @@ set i=%i:and=,%
 set n=
 for %%i in (%i%) do call :ix %%i >"%tem%"
 if defined pi call :ie %pi% >>"%tem%"
-EXIT /b
+goto ireset
 :ix
 set c=%*
 call :isNumber %* || call :isNumber %c:~,1% || set n=%*
@@ -1915,6 +1917,7 @@ EXIT /b
 :i2
 if %i2% LSS %i1% set i1=%i2%& set i2=%i1%
 for /l %%i in (%i1%,1,%i2%) do call :ie %%i
+:ireset
 set n=
 set pi=
 EXIT /b
@@ -1943,7 +1946,7 @@ echo $end = 0
 echo $rQ = '(?=(?:[^^"]*"[^^"]*")*[^^"]*$)'
 echo (gc "%tem%" ^| %% {[PSCustomObject]@{index=[int]($_ -Split ' ')[0]; hash=($_ -Split ' ')[1]; file=($_ -Split ' ')[2]; value=$_}} ^| Sort-Object -Property @{Expression = 'index'; Descending = $true}, @{Expression = 'hash'; Descending = $true}, @{Expression = 'file'; Descending = $true}).value ^| %% {
 echo   $l = ($_ -Split " +$rQ").Trim('"')
-echo   [int]$i, [int]$oi = $l[0]
+echo   [int]$i = [int]$oi = $l[0]
 set ccb=}
 goto PSfor%1
 :PSforF
@@ -1972,11 +1975,10 @@ echo   $r %ic:x=-%
 echo   $a %ic:x=+%
 echo   $so = @($so ^| select hash, @{n="sample_index";e={$i}}, flags)
 echo   $a = [array]$a + [array]$i
-:PSUpd
-:PSAdd
 call :PSaddHi
 call :PSaddFi
-goto PSfixZ
+echo.%ccb%
+goto PSwriteJSON
 :PSaddHi
 echo     $ro = 1
 echo     if ($sf.sounds.sample_index.count -eq 0) {
@@ -2023,7 +2025,10 @@ EXIT /b
 call :PSaddFi
 echo.%ccb%
 echo $sf.sounds = @([PSCustomObject]@{hash='CONVERT'; sample_index=0; flags=%flgh%})
-goto PSwriteJSON
+goto PSWJNC
+:PSAdd
+call :PSaddHi
+call :PSaddFi
 :PSfixZ
 echo.%ccb%
 REM Fix order of files added at the end
@@ -2054,8 +2059,10 @@ echo   if ($_ -match "[\{\[]$rQ") {$ind += 4}
 echo   $line
 echo }), (New-Object System.Text.UTF8Encoding $False))
 EXIT /b
+:PSWJNC
 REM Convert to JSON, with bad v5 formatting
 echo [IO.File]::WriteAllLines("%newjson%", ($sf ^| ConvertTo-Json), (New-Object System.Text.UTF8Encoding $False))
+EXIT /b
 :PSops
 set "gc=(gc -raw '%oldjson%' | ConvertFrom-Json)"
 goto PSjson%1

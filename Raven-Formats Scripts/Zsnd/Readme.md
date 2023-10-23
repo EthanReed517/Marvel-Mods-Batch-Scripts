@@ -26,10 +26,10 @@
 - You'll be asked for details of any new file, so be sure that you know them.
   It's possible do set-up the BAT to include this information, so you're not asked each time.
   For example: If your files are always 22050hz mono (what you usually use in zsm-editor),
-  you can open the Zsound.bat with a text editor (e.g. Notepad) and change lines 66, 68, and 70:
-  66 to `set sr=22050`
-  68 to `set channels=1`
-  70 to `set loop=false`
+  you can open the Zsound.bat with a text editor (e.g. Notepad) and change lines 70, 72, and 74:
+  70 to `set sr=22050`
+  72 to `set channels=1`
+  74 to `set loop=false`
   Similarly, it's possible to define all other inputs in the BAT.
 - ZSM/ZSS file is automatically created.
   (You'll be asked for the extension, if the filename doesn't end in `_m` or `_v` or isn't `x_voice` or `x_common`)
