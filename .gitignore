@@ -12,7 +12,7 @@ Raven-Formats Scripts/QuickBatch/(XC)Decompile.bat
 Raven-Formats Scripts/QuickBatch/(XC)Edit.bat
 Raven-Formats Scripts/QuickBatch/(XCtoRF)Convert.bat
 Raven-Formats Scripts/(XC)Compile.bat
-Raven-Formats Scripts/Zsnd/build_x_voice.bat
+Raven-Formats Scripts/Zsnd/x_voice.bat
 Raven-Formats Scripts/Zsnd/Zsound.bat
 Raven-Formats Scripts/SkinHelpers/SkinInstallerXML2.bat
 
