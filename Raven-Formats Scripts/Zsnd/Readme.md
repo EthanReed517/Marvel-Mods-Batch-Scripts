@@ -31,7 +31,7 @@
   72 to `set channels=1`
   74 to `set loop=false`
   Similarly, it's possible to define all other inputs in the BAT.
-- ZSM/ZSS file is automatically created.
+- The ZSM/ZSS file is automatically created or updated.
   (You'll be asked for the extension, if the filename doesn't end in `_m` or `_v` or isn't `x_voice` or `x_common`)
 
 #### To extract ZSS and ZSM files:
@@ -43,8 +43,7 @@
 - You'll be asked for the extension, if the filename doesn't end in `_m` or `_v` or isn't `x_voice` or `x_common`
 
 ## Known issues
-- The BAT has a lot of features, but they haven't all been tested.
-  If you want to use any of these features (e.g. add music) consider this batch in alpha state.
+- Currently no known issues. Thanks for all testers, especially BloodyMares. Please report and bugs that you find.
 
 ## Tips
 - [XiMpLe](http://www.ximple.cz/download.php) or another JSON table viewer.
