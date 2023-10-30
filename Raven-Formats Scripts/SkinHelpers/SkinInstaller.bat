@@ -106,7 +106,8 @@ set "erl=%~dp0error.log"
 set igTF=IG_GFX_TEXTURE_FORMAT_
 if ""=="%customext%" set customext=%decformat:lxml=xml%
 if "%operation%" == "ask" call :askop
-if defined sr if defined channels if defined loop set predefined=true& set flags=%channels:4=34%
+set lpd=%loop%
+if defined sr if defined channels if defined lpd set predefined=true& set flags=%channels:4=34%
 REM Powershell commands
 set PSout=[System.IO.File]::WriteAllLines($varp, $var, (New-Object System.Text.UTF8Encoding $False))
 set PSbkp=$var ^| %% {if (Test-Path $_) {$b = $_; $i = 1; while ($true) {if (Test-Path $b) {$b = $_ + '.' + $i + '.bak'; $i++} else {Break}}; copy $_ $b}}
@@ -1290,7 +1291,6 @@ echo ---------------------------------
 echo.
 EXIT /b
 :askSR
-REM Better would be automatic detection, if possible
 set chd=%channels:1=(Mono)%
 set chd=%chd:2=(Stereo)%
 set chd=%chd:4=%
@@ -1560,8 +1560,14 @@ EXIT /b 1
 if defined oldjson for /f "tokens=2 delims=:," %%p in ('findstr /ilc:"\"platform\":" "%oldjson%" 2^>nul') do for %%f in (%inext%) do call echo %%%%f:~,4%% | find /i %%p >nul && set inext=%%f&& set formatW=%%f&& if "%xtnsonly%" NEQ "%%f" EXIT /b 1
 EXIT /b 0
 :srchInfo
+if %asample%==true goto sIa
 if defined predefined EXIT /b
-if not %asample%==true call :askSR & EXIT /b
+if defined lpd set loop=%lpd%
+set fnd=
+for /f "usebackq tokens=1-2" %%c in (`Powershell "$fc = gc '%fullpath%' -raw; $h = $fc[0..43] -join '' | Format-Hex; if ($fc[0..3] -join '' -eq 'RIFF' -and $fc[8..11] -join '' -eq 'WAVE' -and $h.Bytes[20] -eq 1 -and $h.Bytes[34] -eq 16) { '{0} {1}' -f $h.Bytes[22], [BitConverter]::ToInt32([byte[]][char[]]$fc[24..27], 0) }"`) do set fnd=%lpd%& set channels=%%c& set sr=%%d
+if defined fnd goto Wopt5
+goto askSR
+:sIa
 set "gs=%namextns%"
 echo Searching information for "%namextns%" . . .
 call :PSops Get samples sample_rate || EXIT /b && set sr=%sample_rate%
