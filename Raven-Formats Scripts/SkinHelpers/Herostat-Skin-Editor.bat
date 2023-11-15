@@ -1560,11 +1560,11 @@ EXIT /b 1
 if defined oldjson for /f "tokens=2 delims=:," %%p in ('findstr /ilc:"\"platform\":" "%oldjson%" 2^>nul') do for %%f in (%inext%) do call echo %%%%f:~,4%% | find /i %%p >nul && set inext=%%f&& set formatW=%%f&& if "%xtnsonly%" NEQ "%%f" EXIT /b 1
 EXIT /b 0
 :srchInfo
-if %asample%==true goto sIa
 if defined predefined EXIT /b
+if %asample%==true goto sIa
 if defined lpd set loop=%lpd%
 set fnd=
-for /f "usebackq tokens=1-2" %%c in (`Powershell "$fc = gc '%fullpath%' -raw; $h = $fc[0..43] -join '' | Format-Hex; if ($fc[0..3] -join '' -eq 'RIFF' -and $fc[8..11] -join '' -eq 'WAVE' -and $h.Bytes[20] -eq 1 -and $h.Bytes[34] -eq 16) { '{0} {1}' -f $h.Bytes[22], [BitConverter]::ToInt32([byte[]][char[]]$fc[24..27], 0) }"`) do set fnd=%lpd%& set channels=%%c& set sr=%%d
+if /i %xtnsonly%==.wav for /f "usebackq tokens=1-2" %%c in (`Powershell "$fc = gc '%fullpath%' -raw; $h = $fc[0..43] -join '' | Format-Hex; if ($fc[0..3] -join '' -eq 'RIFF' -and $fc[8..11] -join '' -eq 'WAVE' -and $h.Bytes[20] -eq 1 -and $h.Bytes[34] -eq 16) { '{0} {1}' -f $h.Bytes[22], [BitConverter]::ToInt32($fc[24..27], 0) }"`) do set fnd=%lpd%& set channels=%%c& set sr=%%d
 if defined fnd goto Wopt5
 goto askSR
 :sIa
@@ -1574,6 +1574,8 @@ call :PSops Get samples sample_rate || EXIT /b && set sr=%sample_rate%
 call :PSops Get samples format
 call :PSops Get sounds flags && set flgh=%flags%
 call :PSops Get samples flags || call :askSR
+set loop=false
+if %flags% EQU 1 set loop=true
 if %flags% LSS 0 set flags=
 if %flags% GTR 99 set flags=
 EXIT /b 0

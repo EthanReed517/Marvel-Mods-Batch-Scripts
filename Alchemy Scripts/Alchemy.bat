@@ -1491,6 +1491,7 @@ EXIT /b 0
 
 :checkTools program
 if not defined IG_ROOT echo The IG_ROOT variable is not defined. Please check your Alchemy 5 installation. & goto Errors
+reg delete "HKEY_CURRENT_USER\Software\vicarious visions\driver" /f >nul 2>nul
 if exist "%~dp0%1.exe" set %1="%~dp0%1.exe"
 if not defined %1 for /f "delims=" %%a in ('where %1.exe 2^>nul ') do set %1=%1
 if not defined %1 if exist "%IG_ROOT%\bin\%1.exe" set %1="%IG_ROOT%\bin\%1.exe"
