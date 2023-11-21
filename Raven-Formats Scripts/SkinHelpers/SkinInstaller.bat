@@ -71,7 +71,7 @@ set sr=
 REM Channels =1; =2; =4
 set channels=
 REM Loop =true; =false
-set loop=
+set loop=false
 REM Hash flags =31; =255 (Currently unknow what it does. Leave it 31 or 255.)
 set flgh=31
 
@@ -2041,7 +2041,7 @@ call :PSaddFi
 echo.%ccb%
 REM Fix order of files added at the end
 set "sarev=$sf.samples[^($sf.samples.count-1^)..^($sf.samples.count-$end^)]"
-set "sorev=^( $sf.sounds[^($sf.sounds.count-1^)..^($sf.sounds.count-$end^)] ^| select hash, @{n="sample_index";e={$sf.sounds.sample_index[($sf.sounds.count-$end+($sf.sounds.count-$_.sample_index-1))]}}, flags ^)"
+set "sorev=^( $sf.sounds[^($sf.sounds.count-1^)..^($sf.sounds.count-$end^)] ^| select hash, @{n="sample_index";e={$sf.sounds.sample_index[($sf.sounds.count-$end+($sf.sounds.count-$sf.sounds.IndexOf($_)-1))]}}, flags ^)"
 echo if ($end -gt 0) {
 echo   if ($sf.samples.count-$end -gt 0) {
 echo     $sf.samples = $sf.samples[0..^($sf.samples.count-$end-1^)] + %sarev%
@@ -2345,8 +2345,9 @@ call :checkTools py
 if exist "%~dp0OpenHeroSelect.exe" set conv="%~dp0OpenHeroSelect.exe" -c
 if exist "%~dp0xml2json.exe" set conv="%~dp0xml2json.exe"
 if defined py if exist "%~dp0converter.py" set conv=py "%~dp0converter.py"
-if ""=="%conv%" echo Converter not found. Check the Readme.>>"%erl%"
-EXIT /b
+if defined conv EXIT /b
+echo Error: Converter not found. Check the Readme.
+goto Errors
 
 :checkExist extension
 set "%1=%pathname%.%1"

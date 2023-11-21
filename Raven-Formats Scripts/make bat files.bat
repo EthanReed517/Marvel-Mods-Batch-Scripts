@@ -105,7 +105,7 @@ echo set sr=
 echo REM Channels =1; =2; =4
 echo set channels=
 echo REM Loop =true; =false
-echo set loop=
+echo set loop=false
 echo REM Hash flags =31; =255 (Currently unknow what it does. Leave it 31 or 255.)
 echo set flgh=31
 echo.
