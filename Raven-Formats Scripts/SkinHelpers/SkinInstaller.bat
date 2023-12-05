@@ -6,7 +6,7 @@ REM ----------------------------------------------------------------------------
 REM Settings:
 
 REM What operation should be made? (=decompile; =compile; =edit; =convert; =ask; =detect)
-REM (Operations for Zsnd: =extract; =combine; =update; =editZSSZSM; =editJSON; add sound files =addWAV; convert WAV files for old versions of Zsnd =convertW; convert multi-channel sounds =ravenAudio)
+REM (Operations for Zsnd: =extract; =combine; =update; =editZSSZSM; =editJSON; add sound files =addWAV; convert WAV files for old versions of Zsnd =convertW; convert multi-channel sounds =ravenAudio; convert supported formats =ZSconvert)
 REM (Operations that use Raven-Formats: =PackageCloner; =ModCloner; =Herostat-Skin-Editor; =SkinsHelper)
 REM (Alchemy operations used by other operations: =genGColorFix; =SkinEditFN)
 set operation=SkinsHelper
@@ -96,6 +96,7 @@ REM these are automatic settings, don't edit them:
 set x=0
 set inext=.txt, .xml, .json
 set rf=xml eng fre ger ita pol rus spa pkg boy chr nav
+set zf=.wav, .xbadpcm, .xma, .vag, .dsp
 if ""=="%temp%" set "temp=%~dp0"
 set "tem=%temp%\%operation%.tmp"
 set "rfo=%temp%\RFoutput.log"
@@ -117,7 +118,7 @@ set unk=Unknown (information required, contact ak2yny if you know more)
 set .wav=PC 106 WAV 16bit
 set .xbadpcm=XBOX 1 XBADPCM: Xbox, %unk%
 set .xma=XENO 1 XMA: Xbox 360, %unk%
-set .vag=PS2 0 VAG 16bit (WAV converted with FPacker or MFAudio)
+set .vag=PS2 -1 VAG 16bit (WAV converted through FPacker or MFAudio)
 set .dsp=GCUB 0 DSP 16bit (Nintendo Gamecube DSPADPCM for GC and Wii)
 
 call :%ForPltfrm%Setup
@@ -173,6 +174,7 @@ EXIT /b
 set "i=%cmdcmdline:"=""%"
 set "i=%i:*"" =%"
 set "i=%i:~0,-2%"
+if ""=="%i%" EXIT /b
 :fixQ
 if ""=="%i%" call set "i=%%%1%%"
 set "i=%i:^=^^%"
@@ -198,6 +200,7 @@ for %%i in ("%fullpath%") do (
  set xtnsonly=%%~xi
  set infile=%%~fi
 )
+set recallcd=cd /d "%cd%"
 EXIT /b
 :VAR
 set "b=%fullpath%"
@@ -328,12 +331,13 @@ EXIT /b
 echo No support for %EditGame% on %ForPltfrm%.
 goto Errors
 
+:startZSconvert
 :starteditZSSZSM
 :startextract
 set inext=.zss, .zsm
 goto czs
 :startaddWAV
-set inext=.wav, .xma, .xbadpcm, .vag, .dsp
+set inext=%zf%
 goto conW
 :startconvertW
 set inext=.wav
@@ -353,7 +357,7 @@ set inext=.wav
 call :checkTools ravenAudio
 EXIT /b
 :startupdate
-set inext=.wav, .xma, .xbadpcm, .vag, .dsp
+set inext=%zf%
 call :checkPlat
 set movewhr=%movewhr:destination=source%
 set askname=update
@@ -372,7 +376,7 @@ call :defineJSON
 for %%i in ("%*") do (
  set "zcn=%%~fi"
  if /i "%%~xi"==".txt" goto ZsndLoad
- for %%e in (.zss, .zsm) do if /i "%%~xi"=="%%e" if /i not %operation%==editZSSZSM set operation=extract& set inext=.zss, .zsm
+ for %%e in (.zss, .zsm) do if /i "%%~xi"=="%%e" if /i not %operation%==editZSSZSM if /i not %operation%==ZSconvert set operation=extract& set inext=.zss, .zsm
  if /i "%%~xi"==".json" set operation=combine& set inext=.json
 )
 EXIT /b
@@ -440,7 +444,7 @@ goto Errors
 :detect
 for %%e in (.txt, .xml, .json) do if /i "%xtnsonly%" == "%%e" goto compile
 for %%e in (.%rf: =b, .%b) do if /i "%xtnsonly%" == "%%e" goto decompile
-for %%e in (.wav, .xma, .xbadpcm, .vag, .dsp) do if /i "%xtnsonly%" == "%%e" goto addWAV
+for %%e in (.wav, .xbadpcm, .xma, .vag, .dsp) do if /i "%xtnsonly%" == "%%e" goto addWAV
 for %%e in (.zss, .zsm) do if /i "%xtnsonly%" == "%%e" goto extract
 for %%e in (.json) do if /i "%xtnsonly%" == "%%e" goto combine
 EXIT /b
@@ -1342,10 +1346,10 @@ set "oj=%outfile%%nameonly%"
 call :numberedBKP oj
 set "oj=%oj%.json"
 call :numberedBKP oj
-if defined outfile set "back=%cd%" & cd /d "%zsndp%"
+if defined outfile cd /d "%zsndp%"
 echo extracting . . .
 %Zsnd% -d "%fullpath%" "%oj%" 2>"%rfo%" || call :writerror RF
-if defined outfile cd /d "%back%"
+if defined outfile %recallcd%
 EXIT /b
 
 :combine
@@ -1363,6 +1367,33 @@ set "zs=%pathname%.%ext%"
 call :numberedBKP zs
 cd /d "%pathonly%"
 %Zsnd% "%fullpath%" "%zs%" 2>"%rfo%" || call :writerror RF
+EXIT /b
+
+:ZSconvert
+REM RE is not supported, yet, but really needs this as well.
+if %ConsGen%==8th EXIT /b
+set PF=%ForPltfrm:PSP=PS2%
+set PF=%PF:GC=GCUB%
+set PF=%PF:Wii=GCUB%
+set PF=%PF:360=XENO%
+call :extract
+echo converting . . .
+for /f "delims=" %%i in ('dir /b /s "%oj:~,-5%\*.wav" 2^>nul') do (
+ set "fullpath=%%~i"
+ call :ZSc2
+)
+call :numberedBKP oj
+set "oldjson=%oj%"
+set "newjson=%oj%"
+set "fullpath=%oj%"
+call :filesetup
+call :PSfl PSconvertZS
+goto combine
+:ZSc2
+call :filesetup
+call :formatW || EXIT /b
+call :srchInfo
+call :%StT% || EXIT /b
 EXIT /b
 
 :ZsndPreConfig
@@ -1490,12 +1521,11 @@ set "newjson=%oldjson%"
 echo converting . . .
 call :writeNewJSON
 call :PSJZ F conv
-set "back=%cd%"
 if defined jp cd /d "%jp%"
 zsnd "%oldjson%" "%cvd%.zss" 2>"%rfo%" || call :writerror RF
 cd /d "%zsndp%"
 %zspe% -d "%cvd%.zss" "%oldjson%"
-cd /d "%back%"
+%recallcd%
 del "%oldjson%" "%cvd%.zss"
 set "oldjson=%bj%"
 set "newjson=%bnj%"
@@ -1508,7 +1538,7 @@ if %remHead%==false echo Conversion requirements not met. Check portable Zsnd. &
 call :formatW || EXIT /b
 if /i "PC" NEQ "%plat%" set remHead=false
 call :srchInfo
-if 0%flags% GTR 1 call :ravenAudio & set format=0
+call :%StT% || EXIT /b
 if "%flags%"=="1" set flags=
 if %loop%==true set /a flags+=1
 call :hashgen
@@ -1518,9 +1548,28 @@ if defined newjson call set "file=%%file:%jp%=%%"
 call :M%movewhr%
 call :writefile >>"%tem%"
 EXIT /b
+:WavToWav
+if 0%flags% GTR 1 goto ravenAudio
+EXIT /b
+:WavToVag
+REM conversion currently only supports one channel, maybe even the format
+REM May need better error messages
+if %channels% GTR 1 EXIT /b 1
+call :checkTools MFAudio || EXIT /b
+%MFAudio% "%fullpath%" /OF%sr% /OC1 /OTVAGC "%fullpath:~,-3%vag" || EXIT /b
+set "fullpath=%fullpath:~,-3%vag"
+set "namextns=%nameonly%.vag"
+set xtnsonly=.vag
+call :platW .vag
+:XbadpcmToXbadpcm
+:XmaToXma
+:DspToDsp
+EXIT /b
+:VagToVag
+if %channels% GTR 2 EXIT /b 1
+EXIT /b
 :formatW
-call :checkPlat || goto fWwrong
-if defined formatW if %xtnsonly% NEQ %formatW% goto fWwrong
+call :checkPlat || EXIT /b
 call :platW %xtnsonly%
 EXIT /b 0
 :platW
@@ -1546,25 +1595,36 @@ goto platSw%errorlevel%
 :platSw1
 if ""=="%o%" set o=0
 set /a o+=1
-for /f "tokens=%o%" %%o in (".wav .xma .xbadpcm .vag .dsp") do call set formatW=%%%%o%%& goto askPlat
+for /f "tokens=%o%" %%o in (".wav .xbadpcm .xma .vag .dsp") do call set formatW=%%%%o%%& goto askPlat
 set o=
 goto platSw1
 :platSw2
 for /f %%p in ("%formatW%") do set plat=%%p
 if defined plat EXIT /b
 goto askPlat
-:fWwrong
+:checkPlat
+set StT=
+if defined oldjson for /f "tokens=2 delims=:," %%p in ('findstr /ilc:"\"platform\":" ^<"%oldjson%" 2^>nul') do for %%f in (%zf%) do call echo %%%%f:~,4%% | find /i %%p >nul && set formatW=%%f&& goto cFmt
+if ""=="%ForPltfrm%" EXIT /b
+if %ConsGen%==8th EXIT /b
+for %%f in (%zf%) do call echo %%%%f:~,4%% | find /i "%ForPltfrm:~,2%" >nul && set formatW=%%f&& goto cFmt
+EXIT /b
+:cFmt
+set StT=%xtnsonly:~1%To%xtnsonly:~1%
+if ""=="%formatW%" EXIT /b 0
+set StT=%xtnsonly:~1%To%formatW:~1%
+if /i %xtnsonly%==%formatW% EXIT /b 0
+if /i %xtnsonly%==.wav if %formatW%==.vag EXIT /b 0
 echo ERROR: "%fullpath%" is not in the correct format. Expected: %formatW%>>"%erl%"
 EXIT /b 1
-:checkPlat
-if defined oldjson for /f "tokens=2 delims=:," %%p in ('findstr /ilc:"\"platform\":" "%oldjson%" 2^>nul') do for %%f in (%inext%) do call echo %%%%f:~,4%% | find /i %%p >nul && set inext=%%f&& set formatW=%%f&& if "%xtnsonly%" NEQ "%%f" EXIT /b 1
-EXIT /b 0
 :srchInfo
 if defined predefined EXIT /b
 if %asample%==true goto sIa
 if defined lpd set loop=%lpd%
 set fnd=
 if /i %xtnsonly%==.wav for /f "usebackq tokens=1-2" %%c in (`Powershell "$fc = gc '%fullpath%' -raw; $h = $fc[0..43] -join '' | Format-Hex; if ($fc[0..3] -join '' -eq 'RIFF' -and $fc[8..11] -join '' -eq 'WAVE' -and $h.Bytes[20] -eq 1 -and $h.Bytes[34] -eq 16) { '{0} {1}' -f $h.Bytes[22], [BitConverter]::ToInt32($fc[24..27], 0) }"`) do set fnd=%lpd%& set channels=%%c& set sr=%%d
+if /i %xtnsonly%==.vag for /f "usebackq tokens=1-2" %%c in (`Powershell "$fc = gc '%fullpath%' -raw; if ($fc[0..3] -join '' -eq 'VAGp') { '{0} {1}' -f [Math]::Max($fc[30], 1), [BitConverter]::ToInt32($fc[19..16], 0) }"`) do set fnd=%lpd%& set channels=%%c& set sr=%%d
+REM Name is $fc[32..48]
 if defined fnd goto Wopt5
 goto askSR
 :sIa
@@ -1726,7 +1786,8 @@ EXIT /b
 set "out=%fullpath%"
 call :rA%movewhr%
 if ""=="%ravenAudio%" call :checkTools ravenAudio || echo ravenAudio not found. Only 1 channel files possible. || EXIT /b
-%ravenAudio% "%fullpath%" "%out%"
+%ravenAudio% "%fullpath%" "%out%" || EXIT /b
+set format=0
 EXIT /b
 :rAdestination
 call :Mdest
@@ -1947,6 +2008,13 @@ echo Generating sound database . . .
 call :PSfl PSjsonZSND %1 %2
 EXIT /b
 
+:PSconvertZS
+set fmtc=
+if %format% GTR -1 set fmtc=@{n="format";e=%format%}, 
+echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
+echo $sf.platform = "%PF%"
+echo $sf.samples = $sf.samples ^| %% { $f=$_.file; $_ ^| select @{n="file";e={$f.substring(0, $f.length -3) + "%StT:*To=%".ToLower()}}, %fmtc%sample_rate }
+goto PSwriteJSON
 :PSjsonZSND
 echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
 echo $max_i = $sf.samples.file.count
@@ -1966,6 +2034,7 @@ echo   } else {
 echo     if ($i -lt 0 -or $i -ge $max_i -and $i -ne 0) {$i = $sf.samples.file.count; $end += 1}
 echo     $so = @([PSCustomObject]@{hash=$l[1].%hshcase%(); sample_index=$i; flags=%flgh%})
 echo     $sa = @([PSCustomObject]@{file=$l[2]; format=[int]$l[3]; sample_rate=[int]$l[4]})
+echo     if ($sa.format -eq -1) {$sa = $sa ^| select file, sample_rate}
 echo     if ($l[5]) {$sa ^| Add-Member -NotePropertyName flags -NotePropertyValue ([int]$l[5])}
 set ccb=%ccb%}
 goto PS%2

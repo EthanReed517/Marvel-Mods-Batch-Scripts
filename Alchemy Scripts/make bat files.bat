@@ -1,6 +1,7 @@
 @echo off
 
-mkdir AnimationMixing hud image2igb "SkinEdit (internal name renamer)" 2>nul
+mkdir AnimationMixing hud image2igb "SkinEdit (internal name renamer)" "Alchemy 5 Truly Portable" 2>nul
+
 (call :writeBAT "Alchemy.bat" Extract false dxt1 false true)>ext.images.bat
 (call :writeBAT "Alchemy.bat" IGBconverter false dxt1 false true)>IGBconverter.bat
 (call :writeBAT "Alchemy.bat" image2igb false dds false true)>image2igb\image2igb.bat
@@ -18,6 +19,10 @@ mkdir AnimationMixing hud image2igb "SkinEdit (internal name renamer)" 2>nul
 (call :writeBAT "Alchemy.bat" SkinEdit false dxt1 false false)>"SkinEdit (internal name renamer)\SkinEdit.bat"
 (call :writeBAT "Alchemy.bat" Maps false dxt1 false true)>Maps.bat
 (call :writeBAT "Alchemy.bat" fixSkins false dxt1 false true)>animdb2actor.bat
+
+for /f "delims=" %%b in ('dir /b /s *.bat') do copy /y "%%~b" "Alchemy 5 Truly Portable\"
+del "Alchemy 5 Truly Portable\make bat files.bat" "Alchemy 5 Truly Portable\Alchemy.bat"
+
 goto eof
 
 :writeBAT

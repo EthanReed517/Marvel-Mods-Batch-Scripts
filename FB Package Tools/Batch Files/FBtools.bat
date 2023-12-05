@@ -76,6 +76,7 @@ EXIT /b
 set "i=%cmdcmdline:"=""%"
 set "i=%i:*"" =%"
 set "i=%i:~0,-2%"
+if ""=="%i%" EXIT /b
 :fixQ
 if ""=="%i%" call set "i=%%%1%%"
 set "i=%i:^=^^%"
@@ -203,7 +204,6 @@ REM create the enter.vbs script. This will automatically hit enter when compilin
  echo Set WshShell = WScript.CreateObject^("WScript.Shell"^)
  echo WshShell.SendKeys "{ENTER}"
 )>"%temp%\enter.vbs"
-%backupcd%
 %fixcurrd%
 wscript "%temp%\enter.vbs"
 echo %namextns% | %fbBuilder%
@@ -213,7 +213,7 @@ EXIT /b
 
 :updateCFG
 set dircmd=/b
-for /f %%a in ('dir /ad /b "%pathonly%"') do for /f %%i in ('dir /a-d /b /s "%%~a"') do set "fi=%%~dpni" & call :writeNewFiles %%~xi %%~ni
+for /f %%a in ('dir /ad /b "%pathonly%"') do for /f "delims=" %%i in ('dir /a-d /b /s "%%~a"') do set "fi=%%~dpni" & call :writeNewFiles %%~xi %%~ni
 EXIT /b
 :writeNewFiles
 call set "fi=%%fi:%pathonly%=%%"
@@ -233,32 +233,35 @@ EXIT /b
 :actors.igb
 for /f "delims=0123456789" %%i in ("%1") do set "format=actoranimdb" & EXIT /b
 set format=actorskin
-EXIT /b
+EXIT /b 0
 :textures.igb
 set format=texture
-EXIT /b
+EXIT /b 0
 :conversations.xmlb
 :npcstat.xmlb
 :weapons.xmlb
 :entities.xmlb
 set format=xml
-EXIT /b
+EXIT /b 0
+:talents.xmlb
+set format=xml_talents
+EXIT /b 0
 :powerstyles.xmlb
 :fightstyles.xmlb
 set format=fightstyle
-EXIT /b
+EXIT /b 0
 :effects.xmlb
 set format=effect
-EXIT /b
+EXIT /b 0
 :maps.xmlb
 set format=zonexml
-EXIT /b
+EXIT /b 0
 :motionpaths.igb
 set format=motionpath
-EXIT /b
+EXIT /b 0
 :shared_powerups.xmlb
 set format=%dir%
-EXIT /b
+EXIT /b 0
 
 :buildCFG
 call :checkCBI

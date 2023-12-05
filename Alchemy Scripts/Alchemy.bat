@@ -196,6 +196,7 @@ EXIT /b
 set "i=%cmdcmdline:"=""%"
 set "i=%i:*"" =%"
 set "i=%i:~0,-2%"
+if ""=="%i%" EXIT /b
 :fixQ
 if ""=="%i%" call set "i=%%%1%%"
 set "i=%i:^=^^%"
@@ -1490,8 +1491,8 @@ echo :step_forward:ground_attack1:ground_attack2:attack_heavy1:attack_heavy2:jum
 EXIT /b 0
 
 :checkTools program
-if not defined IG_ROOT echo The IG_ROOT variable is not defined. Please check your Alchemy 5 installation. & goto Errors
-reg delete "HKEY_CURRENT_USER\Software\vicarious visions\driver" /f >nul 2>nul
+if "%IG_ROOT%"=="" cd /d "%~dp0" & if not exist "%~dp0libIGCore.dll" echo The IG_ROOT variable is not defined. Please check your Alchemy 5 installation. & goto Errors
+reg add "HKEY_CURRENT_USER\Software\vicarious visions\driver" /v ati /t REG_DWORD /d 00000000 /f >nul 2>nul
 if exist "%~dp0%1.exe" set %1="%~dp0%1.exe"
 if not defined %1 for /f "delims=" %%a in ('where %1.exe 2^>nul ') do set %1=%1
 if not defined %1 if exist "%IG_ROOT%\bin\%1.exe" set %1="%IG_ROOT%\bin\%1.exe"

@@ -17,6 +17,7 @@ Raven-Formats Scripts/Zsnd/Zsound.bat
 Raven-Formats Scripts/SkinHelpers/SkinInstallerXML2.bat
 
 # Alchemy clones from "make bat files.bat" AnimationMixing, hud creation tools, image2igb, SkinEdit, animdb2actor, ext.images, genGColorFix, IGBconverter, Maps
+Alchemy Scripts/Alchemy 5 Truly Portable/*
 Alchemy Scripts/AnimationMixing/_combine.bat
 Alchemy Scripts/AnimationMixing/_extract.bat
 Alchemy Scripts/AnimationMixing/previewAnimations.bat

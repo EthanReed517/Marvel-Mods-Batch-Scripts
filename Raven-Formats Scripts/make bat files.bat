@@ -40,7 +40,7 @@ EXIT /b
 
 :RFsettings
 echo REM What operation should be made? (=decompile; =compile; =edit; =convert; =ask; =detect)
-echo REM (Operations for Zsnd: =extract; =combine; =update; =editZSSZSM; =editJSON; add sound files =addWAV; convert WAV files for old versions of Zsnd =convertW; convert multi-channel sounds =ravenAudio)
+echo REM (Operations for Zsnd: =extract; =combine; =update; =editZSSZSM; =editJSON; add sound files =addWAV; convert WAV files for old versions of Zsnd =convertW; convert multi-channel sounds =ravenAudio; convert supported formats =ZSconvert)
 echo REM (Operations that use Raven-Formats: =PackageCloner; =ModCloner; =Herostat-Skin-Editor; =SkinsHelper)
 echo REM (Alchemy operations used by other operations: =genGColorFix; =SkinEditFN)
 echo set operation=%1

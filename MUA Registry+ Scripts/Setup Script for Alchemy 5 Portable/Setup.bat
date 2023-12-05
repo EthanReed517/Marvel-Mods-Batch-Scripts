@@ -74,7 +74,10 @@ REM Code example: REG delete "HKEY_CURRENT_USER\SOFTWARE\Alchemy Finalizer" /f
 set "NewPath=%OldPath:"=%;%NewDLL%;"
 goto RegPathVar
 REM Powershell takes way too long, but no prompt
-PowerShell "[System.Environment]::SetEnvironmentVariable('PATH', [System.Environment]::GetEnvironmentVariable('PATH', 'machine') + ';%NewDLL%;', 'machine')"
+REM when remove not set, when add do set "NDTA= + '%NewDLL%'"
+PowerShell "$op = [System.Environment]::GetEnvironmentVariable('PATH', 'machine') -split ';' | ? {$_}; $op | %% {if ($_[1] -ne ':') {EXIT 1}}; $cp = $op | ? {$_ -notmatch ('^' + [regex]::Escape('%NewDLL%') + '\\?') -or $_ -notmatch ('^' + [regex]::Escape('%OldDLL%') + '\\?') }; [System.Environment]::SetEnvironmentVariable('PATH', ($cp%NDTA% -join ';') + ';', 'machine'); $cp | %% {if ($_ -match 'Alchemy.*DLL') {EXIT 2}}; EXIT 0"
+if %errorlevel%==2 call :Warnng
+if %errorlevel%==1 EXIT
 
 :RemPathVar
 set "Equal=%OldDLL%#" & call :fixEqual
