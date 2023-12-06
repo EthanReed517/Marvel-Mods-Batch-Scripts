@@ -65,12 +65,9 @@ EXIT /b
 
 :isfiles
 set "fullpath=%fullpath:"=%"
-if /i "%fullpath%"=="%outfile%" EXIT /b
 call :filesetup
 if not "%inext%"==".*" echo %xtnsonly%|findstr /eil "%inext:,=%" >nul || EXIT /b
-call :%operation%
-if %delInputFiles%==true del "%fullpath%"
-EXIT /b
+goto %operation%
 
 :convCCL
 set "i=%cmdcmdline:"=""%"
