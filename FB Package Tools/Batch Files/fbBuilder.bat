@@ -211,6 +211,8 @@ EXIT /b
 :updateCFG
 set dircmd=/b
 for /f %%a in ('dir /ad /b "%pathonly%"') do for /f "delims=" %%i in ('dir /a-d /b /s "%%~a"') do set "fi=%%~dpni" & call :writeNewFiles %%~xi %%~ni
+(for /f "usebackq tokens=1-3" %%b in ("%fullpath%") do if exist "%pathonly%%%b" echo %%b %%c %%d)>"%temp%\%nameonly%.tmp"
+move /y "%temp%\%nameonly%.tmp" "%fullpath%"
 EXIT /b
 :writeNewFiles
 call set "fi=%%fi:%pathonly%=%%"
