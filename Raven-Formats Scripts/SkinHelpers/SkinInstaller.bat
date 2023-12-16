@@ -120,6 +120,9 @@ set .xbadpcm=XBOX 1 XBADPCM: Xbox, %unk%
 set .xma=XENO 1 XMA: Xbox 360, %unk%
 set .vag=PS2 -1 VAG 16bit (WAV converted through FPacker or MFAudio)
 set .dsp=GCUB 0 DSP 16bit (Nintendo Gamecube DSPADPCM for GC and Wii)
+set .mp3=Steam 0 MP3 FSB (fsbankcl with quality 40 = 128kbps)
+set .unk=PS4 0 Unknown, %unk%
+set .unk=X1 0 Unknown, %unk%
 
 call :%ForPltfrm%Setup
 REM There is an issue with this call on some machines. This comment should fix that.
@@ -335,7 +338,7 @@ goto Errors
 :starteditZSSZSM
 :startextract
 set inext=.zss, .zsm
-goto czs
+goto czs8
 :startaddWAV
 set inext=%zf%
 goto conW
@@ -367,6 +370,7 @@ goto czs
 set inext=.json
 :czs
 if %ConsGen%==8th echo Zsnd doesn't support the Remastered version of MUA. & goto Errors
+:czs8
 call :pZScheck
 TITLE Zsnd
 call set "outfile=%%outfile:false=%~dp0%%"
@@ -1143,14 +1147,14 @@ set ig=%on:~-3%00
 :MC1cfm
 set on=%ig:~,-2%
 echo.
-choice /m "Old mod number: %on%. Confrm"
+choice /m "Old mod number: %on%. Confirm"
 if errorlevel 2 goto ModCloner1
 set h=
 set psc=$null
 set "pcv=$on = '%on%'; $sn = $on + '*'; $ca = '$'"
 :ModCloner2
 call :MCTitle
-echo Enter a new mod number.
+echo Enter a new mod number for "%ch%".
 call :asknum nn
 if "%nn:~1%"=="" set nn=0%nn%
 set nn=%nn:~-3%
@@ -1370,14 +1374,14 @@ cd /d "%pathonly%"
 EXIT /b
 
 :ZSconvert
-REM RE is not supported, yet, but really needs this as well.
-if %ConsGen%==8th EXIT /b
+if %ForPltfrm% NEQ Steam if %ConsGen%==8th EXIT /b
 set PF=%ForPltfrm:PSP=PS2%
 set PF=%PF:GC=GCUB%
 set PF=%PF:Wii=GCUB%
 set PF=%PF:360=XENO%
 call :extract
 echo converting . . .
+if %ForPltfrm%==Steam goto ZsToFsb
 for /f "delims=" %%i in ('dir /b /s "%oj:~,-5%\*.wav" 2^>nul') do (
  set "fullpath=%%~i"
  call :ZSc2
@@ -1394,6 +1398,13 @@ call :filesetup
 call :formatW || EXIT /b
 call :srchInfo
 call :%StT% || EXIT /b
+EXIT /b
+
+:ZsToFsb
+REM Non-Steam platform formats are currently unknown
+for %%f in (.mp3, .unk) do call echo %%%%f:~,5%% | find /i "%ForPltfrm%" >nul && set format=%%f
+call :checkTools fsbankcl
+call :PSfl PSconvZStoFSB
 EXIT /b
 
 :ZsndPreConfig
@@ -1749,7 +1760,7 @@ if exist "%cvd%\%namextns%" (move /y "%cvd%\%namextns%" "%pathonly%") else (
 EXIT /b
 :Mdest
 set "infolder=%jsonname%"
-set "tp="%newjson:~,-5%\"
+set "tp=%newjson:~,-5%\"
 if /i "%jn:~,7%"=="x_voice" ( call :askxv
 ) else if ""=="%jsonname%" call :askxv
 set "file=%infolder%\%namextns%"
@@ -1995,6 +2006,7 @@ call :isValid %1 && echo %1
 EXIT /b
 
 :PSfl
+set ra=/\*\*\*random\*\*\*/
 (call :%1 %2 %3 )>"%tem%.ps1"
 Powershell -executionpolicy remotesigned -File "%tem%.ps1"
 del "%tem%.ps1"
@@ -2015,6 +2027,40 @@ echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
 echo $sf.platform = "%PF%"
 echo $sf.samples = $sf.samples ^| %% { $f=$_.file; $_ ^| select @{n="file";e={$f.substring(0, $f.length -3) + "%StT:*To=%".ToLower()}}, %fmtc%sample_rate }
 goto PSwriteJSON
+:PSconvZStoFSB
+echo $oj = [IO.FileInfo]"%oj%"
+echo $sd = (join-path $oj.DirectoryName $oj.BaseName) + ".pak"
+echo ni -Path $sd -ItemType Directory
+echo cd $oj.DirectoryName
+echo [byte[]]$i0 = 48,83,73,83
+echo $sf = gc -raw "%oj%" ^| ConvertFrom-Json
+echo $hs = $sf.sounds ^| select @{n="hash";e={($_.hash -ireplace '%ra%\d\d?$')}}, flags -unique
+echo $hs ^| %% {
+echo   $h = $_.hash
+echo   $fn = $h -replace '/', '.'
+echo   $fb = join-path $sd $fn
+echo   $lt = (join-path $oj.DirectoryName $fn) + ".lst"
+echo   $hl = $h.Length
+echo   $hf = if ($_.flags -ge 255) {1} else {0}
+echo   $nf = if ($_.flags -eq 12) {200} elseif ($_.flags -eq 38) {88} elseif ($_.flags -eq 44) {188} elseif ($_.flags -eq 63) {232} elseif ($_.flags -eq 50) {32} elseif ($_.flags -eq 19) {44} elseif ($_.flags -eq 6) {100} elseif ($_.flags -eq 3) {50} else {244}
+REM    $f2 = [convert]::ToString($_.flags,2); if ([convert]::ToInt32($f2.Substring($f2.Length -5),2) -eq 31) {244}
+echo   $m = if ($h -imatch "^MUSIC\/") {1} else {0}
+echo   $fs = $sf.sounds ^| ? {$_.hash -match "^$h"} ^| %% {$sf.samples[$_.sample_index]}
+echo   [byte[]]$bf = @()
+echo   $fs ^| %% {
+echo     $sn = (gi $_.file).Basename
+echo     $fl = $sn.Length
+echo     $ff = if ($fs[0].flags) {1} else {0}
+echo     $mm = if ($fs[0].flags -ge 2) {1} else {0}
+echo     [byte[]]$bt = ($fl+9),0,$fl,0,$hf,$ff,$m
+echo     $bf += $bt+[System.Text.Encoding]::UTF8.GetBytes($sn)+0+0
+echo   }
+echo   [byte[]]$bh = $i0+($hl+17)+0+$hl+0+$fs.Count+0+(1-$hf)+$mm+0+127+$nf+[System.Text.Encoding]::UTF8.GetBytes($h)+0+0+$bf
+echo   sc "$fb.sis" -Value $bh -Encoding Byte
+echo   $fs.file ^> $lt
+echo   ^&%fsbankcl% -rebuild -format %format:.=% -quality 40 -o "$fb.fsb" $lt
+echo }
+EXIT /b
 :PSjsonZSND
 echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
 echo $max_i = $sf.samples.file.count
@@ -2121,7 +2167,6 @@ echo     $sf.sounds = %sorev%
 echo   }
 echo }
 REM Fix random index
-set ra=/\*\*\*random\*\*\*/
 echo $hs = $sf.sounds ^| select @{n="hash";e={($_.hash -ireplace '%ra%\d\d?$')}}, sample_index, flags
 echo $ra = $hs.hash ^| select -unique ^| %% {if (($hs.hash -eq $_).count -gt 1) {$_}}
 echo $d = @([PSCustomObject]@{hash=''; i=0})

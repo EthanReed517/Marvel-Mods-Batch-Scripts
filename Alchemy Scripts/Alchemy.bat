@@ -762,7 +762,7 @@ echo save_actor_database						%nameonly: =_%\skin.igb
 EXIT /b
 :extractAnimAllTxt
 call :txtChck || EXIT /b 1
-for /f "tokens=1*" %%a in ('findstr /bi "save" ^<"%fullpath%"') do mkdir "%%~dpb" >nul 2>nul
+for /f "tokens=1*" %%a in ('findstr /bi "save" ^<"%fullpath%"') do mkdir "%%~dpb"
 set "srcf=%pathonly%%nameonly:~8%.igb"
 for /f "skip=2 tokens=1*" %%a in ('find "load_actor" "%fullpath%"') do set "srca=%~dp0%%b" & call :eAAT
 EXIT /b 1
