@@ -1,11 +1,11 @@
 ## Installation:
 - Raven Formats (RF) by nikita488: Install [Python 3.8 or newer](https://www.python.org/downloads/), incl. [PATH variable](https://cloudacademy.com/wp-content/uploads/2020/01/Python-Windows-installer.png), then enter `pip install raven-formats` in command ([RF](https://pypi.org/project/raven-formats/)).
-- xmlb-compile (XC) by NBA2Kstuff: Install it by moving, copying, or extracting [Raven-Formats Scripts/xmlb-compile.exe](https://github.com/ak2yny/Marvel-Mods-Batch-Scripts/blob/915a9c745d7c79d08a0b3dfee78163d1c56bd966/Raven-Formats%20Scripts/xmlb-compile.exe) to "C:\Windows".
+- xmlb-compile (XC) by NBA2Kstuff: Install it by moving, copying, or extracting [xmlb-compile.exe](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Raven-Formats%20Scripts/QuickBatch/xmlb-compile.exe) to "C:\Windows".
 
 Portable (no installation required - do this instead):
 - Raven Formats (RF) by nikita488: Download and extract [OpenHeroSelect by Tony Stark](https://github.com/TheRealPSV/OpenHeroSelect/releases).
 Use the .BAT files from this pack next to "json2xmlb.exe" and "xml2json.exe".
-- xmlb-compile (XC) by NBA2Kstuff: [Raven-Formats Scripts/xmlb-compile.exe](https://github.com/ak2yny/Marvel-Mods-Batch-Scripts/blob/915a9c745d7c79d08a0b3dfee78163d1c56bd966/Raven-Formats%20Scripts/xmlb-compile.exe) is included. No further steps required (this pack needs to be extracted).
+- xmlb-compile (XC) by NBA2Kstuff: [xmlb-compile.exe](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Raven-Formats%20Scripts/QuickBatch/xmlb-compile.exe) is included. No further steps required (this pack needs to be extracted).
 
  
 
