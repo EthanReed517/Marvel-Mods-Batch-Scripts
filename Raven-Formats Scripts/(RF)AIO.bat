@@ -124,7 +124,7 @@ set .mp3=Steam 0 MP3 FSB (fsbankcl with quality 40 = 128kbps)
 set .unk=PS4 0 Unknown, %unk%
 set .unk=X1 0 Unknown, %unk%
 
-call :%ForPltfrm%Setup
+call :PlatformSetup
 REM There is an issue with this call on some machines. This comment should fix that.
 
 call :start%operation% %~1
@@ -281,56 +281,82 @@ set operation=SkinsHelper
 set operationtext=Add skins with HUDs to the game or mod folder.
 EXIT /b 0
 
+:PlatformSetup
+set a=8
+set g=1
+set t=PSP GAMECUBE
+set z=infinite
+set PTFMT=RGBA_DXT1
+goto %ForPltfrm%Setup
 :PCSetup
 call :platW .wav
 set ConsGen=PC
+if %EditGame%==MUA EXIT /b
+set a=6
+set z=100000000
+set PTFMT=RGB_888_24
 EXIT /b
 :WiiSetup
-if %EditGame%==XML2 goto PlatEr
+call :StartGame MUA
 call :platW .dsp
 set t=PSP _X_
 set z=600000
 set ConsGen=Wii
+REM No GlobalColor
 EXIT /b
 :PSPSetup
 call :platW .vag
+set g=2
 set t=GAMECUBE DXT
 set z=300000
+set PTFMT=X_8
 set ConsGen=PSP
+REM No GlobalColor, Compatible with some Alchemy 5, native files are PSP specific
 EXIT /b
 :GCSetup
-if %EditGame%==MUA goto PlatEr
+call :StartGame XML2
 call :platW .dsp
 set t=PSP
 goto 6Setup
 :XboxSetup
 call :platW .xbadpcm
+REM t is unknown
+set t=%t% _X_
 goto 6Setup
 :PS2Setup
-set t=PSP GAMECUBE DXT
+set t=%t% DXT
+set PTFMT=RGB_888_24
 call :platW .vag
 :6Setup
+set a=6
 set z=300000
 set ConsGen=6th
 EXIT /b
 :PS3Setup
 call :platW .vag
-set t=PSP GAMECUBE _X_
 set ConsGen=7th
 goto 7Setup
 :360Setup
 call :platW .xma
+set PTFMT=RGBA_DXT5
 set ConsGen=7th
 goto 7Setup
 :SteamSetup
+REM PNG textures are colourswapped (?)
+set t=%t% 888 
 :X1Setup
 :PS4Setup
-set t=PSP GAMECUBE _X_
+REM Not sure if the RE has same specs as 360, but Steam does.
+set PTFMT=RGBA_DXT5
 set ConsGen=8th
 :7Setup
-if %EditGame%==XML2 goto PlatEr
+set g=2
+set t=%t% _X_
+set z=100000000
+call :StartGame MUA
 EXIT /b
-:PlatEr
+:StartGame
+if %EditGame%==%1 EXIT /b
 echo No support for %EditGame% on %ForPltfrm%.
 goto Errors
 
@@ -738,8 +764,6 @@ call :stripQ sh
 if exist "%sh%" call :numberedBKP th & copy /y "%sh%" "%th%"
 if /i %EditGame%%InstType%==XML2skin call :SH23dHead
 set fullpath=
-set a=8
-set g=2
 call :SHTitle
 goto SH4%ConsGen%
 :SH48th
@@ -750,7 +774,7 @@ if exist "%tp%%in%_%sn%.pkgb" goto SH4%EditGame%
 for /f "delims=" %%p in ('dir /b "%tp%%in%_%cn%*.pkgb"') do set "fullpath=%tp%%%p" & call :xml ne && goto SH4cln
 echo INFORMATION: A package file was not detected, and no package was found, which could be cloned, or no compiler found for cloning. Manual herostat and package modifications may be required to make powers and HUD work properly for this skin.
 pause
-if %ConsGen%==8th goto SH48thS
+if %ConsGen%==8th goto SH47th
 goto SH4%EditGame%
 :SH4false
 set in=defaultman
@@ -770,50 +794,36 @@ set m=1
 set newPKGn=%ns%
 call :clonePKG
 goto SH4%EditGame%
-:SH48thS
-REM Not sure if the RE has same specs as 360, but Steam does AFAIK.
+:SH4XML2
+call :SHTitle
+goto SH46th
 :SH47th
 if %ForPltfrm%==PS3 ( echo Textures should be in DXT1 format and use green normal maps in DXT 5 format, if any.
 ) else echo Textures should be in DXT5 format and use blue normal maps, if any.
 echo.
-set z=100000000
-goto ConsSpec
 :SH4PSP
-goto ConsSpec
 :SH4Wii
-set g=1
-goto ConsSpec
-:SH4XML2
-set t=
-set z=100000000
-call :SHTitle
 :SH46th
-set a=6
-set g=1
-:ConsSpec
-set AV=unknown
-for /f usebackq %%v in (`PowerShell "try {$bytes  = [System.IO.File]::ReadAllBytes('%ts%'); '{0:X}' -f $bytes[0x2C]} catch {'unknown'}"`) do set AV=%%v
-echo INFORMATION: Make sure the skin and head or mannequin meet all specifications for %ForPltfrm%. Use other tools to make them compatible if necessary.
-echo.
 set al=OK
-set sl=OK
 set gl=OK
 set tl=OK
-if ""=="%a%" set a=8
-if ""=="%z%" set z=infinite
-if %AV% GTR %a% set al=XX& if %AV% NEQ unknown echo WARNING: The skin is Alchemy version %AV:8=3.5% and not compatible with %ForPltfrm%.
-set AV=%AV:4=2.5%
-set AV=%AV:6=3.2%
-set AV=%AV:8=3.5%
-if %size% GTR %z% set sl=XX& echo INFORMATION: The file size is %size% bytes and possibly over the limit.
-if "%g%"=="1" echo %igGA%|find "2" >nul && set gl=XX
-if ""=="%t%" set t=PSP GAMECUBE
-echo %igGTF%|findstr /i "%t%" >nul && set tl=XX
+set sl=OK
 set he=OK
 if %a%==6 set he=XX
 if /i "%targetName%"=="%sn%" set he=OK
 if /i "%targetName%"=="Bip01" set he=XX
 if /i %InstType%==mannequin set he=OK&& set targetName=%sn%
+set AV=unknown
+for /f usebackq %%v in (`PowerShell "try {$bytes  = [System.IO.File]::ReadAllBytes('%ts%'); '{0:X}' -f $bytes[0x2C]} catch {'unknown'}"`) do set AV=%%v
+echo INFORMATION: Make sure the skin and head or mannequin meet all specifications for %ForPltfrm%. Use other tools to make them compatible if necessary.
+echo.
+if %AV% GTR %a% set al=XX& if %AV% NEQ unknown echo WARNING: The skin is Alchemy version %AV:8=3.5% and not compatible with %ForPltfrm%.
+if "%g%"=="1" echo %igGA%|find "2" >nul && set gl=XX
+echo %igGTF%|findstr /i "%t%" >nul && set tl=XX
+if %size% GTR %z% set sl=XX& echo INFORMATION: The file size is %size% bytes and possibly over the limit.
+set AV=%AV:4=2.5%
+set AV=%AV:6=3.2%
+set AV=%AV:8=3.5%
 echo.
 echo Statistics for "%namextns%":
 echo [%al%] Alchemy version:  %AV%
@@ -850,20 +860,20 @@ EXIT /b
 :SH2_198
 echo 198 is Emma Frost's number.
 set xsn=Diamond Form
-set a=4
-if %ns:~-1%==9 set a=1
+set ad=4
+if %ns:~-1%==9 set ad=1
 goto SH2xs
 :SH2_13
 echo 13 is Human Torch's number.
 set xsn=Flame On
-set a=10
+set ad=10
 :SH2xs
 echo Please paste or enter the full path and filename to the %xsn% skin for %sn%.igb, including .igb extension.
 set /p xs=Enter path, or press enter to skip: || EXIT /b
 call :sgO
 call :stripQ xs
 call :numberedBKP xs
-set /a xn=100%ns% %% 100 + %a%
+set /a xn=100%ns% %% 100 + %ad%
 if "%xn:~1%"=="" set xn=0%xn%
 set "fullpath=%MUApath%\actors\%cn%%xn%.igb"
 copy /y "%xs%" "%fullpath%"
@@ -1213,47 +1223,49 @@ set "ig=%ig:~,-1%00"
 call :isNumber %ig%
 EXIT /b
 
+:ConvertIGB
+REM currently only for igb files that haven't been checked before
+call :getSkinInfo
+set "outfile=%infile%"
+set InstType=Mod
+echo "%infile%" | find "mannequin" >nul && set InstType=mannequin
+echo %igGTF% | findstr /i "%t%" >nul && set opts=optConv
+echo %igGA% | find "1" >nul && goto SE%ConsGen%
+goto SEmain
 :SkinEditFN
-set optcnt=0
 call :filesetup
 if "%1"=="" call :getSkinName
+set "outfile=%fullpath%"
 if %EditGame%==XML2 if %ConsGen% NEQ PSP goto SH5nh
+set opts=
 goto SE%ConsGen%
 :SE6th
 goto SH5nh
 :SEPSP
-call :writeOpt optCGA
+set opts=%opts%,optCGA
 :SEWii
 goto SEmain
 :SE7th
 :SE8th
-call :writeOpt optCGA
+set opts=%opts%,optCGA
 :SEPC
-if /i %InstType%==mannequin goto SErun
+if /i %InstType%==mannequin goto runOpts
 REM For PC choice / m "Do you want to convert to igGeometryAttr2"
 REM findstr "igActorInfo" <"%infile%" >nul || call :checkAlchemy animdb2actor && %animdb2actor% "%infile%" "%infile%"
-findstr "igGlobalColorStateAttr" <"%infile%" >nul 2>nul || call :writeOpt optGGC
+findstr "igGlobalColorStateAttr" <"%infile%" >nul 2>nul || set opts=%opts%,optGGC
 :SEmain
-if /i %InstType%==mannequin goto SErun
+if "%targetName%"=="" goto runOpts
 set "newName=%nameonly%"
-if /i "%targetName%"=="%newName%" goto SErun
+if /i "%targetName%"=="%newName%" goto runOpts
 if /i "%targetName%"=="Bip01" goto SH5nh
-call :writeOpt OptRen
-(call :OptHead %optcnt% & type %optSetT%)>%optSet%
-del %optSetT%
-set "outfile=%fullpath%"
-:SErun
-if %optcnt%==0 EXIT /b
-goto Optimizer
+set opts=%opts%,OptRen
+goto runOpts
 
 :getSkinName
 set "igSS=%temp%\igStatisticsSkin.ini"
 if not exist "%igSS%" (call :OptHead 1 & call :OptSkinStats 1)>"%igSS%"
 ( %sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%igSS%" )>"%temp%\%nameonly%.txt"
-set targetName=
-for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\%nameonly%.txt"') do set targetName=%%a
-del "%temp%\%nameonly%.txt"
-EXIT /b
+goto gSN2
 
 :getSkinInfo
 call :sgO ne || EXIT /b
@@ -1269,6 +1281,8 @@ set Tn=0
 set ao=0
 set MM=false
 for /f "tokens=1-5 delims=|" %%t in ('findstr "%igTF%" ^<"%temp%\%nameonly%.txt"') do call :gSIt %%u %%v %%w %%x
+:gSN2
+set targetName=
 for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\%nameonly%.txt"') do set targetName=%%a
 del "%temp%\%nameonly%.txt"
 EXIT /b
@@ -2249,10 +2263,16 @@ set "h=%hsFo%\*.*"
 EXIT /b 0
 
 
-:writeOpt
-set /a optcnt+=1
-(call :%1 %optcnt%)>>%optSetT%
+:writeOpts
+set i=%1
+for /f "tokens=%i% delims=," %%o in ("%opts%") do for /f "tokens=1*" %%a in ("%%o") do call :%%a %1 %%b
 EXIT /b
+:runOpts
+set c=0
+for %%o in (%opts: =s%) do set /a c+=1
+if %c%==0 EXIT /b 1
+call :OptHead %c% >%optSet%
+for /l %%i in (1,1,%c%) do call :writeOpts %%i >>%optSet%
 
 :Optimizer
 %sgOptimizer% "%infile%" "%outfile%" %optSet% || goto Errors
