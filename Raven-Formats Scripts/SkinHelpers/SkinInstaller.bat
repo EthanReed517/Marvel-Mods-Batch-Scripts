@@ -125,7 +125,6 @@ set .unk=PS4 0 Unknown, %unk%
 set .unk=X1 0 Unknown, %unk%
 
 call :PlatformSetup
-REM There is an issue with this call on some machines. This comment should fix that.
 
 call :start%operation% %~1
 del "%erl%" "%xco%" "%rfo%" "%tem%" "%tem%c" "%tem%m" "%cvd%.json" "%cvd%.zss" %optSetT%
@@ -282,13 +281,20 @@ set operationtext=Add skins with HUDs to the game or mod folder.
 EXIT /b 0
 
 :PlatformSetup
+set mq=mannequin
+set sl=6
+if %EditGame%==XML2 (
+ set mq=characters
+ set sl=9
+)
+REM Wii and PSP allow 6 skins according to jayglass. 6 are confirmed on 360 and PS3.
 set a=8
 set g=1
 set t=PSP GAMECUBE
 set z=infinite
 set PTFMT=RGBA_DXT1
-goto %ForPltfrm%Setup
-:PCSetup
+goto %ForPltfrm%Cfg
+:PCCfg
 call :platW .wav
 set ConsGen=PC
 if %EditGame%==MUA EXIT /b
@@ -296,7 +302,7 @@ set a=6
 set z=100000000
 set PTFMT=RGB_888_24
 EXIT /b
-:WiiSetup
+:WiiCfg
 call :StartGame MUA
 call :platW .dsp
 set t=PSP _X_
@@ -304,7 +310,7 @@ set z=600000
 set ConsGen=Wii
 REM No GlobalColor
 EXIT /b
-:PSPSetup
+:PSPCfg
 call :platW .vag
 set g=2
 set t=GAMECUBE DXT
@@ -313,39 +319,40 @@ set PTFMT=X_8
 set ConsGen=PSP
 REM No GlobalColor, Compatible with some Alchemy 5, native files are PSP specific
 EXIT /b
-:GCSetup
+:GCCfg
 call :StartGame XML2
 call :platW .dsp
 set t=PSP
 goto 6Setup
-:XboxSetup
+:XboxCfg
 call :platW .xbadpcm
 REM t is unknown
 set t=%t% _X_
 goto 6Setup
-:PS2Setup
+:PS2Cfg
 set t=%t% DXT
 set PTFMT=RGB_888_24
 call :platW .vag
 :6Setup
+set sl=4
 set a=6
 set z=300000
 set ConsGen=6th
 EXIT /b
-:PS3Setup
+:PS3Cfg
 call :platW .vag
 set ConsGen=7th
 goto 7Setup
-:360Setup
+:360Cfg
 call :platW .xma
 set PTFMT=RGBA_DXT5
 set ConsGen=7th
 goto 7Setup
-:SteamSetup
+:SteamCfg
 REM PNG textures are colourswapped (?)
 set t=%t% 888 
-:X1Setup
-:PS4Setup
+:X1Cfg
+:PS4Cfg
 REM Not sure if the RE has same specs as 360, but Steam does.
 set PTFMT=RGBA_DXT5
 set ConsGen=8th
@@ -354,6 +361,7 @@ set g=2
 set t=%t% _X_
 set z=100000000
 call :StartGame MUA
+:Cfg
 EXIT /b
 :StartGame
 if %EditGame%==%1 EXIT /b
@@ -672,7 +680,7 @@ if %decformat%==lxml set e=%e%; $e = $e[2..4]
 if %decformat%==xml set "e=$e = '</packagedef>'"
 set r=-replace '%pkgn%',$nn
 set "psc=$x = '%NC%.pkgb'; $pn = '%pathonly%%pkgnm:~,-2%'; $ps = gc -raw '%ps%'"
-set "pcr=gc '%tem%' | %% {$cn = $_.PadLeft(2,'0'); $nn = '%pkgn:~,-2%' + $cn; $pc = $pn + $cn + $x; $ncc =  $pn + $cn + '_nc' + $x; $pp=$ncp = '%tem%.%dex%'; $nc = $null; if ($nn -eq '%pkgn%') {if ($e) {$nc = $psn}} else {if ($psn) {$nc = $psn %r%}; $p = $ps %r%; %PSbkp:var=pc%; %PSout:var=p%; %xmlb% $pp $pc}; if ($nc) {%PSbkp:var=ncc%; %PSout:var=nc%; %xmlb% $pp $ncc}}"
+set "pcr=gc '%tem%' | %% {$cn = $_.PadLeft(2,'0'); $nn = '%pkgn:~,-2%' + $cn; $pc = $pn + $cn + $x; $ncc =  $pn + $cn + '_nc' + $x; $pp=$ncp = '%tem%.%dex%'; $nc = $null; if ($nn -eq '%pkgn%') {if ($e) {$nc = $psn}} else {if ($psn) {$nc = $psn %r%}; $p = $ps %r%; %PSbkp:var=pc%; %PSout:var=p%; &%xmlb:"='% $pp $pc}; if ($nc) {%PSbkp:var=ncc%; %PSout:var=nc%; &%xmlb:"='% $pp $ncc}}"
 set pcn=$null
 call :numberedBKP ps
 call :decompile
@@ -752,7 +760,8 @@ set "th=%MUApath%\hud\hud_head_%sn%.igb"
 set "tp=%MUApath%\packages\generated\characters\"
 set "s3d=%pathname% (3D Head).igb"
 set "t3d=%MUApath%\ui\hud\characters\%sn%.igb"
-if exist "%ts%" call set ConsGen=%%ConsGen:PC=%EditGame%%%
+set SH4p=%ConsGen%
+if exist "%ts%" set SH4p=%EditGame%
 call :numberedBKP ts
 copy /y "%fullpath%" "%ts%"
 if not exist "%sh%" for %%a in ("%pathonly:~,-1%") do set "sh=%%~dpahud\hud_head_%namextns%"
@@ -765,7 +774,7 @@ if exist "%sh%" call :numberedBKP th & copy /y "%sh%" "%th%"
 if /i %EditGame%%InstType%==XML2skin call :SH23dHead
 set fullpath=
 call :SHTitle
-goto SH4%ConsGen%
+goto SH4%SH4p%
 :SH48th
 :SH4PC SkinsHelper4
 if /i %InstType% NEQ skin goto SH4%EditGame%
@@ -934,12 +943,8 @@ call :stripQ MUApath
 EXIT /b
 :Mannequin
 if %EditStat%==true call :PSparseHS skin set sn charactername match ch
-set mq=mannequin
 set mn=01
-if %EditGame%==XML2 (
- set mq=characters
- if %sn:~-2% GTR 9 set mn=%sn:~-2%
-)
+if %EditGame%==XML2 if %sn:~-2% GTR 10 set mn=%sn:~-2%
 set ts=%MUApath%\ui\models\%mq%\%sn:~,-2%%mn%.igb
 mkdir "%MUApath%\ui\models\%mq%" 2>nul
 call :numberedBKP ts
@@ -1018,7 +1023,8 @@ goto SkinEditor3
 :SE2count
 if "%si%"=="" set si=0& set ns= & EXIT /b 0
 if /i "%n:~,4%" NEQ "skin" EXIT /b 1
-if %EditGame%==XML2 goto SE2XML2
+goto SE2%EditGame%
+:SE2MUA
 if defined ns ( set /a si+=1 & set ns=
 ) else set ns=_name
 set "skin_0%si%%ns%=%s%"
@@ -1057,10 +1063,6 @@ set skin_0%n%=
 set skin_0%n%_name=
 goto SkinEditor3
 :listSkins
-set sl=6
-if %ConsGen%==6th set sl=4
-REM Wii, PSP and PS3 allow 6 skins according to jayglass. 6 are confirmed on the 360.
-if %EditGame%==XML2 set sl=9
 set o=0
 set SHo=
 set to=123456789
@@ -1088,7 +1090,8 @@ if defined xmlbd call :VAR compile h
 EXIT /b
 :SE4
 set s=skin
-if %EditGame%==XML2 goto SE4XML2
+goto SE4%EditGame%
+:SE4MUA
 if %1 GTR 1 set s=skin_0%1
 call :SE4%hdf% skin_0%1 %s%
 call :SE4%hdf% skin_0%1_name skin_0%1_name
@@ -1178,9 +1181,9 @@ if %decformat%==json if %nn% LSS 10 set "rd=-replace'(?<=(skin_filter|filename)[
 REM pct = Title
 set "pct=if ($on -eq '%nn%') {exit 2}; $p.charactername + ': From ' + $on + ' to %nn%'"
 REM pcd = Decompile code
-set "pcd=| Select-String $on).path | %% {if ($_) {%xmlb% -d $_ $xd 2>>'%erl%' 1>'%xco%'"
+set "pcd=| Select-String $on).path | %% {if ($_) {&%xmlb:"='% -d $_ $xd 2>>'%erl%' 1>'%xco%'"
 REM xdc = Compile code (with replace/rename code)
-set "xdc=(gc %xd%) %rd% -replace $rd,'%nn%' | Out-File -encoding ASCII $xd; %xmlb% $xd"
+set "xdc=(gc %xd%) %rd% -replace $rd,'%nn%' | Out-File -encoding ASCII $xd; &%xmlb:"='% $xd"
 REM f = Rename code for filelist f
 set "f=dir $f | ren -NewName {$_.name -replace $r,'%nn%'}"
 REM pcr = Main rename code
@@ -1198,7 +1201,7 @@ if %hdf%==xml set "pcs=$l = ($p.outerxml -split '(?=<.*?>)')[1]; "
 set "pcs=$r = 'charactername[\s="":]{2,4}' + $p.charactername; try {$hp = (dir -s '%h%' | select-string -Pattern $r)[0].path} catch {exit 3}; $hs = $h -split '\r?\n'; $m = ($hs | select-string -Pattern $r)[0].linenumber; try {$b = ($hs | select -first $m | select-string -Pattern '^\s*""?stats')[-1].linenumber} catch {$b = $m - 1}; try {$e = ($hs | select -skip $b | select-string -Pattern '{$')[0].linenumber-1} catch {$e = 1}; %pcs%; [array]$h = ($hs | select -first $b); $h += $l + ($hs | select -skip ($b+$e)); %PSout:var=h%"
 if ""=="%h%" set pcs=$null
 call :MCTitle
-PowerShell "%psc%; %pcv%; %pct%; %pcl%; %pcr%; %pch%; %pcp:"=""%; %pcf:"=""%; %pcs:"=""%" || goto MC2Error
+PowerShell "%psc%; %pcv%; %pct%; %pcl%; %pcr%; %pch%; %pcp:"=""%; %pcf:"=""%; %pcs:"=""%; exit 0" || goto MC2Error
 if defined xmlbd call :VAR compile h
 call :sgO
 for %%i in (actors\*.igb) do set "fullpath=%%~fi" & call :SkinEditFN
@@ -2036,11 +2039,12 @@ EXIT /b
 
 :PSconvertZS
 set fmtc=
-if %format% GTR -1 set fmtc=@{n="format";e=%format%}, 
+if %format% GTR -1 set fmtc=@{n="format";e={%format%}}, 
 echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
 echo $sf.platform = "%PF%"
 echo $sf.samples = $sf.samples ^| %% { $f=$_.file; $_ ^| select @{n="file";e={$f.substring(0, $f.length -3) + "%StT:*To=%".ToLower()}}, %fmtc%sample_rate }
-goto PSwriteJSON
+goto PSWJNC
+REM bad formatting, currently.
 :PSconvZStoFSB
 echo $oj = [IO.FileInfo]"%oj%"
 echo $sd = (join-path $oj.DirectoryName $oj.BaseName) + ".pak"
@@ -2187,6 +2191,7 @@ echo $d = @([PSCustomObject]@{hash=''; i=0})
 echo [array]$sf.sounds = Foreach ($s in $hs) {if ($ra -eq $s.hash) {$i = $d.hash.IndexOf($s.hash); if ($i -gt 0) {$d[$i].i++} else {$d += [PSCustomObject]@{hash=$s.hash; i=0}; $i=-1}; $s ^| select @{n="hash";e={($s.hash + '%ra:\=%' + $d[$i].i).%hshcase%()}}, sample_index, flags} else {$s}}
 :PSwriteJSON
 REM Convert to JSON, and fix bad formatting of v5 (newer versions aren't part of Win)
+REM Also converts string numbers to int, but fails with special characters (parse)
 echo $ind = 0
 echo [IO.File]::WriteAllLines("%newjson%", (($sf ^| ConvertTo-Json) -split '\r?\n' ^| ForEach-Object {
 echo   if ($_ -match "[}\]]$rQ") {$ind = [Math]::Max($ind - 4, 0)}
