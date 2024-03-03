@@ -8,6 +8,8 @@ REM ----------------------------------------------------------------------------
 REM Settings:
 REM Ask before backing up existing files? (yes =true; no =false; always replace, not safe! =replace)
 set askbackup=false
+REM Unlock all? (yes =true, no =false):
+set unlock=true
 REM Define a herostat folder (roster will include all subfolders, is overruled by setting in config.ini):
 set herostatFolder=xml
 
@@ -22,6 +24,8 @@ call :readOHS herostatFolder
 set "herostatFolder=%herostatFolder:\\=\%"
 if %herostatFolder:~-1% EQU \ set "herostatFolder=%herostatFolder:~,-1%"
 if %herostatFolder:~1,1% NEQ : set "herostatFolder=%~dp0%herostatFolder%"
+set unlock=%unlock:true=*%
+set unlock=%unlock:false=%
 
 call :configDeleteValues > "%temp%\OHSconfig.ini"
 call :configWriteNew > config.ini
@@ -57,7 +61,7 @@ EXIT /b
 :cfgW2
 call set "hp=%%hs:%herostatFolder%\=%%"
 for /f "delims=_- " %%m in ("%hn%") do (
-  echo %hn:&=^&%>>rosters\temp.Roster.cfg
+  echo %unlock%%hn:&=^&%>>rosters\temp.Roster.cfg
   if %game%==mua echo %%m>>menulocations\temp.Menulocations.cfg
 )
 EXIT /b

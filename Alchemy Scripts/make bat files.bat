@@ -2,23 +2,25 @@
 
 mkdir AnimationMixing hud image2igb "SkinEdit (internal name renamer)" "Alchemy 5 Truly Portable" 2>nul
 
-(call :writeBAT "Alchemy.bat" Extract false dxt1 false true)>ext.images.bat
-(call :writeBAT "Alchemy.bat" IGBconverter false dxt1 false true)>IGBconverter.bat
+set default=false dxt1 false true
+(call :writeBAT "Alchemy.bat" Extract %default%)>ext.images.bat
+(call :writeBAT "Alchemy.bat" IGBconverter %default%)>IGBconverter.bat
 (call :writeBAT "Alchemy.bat" image2igb false dds false true)>image2igb\image2igb.bat
 (call :writeBAT "Alchemy.bat" image2igb true dxt1 false true)>image2igb\image2igb-fxtext.bat
 (call :writeBAT "Alchemy.bat" image2igb false RGBA_8888_32 false true)>"image2igb\image2igb-icons,fonts.bat"
 (call :writeBAT "Alchemy.bat" image2igb false fdxt1 MUA true)>image2igb\image2igb-ls.bat
 (call :writeBAT "Alchemy.bat" image2igb false false IHQ true)>image2igb\image2igb-pngicons.bat
-(call :writeBAT "Alchemy.bat" genGColorFix false dxt1 false true)>genGColorFix.bat
-(call :writeBAT "Alchemy.bat" combineAnimations false dxt1 false true)>AnimationMixing\_combine.bat
-(call :writeBAT "Alchemy.bat" extractAnimations false dxt1 false true)>AnimationMixing\_extract.bat
-(call :writeBAT "Alchemy.bat" previewAnimations false dxt1 false true)>AnimationMixing\previewAnimations.bat
-(call :writeBAT "Alchemy.bat" hud_head_e false dxt1 false true)>hud\hud_head_e.bat
-(call :writeBAT "Alchemy.bat" logos_e false dxt1 false true)>hud\logos_e.bat
-(call :writeBAT "Alchemy.bat" SkinEdit false dxt1 false true)>"SkinEdit (internal name renamer)\SkinEdit-filenameToSkinName.bat"
+(call :writeBAT "Alchemy.bat" genGColorFix %default%)>genGColorFix.bat
+(call :writeBAT "Alchemy.bat" combineAnimations %default%)>AnimationMixing\_combine.bat
+(call :writeBAT "Alchemy.bat" extractAnimations %default%)>AnimationMixing\_extract.bat
+(call :writeBAT "Alchemy.bat" previewAnimations %default%)>AnimationMixing\previewAnimations.bat
+(call :writeBAT "Alchemy.bat" hud_head_e %default%)>hud\hud_head_e.bat
+(call :writeBAT "Alchemy.bat" logos_e %default%)>hud\logos_e.bat
+(call :writeBAT "Alchemy.bat" SkinEdit %default%)>"SkinEdit (internal name renamer)\SkinEdit-filenameToSkinName.bat"
 (call :writeBAT "Alchemy.bat" SkinEdit false dxt1 false false)>"SkinEdit (internal name renamer)\SkinEdit.bat"
-(call :writeBAT "Alchemy.bat" Maps false dxt1 false true)>Maps.bat
-(call :writeBAT "Alchemy.bat" fixSkins false dxt1 false true)>animdb2actor.bat
+(call :writeBAT "Alchemy.bat" Maps %default%)>Maps.bat
+(call :writeBAT "Alchemy.bat" fixSkins %default%)>animdb2actor.bat
+(call :writeBAT "Alchemy.bat" ExtractMotionRaven %default%)>ExtractMotion.bat
 
 for /f "delims=" %%b in ('dir /b /s *.bat') do copy /y "%%~b" "Alchemy 5 Truly Portable\"
 del "Alchemy 5 Truly Portable\make bat files.bat" "Alchemy 5 Truly Portable\Alchemy.bat"
@@ -42,7 +44,7 @@ PowerShell "gc '%~1' | Select-Object -Skip %l%"
 EXIT /b
 
 :Alchemy
-echo REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; make HUD heads from images =hud_head_e; same for team logos =logos_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
+echo REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; Optimize animations =ExtractMotionRaven; make HUD heads from images =hud_head_e; same for team logos =logos_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
 echo set operation=%1
 echo REM Create mip-maps? (=true or =false), useful for lower resolutions only - to ask for each input file, use =ask at the operation settings
 echo set mipmaps=%2
@@ -145,7 +147,7 @@ echo set remext=false
 echo REM Auto name when combining: Always use the first folder name? ( =true); Always use the first file name? ( =file); (No =false)
 echo set autonm=false
 echo REM Enter an IGB file for the skeleton. (Use the first input file "skeleton="; use fightstyle default incl. ponytail =_fightstyle_default)
-echo REM Can include path relative to the BAT. Eg. skeleton=skeletons\humanWponytail\elektra.igb
+echo REM Can be skin or animation. Can include path relative to the BAT. Eg. skeleton=skeletons\humanWponytail\elektra.igb
 echo set skeleton=_fightstyle_default
 echo REM Use name of files for animations? (Yes, they match the anim. name =true; No, scan the files for anim. names =false)
 echo set animfn=true

@@ -116,10 +116,10 @@ if %askbackup%==replace set PSbkp=$null
 REM Zsnd formats:
 set unk=Unknown (information required, contact ak2yny if you know more)
 set .wav=PC 106 WAV 16bit
-set .xbadpcm=XBOX 1 XBADPCM: Xbox, %unk%
+set .xbadpcm=XBOX 1 XB AD P.C.M.: Xbox, %unk%
 set .xma=XENO 1 XMA: Xbox 360, %unk%
-set .vag=PS2 -1 VAG 16bit (WAV converted through FPacker or MFAudio)
-set .dsp=GCUB 0 DSP 16bit (Nintendo Gamecube DSPADPCM for GC and Wii)
+set .vag=PS2 -1 VAG 16bit (WAV converted through FPacker or MFAudio for PS3+2+PSP)
+set .dsp=GCUB 0 DSP 16bit (Nintendo Gamecube DSP AD P.C.M. for GC and Wii)
 set .mp3=Steam 0 MP3 FSB (fsbankcl with quality 40 = 128kbps)
 set .unk=PS4 0 Unknown, %unk%
 set .unk=X1 0 Unknown, %unk%
@@ -608,9 +608,9 @@ EXIT /b 0
 
 :writerror
 set errfile=
-for /f "delims=" %%e in ('findstr /i "error Errno" ^<"%rfo%" 2^>nul') do set "msg=%%e" & call :writeMsg>>"%erl%"
+for /f "delims=" %%e in ('findstr /i "error Errno" ^<"%rfo%" 2^>nul') do set "msg=%%e" & call :writeMsg >>"%erl%"
 if "%1" == "RF" EXIT /b 1
-for /f "delims=" %%e in ('type "%xco%"') do set "msg=%%e" & call :writeMsg>>"%erl%"
+for /f "delims=" %%e in ('type "%xco%"') do set "msg=%%e" & call :writeMsg >>"%erl%"
 EXIT /b 1
 :writeMsg
 if ""=="%errfile%" echo "%fullpath%"
@@ -679,8 +679,8 @@ set e=$e = '        }','','    }','','}'
 if %decformat%==lxml set e=%e%; $e = $e[2..4]
 if %decformat%==xml set "e=$e = '</packagedef>'"
 set r=-replace '%pkgn%',$nn
-set "psc=$x = '%NC%.pkgb'; $pn = '%pathonly%%pkgnm:~,-2%'; $ps = gc -raw '%ps%'"
-set "pcr=gc '%tem%' | %% {$cn = $_.PadLeft(2,'0'); $nn = '%pkgn:~,-2%' + $cn; $pc = $pn + $cn + $x; $ncc =  $pn + $cn + '_nc' + $x; $pp=$ncp = '%tem%.%dex%'; $nc = $null; if ($nn -eq '%pkgn%') {if ($e) {$nc = $psn}} else {if ($psn) {$nc = $psn %r%}; $p = $ps %r%; %PSbkp:var=pc%; %PSout:var=p%; &%xmlb:"='% $pp $pc}; if ($nc) {%PSbkp:var=ncc%; %PSout:var=nc%; &%xmlb:"='% $pp $ncc}}"
+set "psc=$x = '%NC%.pkgb'; $pn = '%pathonly:'=''%%pkgnm:~,-2%'; $ps = gc -raw '%ps:'=''%'"
+set "pcr=gc '%tem:'=''%' | %% {$cn = $_.PadLeft(2,'0'); $nn = '%pkgn:~,-2%' + $cn; $pc = $pn + $cn + $x; $ncc =  $pn + $cn + '_nc' + $x; $pp=$ncp = '%tem:'=''%.%dex%'; $nc = $null; if ($nn -eq '%pkgn%') {if ($e) {$nc = $psn}} else {if ($psn) {$nc = $psn %r%}; $p = $ps %r%; %PSbkp:var=pc%; %PSout:var=p%; &%xmlb:"='% $pp $pc}; if ($nc) {%PSbkp:var=ncc%; %PSout:var=nc%; &%xmlb:"='% $pp $ncc}}"
 set pcn=$null
 call :numberedBKP ps
 call :decompile
@@ -696,7 +696,7 @@ if %1==true call :VAR decompile NCpkg
 EXIT /b 0
 :NCtrue
 if not exist "%NCpkg%" EXIT /b 1
-set "pcn=$psn = gc -raw '%nps%'"
+set "pcn=$psn = gc -raw '%nps:'=''%'"
 EXIT /b 0
 :NCfalse
 set "pcn=%e%; $psn = ($ps -split '(?<=hud_head_%pkgn%.*\r?\n)')[0] + ($e -join ""`n"")"
@@ -823,7 +823,7 @@ if /i "%targetName%"=="%sn%" set he=OK
 if /i "%targetName%"=="Bip01" set he=XX
 if /i %InstType%==mannequin set he=OK&& set targetName=%sn%
 set AV=unknown
-for /f usebackq %%v in (`PowerShell "try {$bytes  = [System.IO.File]::ReadAllBytes('%ts%'); '{0:X}' -f $bytes[0x2C]} catch {'unknown'}"`) do set AV=%%v
+for /f usebackq %%v in (`PowerShell "try {$bytes  = [System.IO.File]::ReadAllBytes('%ts:'=''%'); '{0:X}' -f $bytes[0x2C]} catch {'unknown'}"`) do set AV=%%v
 echo INFORMATION: Make sure the skin and head or mannequin meet all specifications for %ForPltfrm%. Use other tools to make them compatible if necessary.
 echo.
 if %AV% GTR %a% set al=XX& if %AV% NEQ unknown echo WARNING: The skin is Alchemy version %AV:8=3.5% and not compatible with %ForPltfrm%.
@@ -982,7 +982,7 @@ set "chr=^%ch%$"
 call :PSparseHS skin psc psc charactername match chr
 set "p=%psc%; [array]$pa = $p; $p = $pa[0]"
 :SkinEditor2
-set "psc=%p%; $p = 'skin[\s="":]{2,4}' + -join $p; try {$h = (dir -s  '%h%' | select-string -Pattern $p)[0]} catch {exit 1}; $h.path; "
+set "psc=%p%; $p = 'skin[\s="":]{2,4}' + -join $p; try {$h = (dir -s '%h:'=''%' | select-string -Pattern $p)[0]} catch {exit 1}; $h.path; "
 if %hdf% NEQ xml set "psc=%psc%$s = ((gc $h.path) -replace '\s;$' | select -skip ($h.linenumber-1)) -join ""`n"" -replace '(?!\s*""?skin)\n[\s\S]+'; "
 if %hdf%==lxml set "psc=%psc%$s"
 if %hdf%==json set "psc=%psc%$s = $s -split '\n'; $s[-1] = $s[-1] -replace '.$'; ('{' + $s + '}' | ConvertFrom-Json).psobject.properties | %% {$_.Name + ' = ' + $_.Value}"
@@ -1078,11 +1078,11 @@ EXIT /b
 if "%skin_01%"=="" goto SkinEditor3
 set skin_01=%cn%%skin_01:~-2%
 for /l %%n in (1,1,%sl%) do if defined skin_0%%n call :SE4 %%n
-set "psc=$h = gc '%h%'; $m = ($h | select-string -Pattern 'skin[\s="":]{2,4}%p%')[0]; $ind = ($m.line -split '(^\s*)')[1]; $s = $h | select -skip ($m.linenumber-1); try {$e = ($s | select-string -Pattern '^((?!^\s*skin).)*$')[0].linenumber-1} catch {exit 1}"
+set "psc=$h = gc '%h:'=''%'; $m = ($h | select-string -Pattern 'skin[\s="":]{2,4}%p%')[0]; $ind = ($m.line -split '(^\s*)')[1]; $s = $h | select -skip ($m.linenumber-1); try {$e = ($s | select-string -Pattern '^((?!^\s*skin).)*$')[0].linenumber-1} catch {exit 1}"
 if %hdf%==lxml set "pcr=$n = New-Object PSObject; %pcs%$s = $n.psobject.properties.name | %% {$ind + $_ + ' = ' + $n.$_ + ' ;'}"
 if %hdf%==json set "pcr=$n = New-Object PSObject; %pcs%$s = $n | ConvertTo-Json; $s = $s.substring(3,$s.length-6) + ','"
 if %hdf%==xml set "pcr=$n = ([xml]($m.line -replace '.$','/>')); %pcs%($n.stats.Attributes | Sort-Object { $_.Name }) | %% {$n.stats.Attributes.Append($_)}; $s = $n.outerxml -replace '/>$','>'; $e = 1"
-set "pco=$h = ($h | select -first ($m.linenumber-1)) + $s + ($h | select -skip ($e+$m.linenumber-1)); $hp = '%h%'; %PSout:var=h%"
+set "pco=$h = ($h | select -first ($m.linenumber-1)) + $s + ($h | select -skip ($e+$m.linenumber-1)); $hp = '%h:'=''%'; %PSout:var=h%"
 CLS
 echo Writing new skin information to "%h%" . . .
 Powershell "%psc:"=""%; %pcr%; %pco%"
@@ -1172,16 +1172,17 @@ call :asknum nn
 if "%nn:~1%"=="" set nn=0%nn%
 set nn=%nn:~-3%
 REM Setup PowerShell:
-set "pcl=$a = '%cd%\actors\'; $l = '%cd%\textures\loading\' + $on + '*.igb'; $m = '%cd%\ui\models\mannequin\' + $on + '01.igb*'; $hu = '%cd%\hud\hud_head_'; $pk = '%cd%\packages\generated\*.pkgb'; $ps = '%cd%\data\powerstyles\' + $p.powerstyle + '.engb'; $xd = '%tem%.%dex%'"
+set "md=%cd:'=''%"
+set "pcl=$a = '%md%\actors\'; $l = '%md%\textures\loading\' + $on + '*.igb'; $m = '%md%\ui\models\mannequin\' + $on + '01.igb*'; $hu = '%md%\hud\hud_head_'; $pk = '%md%\packages\generated\*.pkgb'; $ps = '%md%\data\powerstyles\' + $p.powerstyle + '.engb'; $xd = '%tem:'=''%.%dex%'"
 set xd=$xd
 REM xmlb-compile prints to temp file %xco%, instead of output file
-if %decformat%==lxml set "xd='%xco%'"
+if %decformat%==lxml set "xd='%xco:'=''%'"
 REM need to wrap JSON number in double-quotes
 if %decformat%==json if %nn% LSS 10 set "rd=-replace'(?<=(skin_filter|filename)[\s="":]{2,4})\s(\d{4,5})',' ""$2""'"
 REM pct = Title
 set "pct=if ($on -eq '%nn%') {exit 2}; $p.charactername + ': From ' + $on + ' to %nn%'"
 REM pcd = Decompile code
-set "pcd=| Select-String $on).path | %% {if ($_) {&%xmlb:"='% -d $_ $xd 2>>'%erl%' 1>'%xco%'"
+set "pcd=| Select-String $on).path | %% {if ($_) {&%xmlb:"='% -d $_ $xd 2>>'%erl:'=''%' 1>'%xco:'=''%'"
 REM xdc = Compile code (with replace/rename code)
 set "xdc=(gc %xd%) %rd% -replace $rd,'%nn%' | Out-File -encoding ASCII $xd; &%xmlb:"='% $xd"
 REM f = Rename code for filelist f
@@ -1193,12 +1194,12 @@ set "pch=$r = '(?<=^hud_head_)' + $on; [array]$f = $hu + $sn + '.igb*'; 2..6 | %
 REM pcp = Package clone/rename code. Old packages are currently not deleted
 set "pcp=$r = '(?=' + $on + '\d\d(_nc)?\.pkgb$)' + $on; $rd = '(?<=filename[\s="":]{2,4}(.*\/(hud_head_)?)?)' + $on; (dir -s $pk %pcd%; $xds = ($_ -split '\\'); $xdo = ($xds[0..($xds.length-2)] + ($xds[-1] -replace $r,'%nn%')) -join '\'; %xdc% $xdo}}"
 REM pcf = Powerstyle code +
-set "pcf=$rd = '(?<=skin_filter[\s="":]{2,4})' + $on; (dir $ps %pcd%; %xdc% $ps; $e = (gc %xd% -raw | Select-String 'ents_') -replace '[\s\S]+filename[\s="":]{2,4}(ents_.*?)(""|\s)[\s\S]+','$1'; if ($e) {$e = '%cd%\data\entities\' + $e + '.xmlb'; (dir $e %pcd%; %xdc% $e}}}}}"
+set "pcf=$rd = '(?<=skin_filter[\s="":]{2,4})' + $on; (dir $ps %pcd%; %xdc% $ps; $e = (gc %xd% -raw | Select-String 'ents_') -replace '[\s\S]+filename[\s="":]{2,4}(ents_.*?)(""|\s)[\s\S]+','$1'; if ($e) {$e = '%md%\data\entities\' + $e + '.xmlb'; (dir $e %pcd%; %xdc% $e}}}}}"
 REM pcs = Herostat code
 if %hdf%==lxml set "pcs=$l = $p.psobject.properties.name | %% {$_ + ' = ' + $p.$_ + ' ;'}"
 if %hdf%==json set "pcs=$l = $p | Select -Property * -ExcludeProperty talent,Multipart,StatEffect,BoltOn | ConvertTo-Json; $l = $l.substring(3,$l.length-6) + ','; "
 if %hdf%==xml set "pcs=$l = ($p.outerxml -split '(?=<.*?>)')[1]; "
-set "pcs=$r = 'charactername[\s="":]{2,4}' + $p.charactername; try {$hp = (dir -s '%h%' | select-string -Pattern $r)[0].path} catch {exit 3}; $hs = $h -split '\r?\n'; $m = ($hs | select-string -Pattern $r)[0].linenumber; try {$b = ($hs | select -first $m | select-string -Pattern '^\s*""?stats')[-1].linenumber} catch {$b = $m - 1}; try {$e = ($hs | select -skip $b | select-string -Pattern '{$')[0].linenumber-1} catch {$e = 1}; %pcs%; [array]$h = ($hs | select -first $b); $h += $l + ($hs | select -skip ($b+$e)); %PSout:var=h%"
+set "pcs=$r = 'charactername[\s="":]{2,4}' + $p.charactername; try {$hp = (dir -s '%h:'=''%' | select-string -Pattern $r)[0].path} catch {exit 3}; $hs = $h -split '\r?\n'; $m = ($hs | select-string -Pattern $r)[0].linenumber; try {$b = ($hs | select -first $m | select-string -Pattern '^\s*""?stats')[-1].linenumber} catch {$b = $m - 1}; try {$e = ($hs | select -skip $b | select-string -Pattern '{$')[0].linenumber-1} catch {$e = 1}; %pcs%; [array]$h = ($hs | select -first $b); $h += $l + ($hs | select -skip ($b+$e)); %PSout:var=h%"
 if ""=="%h%" set pcs=$null
 call :MCTitle
 PowerShell "%psc%; %pcv%; %pct%; %pcl%; %pcr%; %pch%; %pcp:"=""%; %pcf:"=""%; %pcs:"=""%; exit 0" || goto MC2Error
@@ -1231,7 +1232,7 @@ REM currently only for igb files that haven't been checked before
 call :getSkinInfo
 set "outfile=%infile%"
 set InstType=Mod
-echo "%infile%" | find "mannequin" >nul && set InstType=mannequin
+echo "%infile%" | find /i "mannequin" >nul && set InstType=mannequin
 echo %igGTF% | findstr /i "%t%" >nul && set opts=optConv
 echo %igGA% | find "1" >nul && goto SE%ConsGen%
 goto SEmain
@@ -1267,14 +1268,14 @@ goto runOpts
 :getSkinName
 set "igSS=%temp%\igStatisticsSkin.ini"
 if not exist "%igSS%" (call :OptHead 1 & call :OptSkinStats 1)>"%igSS%"
-( %sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%igSS%" )>"%temp%\%nameonly%.txt"
+%sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%igSS%" >"%temp%\%nameonly%.txt"
 goto gSN2
 
 :getSkinInfo
 call :sgO ne || EXIT /b
 set "iini=%temp%\SkinInfo.ini"
 if not exist "%iini%" (call :OptHead 3 & call :OptTexInfo 1 0x00000117 & call :OptGeoInfo 2 0x00500000 & call :OptSkinStats 3)>%iini%
-( %sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%iini%" )>"%temp%\%nameonly%.txt"
+%sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%iini%" >"%temp%\%nameonly%.txt"
 set Gn=0
 set igGA=
 for /f "tokens=3 delims=|" %%g in ('findstr "igGeometryAttr" ^<"%temp%\%nameonly%.txt"') do call :gSIga %%g
@@ -1434,7 +1435,6 @@ call :comb%combine%
 EXIT /b
 
 :updatePost
-call :addConv
 cd /d "%jp%"
 echo.& echo|set /p=Removing 
 for /f "skip=2 tokens=1*" %%e in ('find /i """file"":" "%oldjson%" 2^>nul') do (
@@ -1443,6 +1443,7 @@ for /f "skip=2 tokens=1*" %%e in ('find /i """file"":" "%oldjson%" 2^>nul') do (
 )
 echo.
 call :PSJZ F Add
+call :addConv
 call :comb%combine%
 EXIT /b
 :uChckRem
@@ -1476,16 +1477,16 @@ EXIT /b
 :addWAVPost
 REM possibly add option to add more files separately? Would mean that %tem% can't be deleted.
 call :prepJSON
-call :addConv
 call :PSJZ F Add
+call :addConv
 call :comb%combine%
 EXIT /b
 :addConv
 if %remHead%==false EXIT /b
+if not exist "%tem%c" EXIT /b
+set "tem=%tem%c"
 call :convertWPost
-for /f usebackq^ tokens^=1-5^ delims^=^" %%c in ("%tem%") do set "hash=%%~d" & set "fullpath=%%~f" & call :filesetup & call :cM%movewhr% %%c "%%g"
-move /y "%tem%c" "%tem%"
-if %movewhr% NEQ destination EXIT /b
+for /f usebackq^ tokens^=1-5^ delims^=^" %%c in ("%tem%") do set "fullpath=%%~f" & call :filesetup & call :cM%movewhr%
 if "%cvd%\"=="%tp%" EXIT /b
 move "%cvd%\*" "%tp%"
 rd /s /q "%cvd%"
@@ -1549,7 +1550,7 @@ set "newjson=%oldjson%"
 echo converting . . .
 call :writeNewJSON
 call :PSJZ F conv
-if defined jp cd /d "%jp%"
+cd /d "%jp%"
 zsnd "%oldjson%" "%cvd%.zss" 2>"%rfo%" || call :writerror RF
 cd /d "%zsndp%"
 %zspe% -d "%cvd%.zss" "%oldjson%"
@@ -1571,30 +1572,44 @@ if "%flags%"=="1" set flags=
 if %loop%==true set /a flags+=1
 call :hashgen
 call :askindx
-set "file=%fullpath%"
-if defined newjson call set "file=%%file:%jp%=%%"
-call :M%movewhr%
 call :writefile >>"%tem%"
 EXIT /b
 :WavToWav
 if 0%flags% GTR 1 goto ravenAudio
+call :GetOutPath
+if %remHead%==true echo 0 "0" "%fullpath%" %format% %sr% %flags% >>"%tem%c" & EXIT /b
+REM move or copy? Converted files are copied.
+if %movewhr%==destination move "%fullpath%" "%out%"
 EXIT /b
+:WavToDsp
+REM Only supports 1 channel (16-bit PCM WAV or AIFF) and seems to convert to 22050hz
+if %channels% GTR 1 EXIT /b 1
+call :checkTools DSPADPCM || EXIT /b
+%DSPADPCM% -E "%fullpath%" "%fullpath:~,-3%dsp" || EXIT /b
+del "%cd%\%nameonly%.txt"
+call :ZSnewFormat dsp
+goto DspToDsp
 :WavToVag
 REM conversion currently only supports one channel, maybe even the format
 REM May need better error messages
 if %channels% GTR 1 EXIT /b 1
 call :checkTools MFAudio || EXIT /b
 %MFAudio% "%fullpath%" /OF%sr% /OC1 /OTVAGC "%fullpath:~,-3%vag" || EXIT /b
-set "fullpath=%fullpath:~,-3%vag"
-set "namextns=%nameonly%.vag"
-set xtnsonly=.vag
-call :platW .vag
+call :ZSnewFormat vag
 :XbadpcmToXbadpcm
 :XmaToXma
 :DspToDsp
+REM Currently no backup needed, since no conversion is configured for these formats.
+call :GetOutPath
 EXIT /b
 :VagToVag
 if %channels% GTR 2 EXIT /b 1
+goto DspToDsp
+:ZSnewFormat
+set "fullpath=%fullpath:~,-3%%1"
+set "namextns=%nameonly%.%1"
+set xtnsonly=.%1
+call :platW .%1
 EXIT /b
 :formatW
 call :checkPlat || EXIT /b
@@ -1635,7 +1650,7 @@ set StT=
 if defined oldjson for /f "tokens=2 delims=:," %%p in ('findstr /ilc:"\"platform\":" ^<"%oldjson%" 2^>nul') do for %%f in (%zf%) do call echo %%%%f:~,4%% | find /i %%p >nul && set formatW=%%f&& goto cFmt
 if ""=="%ForPltfrm%" EXIT /b
 if %ConsGen%==8th EXIT /b
-for %%f in (%zf%) do call echo %%%%f:~,4%% | find /i "%ForPltfrm:~,2%" >nul && set formatW=%%f&& goto cFmt
+for %%f in (%zf%) do call echo %%%%f%% | find /i "%ForPltfrm%" >nul && set formatW=%%f&& goto cFmt
 EXIT /b
 :cFmt
 set StT=%xtnsonly:~1%To%xtnsonly:~1%
@@ -1643,6 +1658,7 @@ if ""=="%formatW%" EXIT /b 0
 set StT=%xtnsonly:~1%To%formatW:~1%
 if /i %xtnsonly%==%formatW% EXIT /b 0
 if /i %xtnsonly%==.wav if %formatW%==.vag EXIT /b 0
+if /i %xtnsonly%==.wav if %formatW%==.dsp EXIT /b 0
 echo ERROR: "%fullpath%" is not in the correct format. Expected: %formatW%>>"%erl%"
 EXIT /b 1
 :srchInfo
@@ -1650,8 +1666,8 @@ if defined predefined EXIT /b
 if %asample%==true goto sIa
 if defined lpd set loop=%lpd%
 set fnd=
-if /i %xtnsonly%==.wav for /f "usebackq tokens=1-2" %%c in (`Powershell "$fc = gc '%fullpath%' -raw; $h = $fc[0..43] -join '' | Format-Hex; if ($fc[0..3] -join '' -eq 'RIFF' -and $fc[8..11] -join '' -eq 'WAVE' -and $h.Bytes[20] -eq 1 -and $h.Bytes[34] -eq 16) { '{0} {1}' -f $h.Bytes[22], [BitConverter]::ToInt32($fc[24..27], 0) }"`) do set fnd=%lpd%& set channels=%%c& set sr=%%d
-if /i %xtnsonly%==.vag for /f "usebackq tokens=1-2" %%c in (`Powershell "$fc = gc '%fullpath%' -raw; if ($fc[0..3] -join '' -eq 'VAGp') { '{0} {1}' -f [Math]::Max($fc[30], 1), [BitConverter]::ToInt32($fc[19..16], 0) }"`) do set fnd=%lpd%& set channels=%%c& set sr=%%d
+if /i %xtnsonly%==.wav for /f "usebackq tokens=1-2" %%c in (`Powershell "$fc = gc '%fullpath:'=''%' -raw; $h = $fc[0..43] -join '' | Format-Hex; if ($fc[0..3] -join '' -eq 'RIFF' -and $fc[8..11] -join '' -eq 'WAVE' -and $h.Bytes[20] -eq 1 -and $h.Bytes[34] -eq 16) { '{0} {1}' -f $h.Bytes[22], [BitConverter]::ToInt32($fc[24..27], 0) }"`) do set fnd=%lpd%& set channels=%%c& set sr=%%d
+if /i %xtnsonly%==.vag for /f "usebackq tokens=1-2" %%c in (`Powershell "$fc = gc '%fullpath:'=''%' -raw; if ($fc[0..3] -join '' -eq 'VAGp') { '{0} {1}' -f [Math]::Max($fc[30], 1), [BitConverter]::ToInt32($fc[19..16], 0) }"`) do set fnd=%lpd%& set channels=%%c& set sr=%%d
 REM Name is $fc[32..48]
 if defined fnd goto Wopt5
 goto askSR
@@ -1763,16 +1779,15 @@ EXIT /b
 
 :cMdestination
 call :Mdest
-echo %1 "%hash%" "%file%" %~2 >>"%tem%c"
-for /f "tokens=3" %%f in ("%~2") do if %%f GTR 1 del "%cvd%\%namextns%"
-EXIT /b
+goto cMmove
 :cMsource
 call :numberedBKP fullpath
 :cMreplace
-if exist "%cvd%\%namextns%" (move /y "%cvd%\%namextns%" "%pathonly%") else (
- echo The converted "%namextns%" could not be found. This is probably due to a too long total file and path name. 
- echo  Check the "converted" folder for any ill-named files and rename them according to the input file. 
- echo  Manually move them to the correct folder, as defined in the JSON file.
+set "tp=%pathonly%"
+:cMmove
+if exist "%cvd%\%namextns%" (move /y "%cvd%\%namextns%" "%tp%") else (
+ echo The converted "%namextns%" could not be found. This is probably due to a too long total file and path name.
+ echo  Check "%tp%" for any ill-named files and rename them according to the input file.
 )>>"%erl%"
 EXIT /b
 :Mdest
@@ -1782,13 +1797,6 @@ if /i "%jn:~,7%"=="x_voice" ( call :askxv
 ) else if ""=="%jsonname%" call :askxv
 set "file=%infolder%\%namextns%"
 mkdir "%tp%" 2>nul
-EXIT /b
-:Mdestination
-if %remHead%==true EXIT /b
-call :Mdest
-if /i "%format%%xtnsonly%"=="0.wav" EXIT /b
-REM move or copy? Converted files are copied.
-move "%fullpath%" "%tp%"
 EXIT /b
 :askxv
 set dircmd=/b /a-d
@@ -1803,6 +1811,19 @@ if ""=="%subfolder%" (
 set "infolder=%subfolder%"
 set "tp=%jp%%infolder%\"
 EXIT /b
+:GetOutPath
+set "out=%fullpath%"
+set "file=%out%"
+if defined newjson for %%j in ("%newjson%") do call set "file=%%file:%%~dpj=%%"
+call :GOP%movewhr% %1
+EXIT /b
+:GOPdestination
+call :Mdest
+set "out=%tp%\%namextns%"
+EXIT /b
+:GOPsource
+if "%1"=="bkp" call :numberedBKP fullpath
+EXIT /b
 
 :countindex (var name for file)
 call set "cj=%%%1%%"
@@ -1811,18 +1832,10 @@ for /f "tokens=3 delims=:" %%c in ('find /c """file"":" "%cj%" 2^>nul') do set /
 EXIT /b
 
 :ravenAudio
-set "out=%fullpath%"
-call :rA%movewhr%
 if ""=="%ravenAudio%" call :checkTools ravenAudio || echo ravenAudio not found. Only 1 channel files possible. || EXIT /b
+call :GetOutPath bkp
 %ravenAudio% "%fullpath%" "%out%" || EXIT /b
 set format=0
-EXIT /b
-:rAdestination
-call :Mdest
-set "out=%tp%\%namextns%"
-EXIT /b
-:rAsource
-call :numberedBKP fullpath
 EXIT /b
 
 :editZSSZSM
@@ -2024,14 +2037,14 @@ EXIT /b
 
 :PSfl
 set ra=/\*\*\*random\*\*\*/
-(call :%1 %2 %3 )>"%tem%.ps1"
+call :%1 %2 %3 >"%tem%.ps1"
 Powershell -executionpolicy remotesigned -File "%tem%.ps1"
 del "%tem%.ps1"
 EXIT /b
 
 :PSJZ
 if not exist "%tem%" EXIT /b
-call :ZsndSave && EXIT /b
+if not "%2"=="conv" call :ZsndSave && EXIT /b
 for %%n in ("%newjson%") do if %%~zn GTR 200 call :numberedBKP newjson
 echo Generating sound database . . .
 call :PSfl PSjsonZSND %1 %2
@@ -2084,9 +2097,9 @@ echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
 echo $max_i = $sf.samples.file.count
 echo $end = 0
 echo $rQ = '(?=(?:[^^"]*"[^^"]*")*[^^"]*$)'
-echo (gc "%tem%" ^| %% {[PSCustomObject]@{index=[int]($_ -Split ' ')[0]; hash=($_ -Split ' ')[1]; file=($_ -Split ' ')[2]; value=$_}} ^| Sort-Object -Property @{Expression = 'index'; Descending = $true}, @{Expression = 'hash'; Descending = $true}, @{Expression = 'file'; Descending = $true}).value ^| %% {
+echo (gc "%tem%" ^| %% {$row = $_ -Split ' '; [PSCustomObject]@{index=[int]$row[0]; hash=$row[1]; file=$row[2]; value=$_}} ^| Sort-Object -Property @{Expression = 'index'; Descending = $true}, @{Expression = 'hash'; Descending = $true}, @{Expression = 'file'; Descending = $true}).value ^| %% {
 echo   $l = ($_ -Split " +$rQ").Trim('"')
-echo   [int]$i = [int]$oi = $l[0]
+echo   [int]$i = [int]$oi = $l ^| select -first 1
 set ccb=}
 goto PSfor%1
 :PSforF
@@ -2125,6 +2138,7 @@ echo     $ro = 1
 echo     if ($sf.sounds.sample_index.count -eq 0) {
 echo       $sf.sounds = $so
 echo     } else {
+REM        if ($sf.samples.file.count -ne (($sf.sounds.sample_index ^| sort ^| select -last 1) + 1)) { "Samples ({0}) and sample index information ({1}) don't match." -f ($sf.samples.file.count-1), ($sf.sounds.sample_index ^| sort ^| select -last 1); Exit 1 }
 echo       $sf.sounds = @($sf.sounds ^| %% {
 echo         if ($_.sample_index -eq $i -and $ro) {$so; Clear-Variable ro}
 echo         if ($_.sample_index -lt $i) {$_}
@@ -2174,8 +2188,9 @@ call :PSaddFi
 echo.%ccb%
 REM Fix order of files added at the end
 set "sarev=$sf.samples[^($sf.samples.count-1^)..^($sf.samples.count-$end^)]"
-set "sorev=^( $sf.sounds[^($sf.sounds.count-1^)..^($sf.sounds.count-$end^)] ^| select hash, @{n="sample_index";e={$sf.sounds.sample_index[($sf.sounds.count-$end+($sf.sounds.count-$sf.sounds.IndexOf($_)-1))]}}, flags ^)"
-echo if ($end -gt 0) {
+set "sorev=^( $sf.sounds[^($sf.sounds.count-1^)..^($sf.sounds.count-$end^)] ^| select hash, @{n="sample_index";e={$sf.sounds.sample_index[^($rv-$sf.sounds.IndexOf^($_^)^)]}}, flags ^)"
+echo if ($end -gt 1) {
+echo   $rv = $sf.sounds.count * 2 - $end - 1
 echo   if ($sf.samples.count-$end -gt 0) {
 echo     $sf.samples = $sf.samples[0..^($sf.samples.count-$end-1^)] + %sarev%
 echo     $sf.sounds = $sf.sounds[0..^($sf.sounds.count-$end-1^)] + %sorev%
@@ -2205,7 +2220,7 @@ REM Convert to JSON, with bad v5 formatting
 echo [IO.File]::WriteAllLines("%newjson%", ($sf ^| ConvertTo-Json), (New-Object System.Text.UTF8Encoding $False))
 EXIT /b
 :PSops
-set "gc=(gc -raw '%oldjson%' | ConvertFrom-Json)"
+set "gc=(gc -raw '%oldjson:'=''%' | ConvertFrom-Json)"
 goto PSjson%1
 :PSjsonSortH
 REM Sort hash table
@@ -2226,11 +2241,11 @@ if %2==sounds (set "gt=(%gc%.sounds | ? {$_.sample_index -eq '%indx%'}).hash") e
 for /f "usebackq delims=" %%r in (`PowerShell "%gt%"`) do set "%3=%%~r" & EXIT /b 0
 EXIT /b 1
 :PStopfolder
-powershell "('%cd%' -split ('\\'))[-1]"
+powershell "('%cd:'=''%' -split ('\\'))[-1]"
 EXIT /b
 :PSparseHS
 REM var h must one or multiple herostat files (multi only tested with lxml)
-set "psc=$h = (dir -s '%h%' | %% {gc -raw $_}); $d = "
+set "psc=$h = (dir -s '%h:'=''%' | %% {gc -raw $_}); $d = "
 if %hdf%==lxml set "psc=%psc%$h -split '(?=stats\s{\r?\n[\S\s]*)' | %% {($_ -split '[a-zA-Z]*\s{\r?\n')[1] -replace '(\s;|\s*}) *(?=\r?\n)' | ConvertFrom-StringData}"
 if %hdf%==xml set "psc=%psc%([xml]$h).characters.stats"
 if %hdf%==json set "psc=%psc%($h -replace '{\r?\n\s*\"characters\":\s{' -replace '\s*}\s*}\r' -split '(?=\"stats\":[\S\s]*},?)') | %% {(('{' + $_.Trim().Trim(',') + '}' | ConvertFrom-Json).stats)}"

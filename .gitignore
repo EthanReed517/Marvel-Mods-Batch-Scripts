@@ -31,6 +31,7 @@ Alchemy Scripts/image2igb/image2igb.bat
 Alchemy Scripts/SkinEdit (internal name renamer)/*
 Alchemy Scripts/animdb2actor.bat
 Alchemy Scripts/ext.images.bat
+Alchemy Scripts/ExtractMotion.bat
 Alchemy Scripts/genGColorFix.bat
 Alchemy Scripts/Maps.bat
 Alchemy Scripts/IGBconverter.bat

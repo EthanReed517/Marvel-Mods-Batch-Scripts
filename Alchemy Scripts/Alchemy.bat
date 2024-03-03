@@ -5,7 +5,7 @@ REM ----------------------------------------------------------------------------
 
 REM Settings:
 
-REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; make HUD heads from images =hud_head_e; same for team logos =logos_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
+REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; Optimize animations =ExtractMotionRaven; make HUD heads from images =hud_head_e; same for team logos =logos_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
 set operation=ask
 REM Create mip-maps? (=true or =false), useful for lower resolutions only - to ask for each input file, use =ask at the operation settings
 set mipmaps=false
@@ -221,7 +221,7 @@ EXIT /b
 
 
 :startimage2igb
-call :checkTools image2igb || EXIT
+call :chkTlMsg image2igb
 set inext=.dds, .png, .tga, .jpg, .bmp, .igt
 goto sgO
 :startSkinEdit
@@ -232,8 +232,7 @@ if %SkinEditToFilename%==true set aSeIn=c&set aSeAll=a
 goto sgO
 :startlistAnimations
 mkdir "%~dp0animLists" 2>nul
-(call :OptHead 1 & call :optAnimExt 1)>%optSet%
-goto sgO
+goto oAnim
 :starthud_head_e
 set inext=.png, .tga, .gif
 goto sgO
@@ -241,33 +240,40 @@ goto sgO
 set inext=.tga
 goto sgO
 :startfixSkins
-call :checkTools animdb2actor || EXIT
+call :chkTlMsg animdb2actor
 :startremInfo
 :startIGBconverter
 :startMaterialInfo
 :startExtract
+:startExtractMotionRaven
 :sgO
-call :checkTools sgOptimizer && EXIT /b 0
+call :checkTools sgOptimizer && EXIT /b
 echo "%IG_ROOT%\bin\sgOptimizer.exe" must exist. Please check your Alchemy 5 installation.
 goto Errors
 :startcombineSkinsAnims
 :startcombineAnimations
 :startextractAnimations
-(call :OptHead 1 & call :optAnimExt 1)>%optSet%
-call :sgO
 set inext=.txt, .igb
-:aP
-call :checkTools animationProducer && EXIT /b 0
+call :checkTools animationProducer && goto oAnim
 set animationProducer="%IG_ROOT%\animationProducer\DX\animationProducer.exe"
-if exist %animationProducer% EXIT /b 0
+if exist %animationProducer% goto oAnim
 echo "%IG_ROOT%\bin\animationProducer.exe" or %animationProducer% must exist. Please check your Alchemy 5 installation.
 goto Errors
+:oAnim
+set opts=optAnimExt
+call :writeOptSet
+goto sgO
 :startpreviewAnimations
-call :checkTools insight && EXIT /b 0
+call :checkTools insight && EXIT /b
 set insight="%IG_ROOT%\ArtistPack\insight\DX9\insight.exe"
 if exist %insight% EXIT /b 0
 echo Insight Viewer not found. Please check your Alchemy 5 installation.
 goto Errors
+:chkTlMsg
+call :checkTools %1 && EXIT /b
+echo %1.exe not found.
+if "%2"=="" goto Errors
+EXIT /b 1
 
 :askop
 CLS
@@ -371,7 +377,7 @@ if %askallsw%==true if /i %format%==ask call :askformat3D
 call :toLower format
 set c=actorConverter
 findstr "igEnbaya" <"%fullpath%" >nul 2>nul && call :AnimConverter || findstr "igAnimationDatabase" <"%fullpath%" >nul 2>nul || call :remInfo
-if not defined %c% call :checkTools %c% || (echo "%fullpath%": %c%.exe not found.)>>"%erl%" || EXIT /b
+if not defined %c% call :chkTlMsg %c% x >>"%erl%" || EXIT /b
 call set c=%%%c%%%
 %c% "%fullpath%" "%pathname%.%format%"
 if %exttextrs%==true goto Extract
@@ -384,9 +390,8 @@ EXIT /b 0
 :remInfo
 set c=IGBconverter
 findstr "igActorInfo" <"%fullpath%" >nul 2>nul || EXIT /b
-(call :OptHead 1 & call :optCombAnimDB 1)>%optSet%
-set "outfile=%infile%"
-goto Optimizer
+set opts=optCombAnimDB
+goto runOptsOnI
 
 :askformat3D
 CLS
@@ -409,8 +414,8 @@ set sfolder=
 if %detectPNG%==true call :fetchFormat & del "%pathname%.txt"
 if %subfolder%==true set "sfolder=%nameonly%" & mkdir "%pathname%"
 if %refExtTex%==true set "outfile=%fullpath%"
-(call :OptHead 1 & call :OptExt 1 %iformat% %refExtTex% false %enm%)>%optSet%
-call :Optimizer
+set opts=OptExt %iformat% %refExtTex% false %enm%
+call :runOpts
 if %remMipMap%==false EXIT /b
 set "sf=%sfolder%\"
 for %%m in ("%pathonly%%sf%*.tga", "%pathonly%%sf%*.png") do for /l %%a in (1,1,20) do if exist "%%~dpnm-%%a%%~xm" del "%%~dpnm-%%a%%~xm"
@@ -435,8 +440,8 @@ EXIT /b
 call :fTi 0x00000011
 EXIT /b
 :fTi
-(call :OptHead 1 & call :OptTexInfo 1 %1) >%optSet%
-(call :Optimizer)>"%pathname%.txt"
+set opts=OptTexInfo %1
+call :runOpts >"%pathname%.txt"
 EXIT /b
 
 :fetchTextures
@@ -455,7 +460,7 @@ if %askallsw%==true call :checkconvert
 if %askallsz%==true call :checkresize
 set ini=%optSet%
 if %MagFilter%%WrapST%==falsefalse set ini=
-if defined ini (call :i2iSettings)>"%ini%"
+if defined ini call :i2iSettings >"%ini%"
 set "infile=%pathname%.igb"
 %image2igb% "%fullpath%" "%infile%" %ini%
 set "outfile=%infile%"
@@ -602,15 +607,11 @@ call :isNumber %maxHeight% && call :isNumber %maxWidth% && EXIT /b
 EXIT /b 1
 
 :i2iOptSet
-set optcnt=0
-if not %maxHeight%==false call :writeOpt optRes
-if %convert%==true call :writeOpt optConv
-if %mipmaps%==true call :writeOpt optMipmap
-if not %optcnt% GTR 0 EXIT /b
-(call :OptHead %optcnt% & type %optSetT%)>%optSet%
-del %optSetT%
-set createINI=false
-goto Optimizer
+set opts=
+if not %maxHeight%==false set opts=optRes
+if %convert%==true set opts=%opts%,optConv
+if %mipmaps%==true set opts=%opts%,optMipmap
+goto runOpts
 
 :askSkinEdit
 if %aSeOut%==f set "newName=%nameonly%" & set "oName=%nameonly%"
@@ -648,34 +649,36 @@ echo From: "%iName%"
 EXIT /b
 
 :SkinEdit
-set "outfile=%temp%\temp.igb"
 call :askSkinEdit
 if /i "%targetName%"=="%newName%" EXIT /b
 if /i "%targetName%"=="Bip01" EXIT /b
-(call :OptHead 1 & call :OptRen 1)>%optSet%
-set targetName=
-set "outfile=%infile%"
-goto Optimizer
+set opts=OptRen
+goto runOptsOnI
 
 :getSkinName
-set "igSS=%temp%\igStatisticsSkin.ini"
-if not exist "%igSS%" (call :OptHead 1 & call :OptSkinStats 1)>"%igSS%"
-( %sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%igSS%" )>"%temp%\%nameonly%.txt"
 set targetName=
+set opts=OptSkinStats
+set "igSS=%temp%\igStatisticsSkin.ini"
+if not exist "%igSS%" call :writeOS >"%igSS%"
+%sgOptimizer% "%fullpath%" "%temp%\temp.igb" "%igSS%" >"%temp%\%nameonly%.txt"
 for /f "tokens=1 delims=| " %%a in ('findstr /ir "ig.*Matrix.*Select" ^<"%temp%\%nameonly%.txt"') do set targetName=%%a
 del "%temp%\%nameonly%.txt"
 EXIT /b
 
 :genGColorFix
+set opts=optGGC
 set "igGGC=%temp%\igGenerateGlobalColor.ini"
-if not exist "%igGGC%" (call :OptHead 1 & call :optGGC 1)>"%igGGC%"
+if not exist "%igGGC%" call :writeOS >"%igGGC%"
 %sgOptimizer% "%fullpath%" "%fullpath%" "%igGGC%"
 EXIT /b
 
 :convert_to_igGeometryAttr2
-(call :OptHead 1 & call :optCGA 1)>%optSet%
-set "outfile=%infile%"
-goto Optimizer
+set opts=optCGA
+goto runOptsOnI
+
+:ExtractMotionRaven
+set opts=optExtrMotion
+goto runOptsOnI
 
 :previewAnimations
 set va=%va%"%fullpath%" 
@@ -761,7 +764,7 @@ rem echo create_actor							%nameonly: =_%
 echo save_actor_database						%nameonly: =_%\skin.igb
 EXIT /b
 :extractAnimAllTxt
-call :txtChck || EXIT /b 1
+call :txtChck || EXIT /b
 for /f "tokens=1*" %%a in ('findstr /bi "save" ^<"%fullpath%"') do mkdir "%%~dpb"
 set "srcf=%pathonly%%nameonly:~8%.igb"
 for /f "skip=2 tokens=1*" %%a in ('find "load_actor" "%fullpath%"') do set "srca=%~dp0%%b" & call :eAAT
@@ -818,7 +821,7 @@ EXIT /b
 call :animCombine >>"%AnimProcess%"
 goto animationProducer
 :combineAnimAllTxt
-call :txtChck || EXIT /b 1
+call :txtChck || EXIT /b
 call :animationProducer
 EXIT /b 1
 
@@ -832,7 +835,8 @@ echo extract_skeleton						%outanim%_skel
 echo %~1|findstr /be "false true" >nul && EXIT /b
 :loadActorDB
 set save=actor
-if %skinSr%==true (call :getSkinName) else set targetName=%outanim%
+set targetName=%outanim%
+if %skinSr%==true call :getSkinName
 if %actor+%==true (
  echo load_actor_database						%~1
 ) else (
@@ -867,7 +871,7 @@ EXIT /b
 
 :checktxt
 set x=1
-if /i "%xtnsonly%" == ".igb" set x=0
+if /i "%xtnsonly%"==".igb" set x=0
 if %nevtxt%==true EXIT /b %x%
 if not exist "%pathonly%%1*.txt" set t=%1
 if not defined t goto asktxt
@@ -877,14 +881,22 @@ set "AnimProcess=%fullpath%"
 echo "%namextns%"|findstr /bei "\"%1.*\.txt\"" >nul && goto %1AnimAllTxt
 EXIT /b 1
 :asktxt
-choice /m "Do you want to use the existing %1 database (%1.txt)"
+if /i "%xtnsonly%" NEQ ".txt" choice /m "Do you want to use the existing %1 database (%1.txt)"
 if ERRORLEVEL 2 set nevtxt=true
 set t=%1
 goto checktxt
 :txtChck
 set /p ck=<"%fullpath%"
-echo %ck%|find "create_animation_database" || EXIT /b 1
+echo %ck%|find "create_animation_database" || EXIT /b
 EXIT /b 0
+
+:animationProducer
+REM the animationProducer needs the file locally and without spaces.
+if "%operation%"=="extractAnimations" copy "%~dp0_combine.bat" "%outpath%" & if "%skeleton%"=="_fightstyle_default" copy "%~dp0_fightstyle_default" "%outpath%"
+cd /d "%~dp0"
+%animationProducer% "%AnimProcess%"
+if %errorlevel% NEQ 0 goto Errors
+EXIT /b
 
 :fixSkins
 rem findstr "igActorInfo" <"%fullpath%" >nul 2>nul && EXIT /b
@@ -912,17 +924,18 @@ if "%sfolder%"=="%3" EXIT /b
 set "hudp=%~dp0%sfolder%"
 call :numberedBKP hudp x /i
 mkdir "%hudp%"
-(call :OptHead 1 & call :OptExt 1 %1 true false false)>%optSet%
-%sgOptimizer% "%~dp0%2.igb" "%hudp%\%nameonly%.igb" %optSet%
+set "infile=%~dp0%2.igb"
+set "outfile=%hudp%\%nameonly%.igb"
+set opts=OptExt %1 true false false
+call :runOpts
 if not "%hudp%"=="%pathname%" xcopy /i /y "%hudp%" "%pathname%" & rmdir /s /q "%hudp%"
-set optcnt=2
-if "%5"=="true" set optcnt=3& for %%a in (128:1, 64:2, 32:3, 16:4, 8:5, 4:6, 2:7, 1:8) do for /f "tokens=1-2 delims=:" %%m in ("%%a") do "%~dp0magick.exe" "%fullpath%" -resize %%mx%%m "%pathname%\%3-%%n.%1"
+set opts=OptExt png false true false,optConv
+if "%5"=="true" set "opts=%opts%,optMipmap" & for %%a in (128:1, 64:2, 32:3, 16:4, 8:5, 4:6, 2:7, 1:8) do for /f "tokens=1-2 delims=:" %%m in ("%%a") do "%~dp0magick.exe" "%fullpath%" -resize %%mx%%m "%pathname%\%3-%%n.%1"
 if "%5"=="gif" ( "%~dp0magick.exe" "%fullpath%" "%pathname%\%3_%%04d.%1"
 ) else copy /y "%fullpath%" "%pathname%\%3.%1"
 set sfolder=
 set format=RGBA_DXT%4
-(call :OptHead %optcnt% & call :OptExt 1 png false true false & call :optConv 2)>"%pathname%\%operation:~0,-2%_i.ini"
-if "%5"=="true" (call :optMipmap 3)>>"%pathname%\%operation:~0,-2%_i.ini"
+call :writeOS >"%pathname%\%operation:~,-2%_i.ini"
 REM Injecting the images from batch fails. Has to be made manually in Finalizer.
 EXIT /b
 
@@ -948,7 +961,7 @@ if ""=="%oo%" (
  copy /y "%fullpath:~,-4%.ini" %optSet% >nul
  copy /y "%pathonly%%operation%.ini" %optSet% >nul
  call :Mset && choice /m "Optimization set found (%operation%.ini). Do you want to apply it on all input files"
- if not errorlevel 2 set operation=addNewTextures& goto addNewTextures
+ if not errorlevel 2 goto Mapply
 )
 if %MultiInputA%==true goto MapsMain
 set /a c+=1
@@ -962,6 +975,11 @@ if exist %optSet% (
  EXIT /b 0
 )
 EXIT /b 2
+:Mapply
+copy /y %optSet% %optSetT%
+call :chkConvert
+set operation=addNewTextures
+goto addNewTextures
 
 :MapsPost
 if ""=="%c%" EXIT /b
@@ -1009,12 +1027,10 @@ call :mapsD
 :mapsWO
 set oc=0
 for %%d in (%done%) do call :cRSMMo %%d
-set DXT=%ConvertDDSf:false=1%
-if exist "%tem:~,-4%T.txt" call :convMaps T %DXT%
-if exist "%tem:~,-4%N.txt" call :convMaps N 5
+call :chkConvert
 if %mipmaps%==true set /a oc+=1
-if %mipmaps%==true (call :optMipmap %oc%)>>%optSetT%
-(call :OptHead %oc% & type %optSetT%) > %optSet%
+if %mipmaps%==true call :optMipmap %oc% >>%optSetT%
+(call :OptHead %oc% & type %optSetT%) >%optSet%
 del "%pathname%.txt"
 :addNewTextures
 set outfile=
@@ -1022,9 +1038,30 @@ call :MTitle
 echo Enter a name to save "%nameonly%" as (existing files will be replaced).
 set /p outfile=Enter a name or press enter to update "%namextns%": 
 if defined outfile (set "outfile=%pathonly%%outfile%.igb") else (set "outfile=%fullpath%")
+if exist "%outfile:~,-4%.ini" goto Optimizer
 choice /m "Save the optimization set as well"
 if not errorlevel 2 copy %optSet% "%outfile:~,-4%.ini"
 goto Optimizer
+:chkConvert
+call :chkC N 5 normal
+call :chkC T %ConvertDDSf:false=1% specular reflection emissive
+EXIT /b
+:chkC
+set "convertlist=%tem:~,-4%%1.txt"
+set any=0
+set tx=%*
+for /f "tokens=1* delims== " %%s in ('findstr /bi "%tx:~4%" ^<%optSetT%') do if "%%~t" NEQ "" call :chkFrmt %%~xt %1 && echo %%~nxt>>"%convertlist%" && set /a any+=1
+if %any%==0 EXIT /b
+set /a oc+=1
+set isExclude=include
+set format=RGBA_DXT%2
+call :optConv %oc% >>%optSetT%
+EXIT /b
+:chkFrmt
+if /i "%1"==".dds" EXIT /b 1
+if %2==N EXIT /b 0
+if /i "%1"==".png" if %ConvertDDSf%==false EXIT /b 1
+EXIT /b 0
 
 :mapsD
 set dc=0
@@ -1122,13 +1159,6 @@ for %%e in (png, tga, dds, jpg, bmp) do for /f "delims=" %%t in ('dir "%pathonly
 goto aTMnL
 :isFullPath
 set "%3=%map%"
-for %%t in ("%map%") do call :chkFrmt %%~xt %1 && echo %%~nxt>>"%tem:~,-4%%1.txt"
-EXIT /b 0
-:chkFrmt
-if %2=="" EXIT /b 1
-if /i "%1"==".dds" EXIT /b 1
-if %2==N EXIT /b 0
-if /i "%1"==".png" if %ConvertDDSf%==false EXIT /b 1
 EXIT /b 0
 :askReflectance
 if defined Environment goto CubeMaps
@@ -1170,13 +1200,7 @@ call :mapsR %1
 set /a oc+=1
 call :OptRSMUAMat %oc% >>%optSetT% 2>nul
 EXIT /b
-:convMaps
-set /a oc+=1
-set isExclude=include
-set "convertlist=%tem:~,-4%%1.txt"
-set format=RGBA_DXT%2
-call :optConv %oc% >>%optSetT%
-EXIT /b
+
 
 :checkExist extension
 set "%1=%pathname%.%1"
@@ -1237,23 +1261,31 @@ call echo %%%1%%
 echo.
 EXIT /b
 
-:writeOpt
-set /a optcnt+=1
-(call :%1 %optcnt%)>>%optSetT%
+
+:writeOptSet
+call :writeOS >%optSet%
 EXIT /b
+:writeOS
+set c=0
+for %%o in (%opts: =s%) do set /a c+=1
+if %c%==0 EXIT /b 1
+call :OptHead %c%
+for /l %%i in (1,1,%c%) do call :writeOpts %%i
+EXIT /b
+:writeOpts
+set i=%1
+for /f "tokens=%i% delims=," %%o in ("%opts%") do for /f "tokens=1*" %%a in ("%%o") do call :%%a %1 %%b
+EXIT /b
+:runOptsOnI
+set "outfile=%infile%"
+:runOpts
+call :writeOS >%optSet%
+set createINI=false
+set targetName=
 
 :Optimizer
 %sgOptimizer% "%infile%" "%outfile%" %optSet% || goto Errors
 EXIT /b
-
-:animationProducer
-REM the animationProducer needs the file locally and without spaces.
-if "%operation%"=="extractAnimations" copy "%~dp0_combine.bat" "%outpath%" & if "%skeleton%"=="_fightstyle_default" copy "%~dp0_fightstyle_default" "%outpath%"
-cd /d "%~dp0"
-%animationProducer% "%AnimProcess%"
-if %errorlevel% NEQ 0 goto Errors
-EXIT /b
-
 
 :optHead
 echo [OPTIMIZE]
@@ -1355,6 +1387,11 @@ echo accessMode = 3
 echo storeBoundingVolume = false
 EXIT /b
 
+:optExtrMotion
+echo [OPTIMIZATION%1]
+echo name = ExtractMotionRaven
+EXIT /b
+
 :optAnimExt
 echo [OPTIMIZATION%1]
 echo name = igEnbayaCompressAnimations
@@ -1388,7 +1425,7 @@ echo [OPTIMIZATION%1]
 echo name = igRavenSetupMUAMaterial
 echo diffuseMapName = %intTex:&=^&%
 echo normalMap = %Normal:&=^&%
-echo specularMap = %Specular:&=^&r%
+echo specularMap = %Specular:&=^&%
 echo reflectionMapRight = %reflectionR:&=^&%
 echo reflectionMapLeft = %reflectionL:&=^&%
 echo reflectionMapBack = %reflectionB:&=^&%
@@ -1487,12 +1524,12 @@ if "%format%" == "TILED_X_4_PSP" (
 EXIT /b
 
 :animNames anim
-echo :step_forward:ground_attack1:ground_attack2:attack_heavy1:attack_heavy2:jump_attack1:jump_attack2:attack_jumpslam:jump_smash_loop:jump_smash:jump_smash_hold:attack_knockback:attack_knockback1:attack_knockback2:attack_light1:attack_light2:attack_light3:attack_popup1:attack_popup2:attack_stun1:attack_stun2:attack_stun3:attack_trip1:attack_trip2:block:blocking:bored_1_1:bored_1_2:bored_1_3:bored_1_4:bored_loop_1:clingwall_backflip:crouch_end:crouch_idle:crouch_start:jumpdouble_start:evade_backwards:evade_forwardroll:evade_left:evade_right:fall_FeetFirst:fly_fast:fly_idle:fly_slow:flying_attack1:flying_attack2:flyingback_getup:getup_attack_faceup:flyingforward_getup:getup_attack_facedown:grab_attack:grab_attack_finisher:grabbed_attack:grab_break:grabbed_break:grab_fallback:grab_loop:grabbed_loop:grab_smash:grabbed_smash:grab_attempt:grabbed_attempt:throw_ally_hero:throw_ally_ally:grab_throw_back:grabbed_throw_back:grab_throw_forward:grabbed_throw_forward:grab_throw_left:grabbed_throw_left:grab_throw_right:grabbed_throw_right:slamfront_slump:slamback_slump:idle:idle_to_bored:jump_attack_land:jump_land:jump_loop:jump_smash_land:jump_start:flyingback_loop:flyingforward_loop:death_gen:NO_ANIM:NO_ANIM:flyingback_landloop:slamback_getup:flyingforward_landloop:levelup:lunge_loop:lunge_land:lunge_offwall:menu_action:menu_goodbye:menu_idle:pain_airFeetfirst:pain_airHeadfirst:pain_InAirSpin:pain_rear:pain_blocking:pain_electric:groundpain_back:groundpain_forward:pain_high:pain_low:twitch_left:twitch_right:pickup_object_idle:pickup_object_lift:pickup_object_start:pickup_object_throw:pickup_object_walk:popup_break:popup_bounce:popup_loop:popup:power_1:power_10:power_11:power_12:power_13:power_14:power_15:power_16:power_17:power_18:power_19:power_1_end:power_1_loop:power_1_start:power_2:power_20:power_2_end:power_2_loop:power_3:power_3_end:power_3_loop:power_4:power_4_end:power_4_loop:power_5:power_5_end:power_6:power_7:power_8:power_8_end:power_8_loop:power_8_start:power_9:psylift:telekinesis_victim:push_heavy_object:push_heavy_object_fail:resist_knockback:resist_popup:resist_stun:resist_trip:resurrect_v:step_backward:run:spin_left:spin_right:run_sprint:step_left:step_right:sticky_floor:stun:talking_01:talking_02:talking_03:talking_04:telebuddy_grab:telebuddy_land:telebuddy_loop:slamback_loop:flyingback_land:flyingback_loop:slamfront_loop:flyingforward_land:flyingforward_loop:grabbed_throw:grabbed_throwland:grabbed_throwloop:tpose:trip:grabbed_throwslam:grabbed_throwslump:grabbed_throwslumpland:use_button:victim1:victim10:victim11:victim12:victim2:victim3:victim4:victim5:victim6:victim7:victim8:victim9:walk:zone1:zone10:zone11:zone12:zone13:zone14:zone15:zone16:zone17:zone18:zone19:zone2:zone20:zone21:zone22:zone23:zone24:zone25:zone3:zone4:zone5:zone6:zone7:zone8:zone9:menu_kowned: | find /i ":%*:" >nul || EXIT /b 1
+echo :step_forward:ground_attack1:ground_attack2:attack_heavy1:attack_heavy2:jump_attack1:jump_attack2:attack_jumpslam:jump_smash_loop:jump_smash:jump_smash_hold:attack_knockback:attack_knockback1:attack_knockback2:attack_light1:attack_light2:attack_light3:attack_popup1:attack_popup2:attack_stun1:attack_stun2:attack_stun3:attack_trip1:attack_trip2:block:blocking:bored_1_1:bored_1_2:bored_1_3:bored_1_4:bored_loop_1:clingwall_backflip:crouch_end:crouch_idle:crouch_start:jumpdouble_start:evade_backwards:evade_forwardroll:evade_left:evade_right:fall_FeetFirst:fly_fast:fly_idle:fly_slow:flying_attack1:flying_attack2:flyingback_getup:getup_attack_faceup:flyingforward_getup:getup_attack_facedown:grab_attack:grab_attack_finisher:grabbed_attack:grab_break:grabbed_break:grab_fallback:grab_loop:grabbed_loop:grab_smash:grabbed_smash:grab_attempt:grabbed_attempt:throw_ally_hero:throw_ally_ally:grab_throw_back:grabbed_throw_back:grab_throw_forward:grabbed_throw_forward:grab_throw_left:grabbed_throw_left:grab_throw_right:grabbed_throw_right:slamfront_slump:slamback_slump:idle:idle_to_bored:jump_attack_land:jump_land:jump_loop:jump_smash_land:jump_start:flyingback_loop:flyingforward_loop:death_gen:NO_ANIM:NO_ANIM:flyingback_landloop:slamback_getup:flyingforward_landloop:levelup:lunge_loop:lunge_land:lunge_offwall:menu_action:menu_goodbye:menu_idle:pain_airFeetfirst:pain_airHeadfirst:pain_InAirSpin:pain_rear:pain_blocking:pain_electric:groundpain_back:groundpain_forward:pain_high:pain_low:twitch_left:twitch_right:pickup_object_idle:pickup_object_lift:pickup_object_start:pickup_object_throw:pickup_object_walk:popup_break:popup_bounce:popup_loop:popup:power_1:power_10:power_11:power_12:power_13:power_14:power_15:power_16:power_17:power_18:power_19:power_1_end:power_1_loop:power_1_start:power_2:power_20:power_2_end:power_2_loop:power_3:power_3_end:power_3_loop:power_4:power_4_end:power_4_loop:power_5:power_5_end:power_6:power_7:power_8:power_8_end:power_8_loop:power_8_start:power_9:psylift:telekinesis_victim:push_heavy_object:push_heavy_object_fail:resist_knockback:resist_popup:resist_stun:resist_trip:resurrect_v:step_backward:run:spin_left:spin_right:run_sprint:step_left:step_right:sticky_floor:stun:talking_01:talking_02:talking_03:talking_04:telebuddy_grab:telebuddy_land:telebuddy_loop:slamback_loop:flyingback_land:flyingback_loop:slamfront_loop:flyingforward_land:flyingforward_loop:grabbed_throw:grabbed_throwland:grabbed_throwloop:tpose:trip:grabbed_throwslam:grabbed_throwslump:grabbed_throwslumpland:use_button:victim1:victim10:victim11:victim12:victim2:victim3:victim4:victim5:victim6:victim7:victim8:victim9:walk:zone1:zone10:zone11:zone12:zone13:zone14:zone15:zone16:zone17:zone18:zone19:zone2:zone20:zone21:zone22:zone23:zone24:zone25:zone3:zone4:zone5:zone6:zone7:zone8:zone9:menu_kowned: | find /i ":%*:" >nul || EXIT /b
 EXIT /b 0
 
 :checkTools program
 if "%IG_ROOT%"=="" cd /d "%~dp0" & if not exist "%~dp0libIGCore.dll" echo The IG_ROOT variable is not defined. Please check your Alchemy 5 installation. & goto Errors
-VVreg=HKCU\Software\vicarious visions\driver
+set VVreg=HKCU\Software\vicarious visions\driver
 for /f "skip=2" %%r in ('reg query "%VVreg%"') do reg add "%VVreg%" /v %%r /t REG_DWORD /d 2593173275 /f >nul 2>nul
 if exist "%~dp0%1.exe" set %1="%~dp0%1.exe"
 if not defined %1 for /f "delims=" %%a in ('where %1.exe 2^>nul ') do set %1=%1
@@ -1504,7 +1541,9 @@ EXIT /b 1
 :End
 if defined any call :%operation%Post
 CLS
-if not exist "%erl%" goto cleanup
+for %%e in ("%erl%") do if %%~ze GTR 0 goto Errors
+del "%erl%"
+goto cleanup
 :Errors
 echo.
 echo There was an error in the process. Check the error description.
