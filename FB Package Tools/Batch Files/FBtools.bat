@@ -49,7 +49,7 @@ GOTO End
 :isfolder
 cd /d "%fullpath:"=%"
 call :rec%recursive%
-for /f "delims=" %%i in ('dir %inext:.=*.% 2^>nul ') do (
+for /f "delims=" %%i in ('dir %inext:.=*.% 2^>nul') do (
  set "fullpath=%dp%%%~i"
  call :isfiles
 )

@@ -1529,13 +1529,15 @@ EXIT /b 0
 
 :checkTools program
 if "%IG_ROOT%"=="" cd /d "%~dp0" & if not exist "%~dp0libIGCore.dll" echo The IG_ROOT variable is not defined. Please check your Alchemy 5 installation. & goto Errors
-set VVreg=HKCU\Software\vicarious visions\driver
-for /f "skip=2" %%r in ('reg query "%VVreg%"') do reg add "%VVreg%" /v %%r /t REG_DWORD /d 2593173275 /f >nul 2>nul
 if exist "%~dp0%1.exe" set %1="%~dp0%1.exe"
-if not defined %1 for /f "delims=" %%a in ('where %1.exe 2^>nul ') do set %1=%1
+if not defined %1 for /f "delims=" %%a in ('where %1.exe 2^>nul') do set %1=%1
 if not defined %1 if exist "%IG_ROOT%\bin\%1.exe" set %1="%IG_ROOT%\bin\%1.exe"
-if defined %1 EXIT /b 0
-EXIT /b 1
+set x=1
+if defined %1 set x=0
+if defined VVreg EXIT /b %x%
+set VVreg=HKCU\Software\vicarious visions\driver
+for /f "skip=2 tokens=1-3" %%r in ('reg query "%VVreg%" 2^>nul') do if %%t LSS 10000 reg delete "%VVreg%" /f & reg add "%VVreg%" /v %%r /t REG_DWORD /d 1 /f >nul 2>nul
+EXIT /b %x%
 
 
 :End

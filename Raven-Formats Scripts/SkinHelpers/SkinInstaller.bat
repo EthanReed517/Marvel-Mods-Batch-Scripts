@@ -1588,7 +1588,7 @@ call :checkTools DSPADPCM || EXIT /b
 %DSPADPCM% -E "%fullpath%" "%fullpath:~,-3%dsp" || EXIT /b
 del "%cd%\%nameonly%.txt"
 call :ZSnewFormat dsp
-EXIT /b
+goto DspToDsp
 :WavToVag
 REM conversion currently only supports one channel, maybe even the format
 REM May need better error messages
@@ -1599,10 +1599,12 @@ call :ZSnewFormat vag
 :XbadpcmToXbadpcm
 :XmaToXma
 :DspToDsp
+REM Currently no backup needed, since no conversion is configured for these formats.
+call :GetOutPath
 EXIT /b
 :VagToVag
 if %channels% GTR 2 EXIT /b 1
-EXIT /b
+goto DspToDsp
 :ZSnewFormat
 set "fullpath=%fullpath:~,-3%%1"
 set "namextns=%nameonly%.%1"
@@ -2136,7 +2138,7 @@ echo     $ro = 1
 echo     if ($sf.sounds.sample_index.count -eq 0) {
 echo       $sf.sounds = $so
 echo     } else {
-REM       if ($sf.samples.file.count -ne (($sf.sounds.sample_index ^| sort ^| select -last 1) + 1)) { "Samples ({0}) and sample index information ({1}) don't match." -f ($sf.samples.file.count-1), ($sf.sounds.sample_index ^| sort ^| select -last 1); Exit 1 }
+REM        if ($sf.samples.file.count -ne (($sf.sounds.sample_index ^| sort ^| select -last 1) + 1)) { "Samples ({0}) and sample index information ({1}) don't match." -f ($sf.samples.file.count-1), ($sf.sounds.sample_index ^| sort ^| select -last 1); Exit 1 }
 echo       $sf.sounds = @($sf.sounds ^| %% {
 echo         if ($_.sample_index -eq $i -and $ro) {$so; Clear-Variable ro}
 echo         if ($_.sample_index -lt $i) {$_}
