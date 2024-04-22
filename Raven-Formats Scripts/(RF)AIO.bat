@@ -626,7 +626,7 @@ echo --------------------
 echo.
 EXIT /b
 :PackageCloner
-call :readNumber || EXIT /b
+call :readNumber nameonly || EXIT /b
 findstr /eil "%pkgnm%.pkgb %pkgnm%_nc.pkgb" <"%tpc%" >nul 2>nul || set /a x+=1
 for %%a in ("%fullpath%") do echo %%~a>>"%tpc%"
 EXIT /b
@@ -657,7 +657,7 @@ set pkgn=na
 goto srcNum
 
 :clonePKG
-call :readNumber || EXIT /b
+call :readNumber nameonly || EXIT /b
 REM To only clone one number even if they are named differently, use %pkgn%
 echo %cmplt% | find "-%pkgnm%%NC%-" && EXIT /b
 set cmplt=%cmplt%-%pkgnm%%NC%-
@@ -702,10 +702,10 @@ EXIT /b 0
 set "pcn=%e%; $psn = ($ps -split '(?<=hud_head_%pkgn%.*\r?\n)')[0] + ($e -join ""`n"")"
 EXIT /b 2
 
-:readNumber
+:readNumber var
 set NC=
-for /f "tokens=2" %%s in ("%nameonly%") do EXIT /b 1
-set "pkgnm=%nameonly%"
+call set "pkgnm=%%%1%%"
+for /f "tokens=2" %%s in ("%pkgnm%") do EXIT /b 1
 if "%pkgnm:~-3%"=="_nc" set "pkgnm=%pkgnm:~,-3%" & set NC=_nc
 set pkgn=%pkgnm:~-5%
 set pkgn=%pkgn:_=%
@@ -790,7 +790,7 @@ set in=defaultman
 for /f "delims=" %%p in ('dir /b "%tp%*_%cn%*.pkgb"') do set "nameonly=%%~np" & goto SH4p2
 goto SH4p3
 :SH4p2
-call :readNumber || goto SH4p3
+call :readNumber nameonly || goto SH4p3
 set "in=%pkgnm:~,-5%"
 if "_"=="%in:~-1%" set "in=%in:~,-1%"
 :SH4p3

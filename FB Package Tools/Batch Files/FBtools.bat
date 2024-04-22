@@ -141,35 +141,51 @@ set operationtext=Update a CFG file (input file) with all new files. CFG can be 
 EXIT /b 0
 
 :startextractFB
-call :checkTools fbExtractor
+call :checkToolsE fbExtractor
 set inext=.fb
 EXIT /b
 :startbuildFBnew
 :startbuildFB
-call :checkTools fbBuilder
+call :checkToolsE fbBuilder
 :startupdateCFG
 set inext=.cfg
 EXIT /b
 :startbuildCFG
-call :checkTools cfgBuilder
+call :checkToolsE cfgBuilder
 set inext=.xml, .txt, .pkg
 EXIT /b
 :startdetect
-call :checkTools fbExtractor
-call :checkTools fbBuilder
+call :checkTools fb && EXIT /b
+call :checkToolsE fbExtractor
+call :checkToolsE fbBuilder
 EXIT /b
+:startRFFB
+call :checkToolsE fb
+EXIT /b 
 
 :detect
 if "%fullpath%"=="%~dp0cfgBuilder_info.cfg" EXIT /b
 if /i "%xtnsonly%"==".fb" goto extractFB
+if /i "%xtnsonly%"==".json" goto RFFB
 if /i "%xtnsonly%"==".cfg" goto buildFB
-call :checkTools cfgBuilder
+call :checkToolsE cfgBuilder
 if /i "%xtnsonly%"==".pkg" goto buildCFG
 call :opswitcher
 goto %operation%
 EXIT /b
 
+:RFFB
+if /i "%xtnsonly%"==".fb" goto RFFBD
+set ext=.fb
+if /i "%pathname:~-3%"==".fb" set ext=
+%fb% "%fullpath%" "%pathname%%ext%" || goto Errors
+EXIT /b
+:RFFBD
+%fb% -d "%fullpath%" "%pathname%.json" || goto Errors
+EXIT /b
+
 :extractFB
+if defined fb goto RFFBD
 if %deletepkg%==ask choice /m "Do you want to create PKG files" & if errorlevel 2 (set deletepkg=true) else set deletepkg=false
 %fbExtractor% "%fullpath%"
 if %deletepkg%==true del "%fullpath%.pkg" /f /q
@@ -196,6 +212,7 @@ EXIT /b
 choice /m "Did you add new files, in addition to the ones that extracted from '%nameonly%'"
 if not errorlevel 2 call :updateCFG
 :buildFB
+if defined fb goto RFFB
 REM create the enter.vbs script. This will automatically hit enter when compiling
 (
  echo Set WshShell = WScript.CreateObject^("WScript.Shell"^)
@@ -273,7 +290,7 @@ move /y "%cd%\%namextns%.cfg" "%pathname%.cfg"
 EXIT /b
 :checkCBI
 if exist "%~dp0cfgBuilder_info.cfg" set "cfgpath=%~dp0" & EXIT /b
-call :checkTools cfgBuilder
+call :checkToolsE cfgBuilder
 for %%c in (%cfgBuilder%) do if exist "%%~dpccfgBuilder_info.cfg" set "cfgpath=%%~dpc" & EXIT /b
 echo cfgBuilder_info.cfg not found.
 goto Errors
@@ -283,6 +300,27 @@ goto Errors
 if exist "%~dp0%1.exe" set %1="%~dp0%1.exe"
 if not defined %1 for /f "delims=" %%a in ('where %1 2^>nul') do set %1=%1
 if defined %1 EXIT /b 0
+if /i [%1]==[FB] goto checkFB
+EXIT /b 1
+:checkFB
+if defined %1 EXIT /b 0
+REM No .exe standalone existing, currently.
+REM if exist "%~dp0json2xmlb.exe" set %1="%~dp0json2xmlb.exe" & EXIT /b 0
+:checkPython
+for /f "delims=" %%a in ('where py 2^>nul') do (
+ for /f "delims=" %%b in ('where zsnd 2^>nul') do goto setRF
+ PATH | find "Programs\Python\Python" >nul && goto instRF
+)
+EXIT /b 1
+echo Python is not correctly installed. Check the Readme.
+goto Errors
+:instRF
+pip install --ignore-installed raven-formats || EXIT /b
+:setRF
+set fb=fb
+EXIT /b 0
+:checkToolsE program
+call :checkTools %1 && EXIT /b
 echo "%1.exe" not found.
 goto Errors
 
