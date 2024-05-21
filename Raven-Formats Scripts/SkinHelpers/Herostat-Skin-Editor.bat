@@ -626,7 +626,7 @@ echo --------------------
 echo.
 EXIT /b
 :PackageCloner
-call :readNumber || EXIT /b
+call :readNumber nameonly || EXIT /b
 findstr /eil "%pkgnm%.pkgb %pkgnm%_nc.pkgb" <"%tpc%" >nul 2>nul || set /a x+=1
 for %%a in ("%fullpath%") do echo %%~a>>"%tpc%"
 EXIT /b
@@ -657,7 +657,7 @@ set pkgn=na
 goto srcNum
 
 :clonePKG
-call :readNumber || EXIT /b
+call :readNumber nameonly || EXIT /b
 REM To only clone one number even if they are named differently, use %pkgn%
 echo %cmplt% | find "-%pkgnm%%NC%-" && EXIT /b
 set cmplt=%cmplt%-%pkgnm%%NC%-
@@ -702,10 +702,10 @@ EXIT /b 0
 set "pcn=%e%; $psn = ($ps -split '(?<=hud_head_%pkgn%.*\r?\n)')[0] + ($e -join ""`n"")"
 EXIT /b 2
 
-:readNumber
+:readNumber var
 set NC=
-for /f "tokens=2" %%s in ("%nameonly%") do EXIT /b 1
-set "pkgnm=%nameonly%"
+call set "pkgnm=%%%1%%"
+for /f "tokens=2" %%s in ("%pkgnm%") do EXIT /b 1
 if "%pkgnm:~-3%"=="_nc" set "pkgnm=%pkgnm:~,-3%" & set NC=_nc
 set pkgn=%pkgnm:~-5%
 set pkgn=%pkgn:_=%
@@ -790,7 +790,7 @@ set in=defaultman
 for /f "delims=" %%p in ('dir /b "%tp%*_%cn%*.pkgb"') do set "nameonly=%%~np" & goto SH4p2
 goto SH4p3
 :SH4p2
-call :readNumber || goto SH4p3
+call :readNumber nameonly || goto SH4p3
 set "in=%pkgnm:~,-5%"
 if "_"=="%in:~-1%" set "in=%in:~,-1%"
 :SH4p3
@@ -1164,7 +1164,7 @@ choice /m "Old mod number: %on%. Confirm"
 if errorlevel 2 goto ModCloner1
 set h=
 set psc=$null
-set "pcv=$on = '%on%'; $sn = $on + '*'; $ca = '$'"
+set "pcv=$on = '%on:'=''%'; $sn = $on + '*'; $ca = '$'"
 :ModCloner2
 call :MCTitle
 echo Enter a new mod number for "%ch%".
@@ -1172,8 +1172,7 @@ call :asknum nn
 if "%nn:~1%"=="" set nn=0%nn%
 set nn=%nn:~-3%
 REM Setup PowerShell:
-set "md=%cd:'=''%"
-set "pcl=$a = '%md%\actors\'; $l = '%md%\textures\loading\' + $on + '*.igb'; $m = '%md%\ui\models\mannequin\' + $on + '01.igb*'; $hu = '%md%\hud\hud_head_'; $pk = '%md%\packages\generated\*.pkgb'; $ps = '%md%\data\powerstyles\' + $p.powerstyle + '.engb'; $xd = '%tem:'=''%.%dex%'"
+set "pcl=$md = '%cd:'=''%', $a = $md+'\actors\'; $l = $md+'\textures\loading\' + $on + '*.igb'; $m = $md+'\ui\models\mannequin\' + $on + '01.igb*'; $hu = $md+'\hud\hud_head_'; $pk = $md+'\packages\generated\*.pkgb'; $ps = $md+'\data\powerstyles\' + $p.powerstyle + '.engb'; $xd = '%tem:'=''%.%dex%'"
 set xd=$xd
 REM xmlb-compile prints to temp file %xco%, instead of output file
 if %decformat%==lxml set "xd='%xco:'=''%'"
@@ -1194,7 +1193,7 @@ set "pch=$r = '(?<=^hud_head_)' + $on; [array]$f = $hu + $sn + '.igb*'; 2..6 | %
 REM pcp = Package clone/rename code. Old packages are currently not deleted
 set "pcp=$r = '(?=' + $on + '\d\d(_nc)?\.pkgb$)' + $on; $rd = '(?<=filename[\s="":]{2,4}(.*\/(hud_head_)?)?)' + $on; (dir -s $pk %pcd%; $xds = ($_ -split '\\'); $xdo = ($xds[0..($xds.length-2)] + ($xds[-1] -replace $r,'%nn%')) -join '\'; %xdc% $xdo}}"
 REM pcf = Powerstyle code +
-set "pcf=$rd = '(?<=skin_filter[\s="":]{2,4})' + $on; (dir $ps %pcd%; %xdc% $ps; $e = (gc %xd% -raw | Select-String 'ents_') -replace '[\s\S]+filename[\s="":]{2,4}(ents_.*?)(""|\s)[\s\S]+','$1'; if ($e) {$e = '%md%\data\entities\' + $e + '.xmlb'; (dir $e %pcd%; %xdc% $e}}}}}"
+set "pcf=$rd = '(?<=skin_filter[\s="":]{2,4})' + $on; (dir $ps %pcd%; %xdc% $ps; $e = (gc %xd% -raw | Select-String 'ents_') -replace '[\s\S]+filename[\s="":]{2,4}(ents_.*?)(""|\s)[\s\S]+','$1'; if ($e) {$e = $md+'\data\entities\' + $e + '.xmlb'; (dir $e %pcd%; %xdc% $e}}}}}"
 REM pcs = Herostat code
 if %hdf%==lxml set "pcs=$l = $p.psobject.properties.name | %% {$_ + ' = ' + $p.$_ + ' ;'}"
 if %hdf%==json set "pcs=$l = $p | Select -Property * -ExcludeProperty talent,Multipart,StatEffect,BoltOn | ConvertTo-Json; $l = $l.substring(3,$l.length-6) + ','; "
