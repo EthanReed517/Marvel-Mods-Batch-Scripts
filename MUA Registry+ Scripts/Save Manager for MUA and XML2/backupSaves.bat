@@ -71,6 +71,7 @@ regedit /e %rfn% %rk%
 EXIT /b
 :regR
 if %1==d call :Resolution
+if not exist "%sv%" mkdir "%sv%"
 if exist %rfn% %rfn% & copy %rfn% "%sv%"
 EXIT /b
 :regV
@@ -100,7 +101,7 @@ choice /m "Do you want to create a backup profile first"
 if not errorlevel 2 goto askname
 
 :restore
-REM removed saved profile %bpn%, because it's problematic when it includes delimiters
+REM To exclude the newly created profile: set fd=dir "%df%" ^| findstr /veil "Screenshots Save" ^| findstr /veilc:"%bpn%"
 set fd=dir "%df%" ^| findstr /veil "Screenshots Save"
 CLS
 echo %*
