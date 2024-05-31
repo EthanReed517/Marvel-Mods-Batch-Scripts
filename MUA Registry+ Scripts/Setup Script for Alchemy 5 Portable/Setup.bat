@@ -2,12 +2,13 @@
 
 echo "%~dp0" | find ";" >nul && goto ErrorPath
 
-set envkey="HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment"
 if defined IG_ROOT set "OldDLL=%IG_ROOT:"=%\DLL"
 if defined OldDLL set "OldDLL=%OldDLL:\\=\%"
 set "NewDLL=%~dp0DLL"
 
-if "%NewDLL%" == "%OldDLL%" (
+set "psc=$envkey = 'registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment'; $MPath = ((Get-Item -LiteralPath $envkey).GetValue('Path', '', 'DoNotExpandEnvironmentNames') -split ';' -ne '') | ? {'%OldDLL%' -notin $_.TrimEnd('/').TrimEnd('\')}; $wn = $null -ne ($MPath | ? {$_ -imatch '.*Alchemy.*DLL'})"
+
+if /i "%NewDLL%" == "%OldDLL%" (
  choice /m "An identical installation was found. Do you want to unregister Alchemy from this system"
  if ERRORLEVEL 2 Exit 0
  goto Uninstall
@@ -20,9 +21,7 @@ if defined IG_ROOT (
 :Install
 setx IG_ROOT /m "%~dp0
 if ERRORLEVEL 1 goto Error
-echo "%PATH:"=%" | find /i "%OldDLL%" >nul && call :RemPathVar
-call :GetPathVar
-echo "%OldPath:"=%" | find /i "%NewDLL%" >nul || call :AddPathVar
+PowerShell "$NewDLL = Join-Path '%~dp0' 'DLL'; %psc%; if ($NewDLL -notin $MPath -and ($NewDLL + '\') -notin $MPath) {sp -Type ExpandString -LiteralPath $envkey Path (($MPath + $NewDLL) -join ';')}; if ($wn) {EXIT 1}" || call :Warnng
 choice /c FIN /m "Associate .IGB files with Finalizer (F), Insight Viewer (I) or don't associate/change (N)"
 if ERRORLEVEL 3 Exit 0
 if ERRORLEVEL 2 ( set "igApp=insight\DX9\insight" ) else ( set "igApp=Finalizer\sgFinalizer" )
@@ -33,8 +32,7 @@ Exit 0
 :Uninstall
 setx IG_ROOT "" /m
 if ERRORLEVEL 1 goto Error
-echo "%PATH:"=%" | find /i "%OldDLL%" >nul && call :RemPathVar
-REG delete %envkey% /f /v IG_ROOT
+PowerShell "%psc%; sp -Type ExpandString -LiteralPath $envkey Path ($MPath -join ';'); rp -LiteralPath $envkey IG_ROOT; if ($wn) {EXIT 1}" || call :Warnng
 FTYPE igb_auto_file=
 ASSOC .IGB=
 pause
@@ -70,40 +68,6 @@ REM [HKCU]\SOFTWARE\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\
 REM       Compatibility Assistant\Store & Layers: viewer/finalizer comp. settings
 REM Code example: REG delete "HKEY_CURRENT_USER\SOFTWARE\Alchemy Finalizer" /f
 
-:AddPathVar
-set "NewPath=%OldPath:"=%;%NewDLL%;"
-goto RegPathVar
-REM Powershell takes way too long, but no prompt
-REM when remove not set, when add do set "NDTA= + '%NewDLL%'"
-PowerShell "$op = [System.Environment]::GetEnvironmentVariable('PATH', 'machine') -split ';' | ? {$_}; $op | %% {if ($_[1] -ne ':') {EXIT 1}}; $cp = $op | ? {$_ -notmatch ('^' + [regex]::Escape('%NewDLL%') + '\\?') -or $_ -notmatch ('^' + [regex]::Escape('%OldDLL%') + '\\?') }; [System.Environment]::SetEnvironmentVariable('PATH', ($cp%NDTA% -join ';') + ';', 'machine'); $cp | %% {if ($_ -match 'Alchemy.*DLL') {EXIT 2}}; EXIT 0"
-if %errorlevel%==2 call :Warnng
-if %errorlevel%==1 EXIT
-
-:RemPathVar
-set "Equal=%OldDLL%#" & call :fixEqual
-set "r=;%ne:~1,-1%"
-call :GetPathVar
-set "Equal=%OldPath:"=%#" & set "ne=" & call :fixEqual
-set "OldPath=%ne:~1,-1%"
-call set "NewPath=%%OldPath:%r%=%%"
-set "NewPath=%NewPath:?==%"
-call :RegPathVar
-echo "%NewPath%" | findstr /irc:"Alchemy.*DLL" >nul && call :Warnng
-Exit /b
-:fixEqual
-for /F "tokens=1* delims==" %%a in ("%Equal%") do set "Equal=%%b" & set "ne=%ne%?%%a"
-if defined Equal goto fixEqual
-Exit /b
-
-:RegPathVar
-REG add %envkey% /f /v Path /t REG_SZ /d "%NewPath:;;=;%"
-if ERRORLEVEL 1 goto Error
-Exit /b
-
-:GetPathVar
-for /f "skip=2 tokens=1,2*" %%n in ('REG query %envkey% /v "Path" 2^>nul') do if /i "%%n" == "Path" set "OldPath=%%p"
-Exit /b
-
 :Warnng
 echo.
 echo  An old Alchemy path still exists in the Path variable.
@@ -114,10 +78,10 @@ pause
 Exit /b
 
 :ErrorPath
-echo ERROR: A ^"^;^" was found in the path.
-echo Please rename the files and^/or folders,
-echo or move Alchemy to a different location, and try again.
-echo Unfotunately, the variables to register are malfunctioning with a ^"^;^".
+echo ERROR: The current path contains a semicolon (";").
+echo Please rename the folder^(s^), or move Alchemy to a different location, 
+echo and try again.
+echo Unfotunately, the variables to register are malfunctioning with a semicolon.
 pause
 Exit
 
