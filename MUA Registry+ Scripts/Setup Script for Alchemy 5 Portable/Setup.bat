@@ -4,11 +4,9 @@ echo "%~dp0" | find ";" >nul && goto ErrorPath
 
 if defined IG_ROOT set "OldDLL=%IG_ROOT:"=%\DLL"
 if defined OldDLL set "OldDLL=%OldDLL:\\=\%"
-set "NewDLL=%~dp0DLL"
-
 set "psc=$envkey = 'registry::HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session Manager\Environment'; $MPath = ((Get-Item -LiteralPath $envkey).GetValue('Path', '', 'DoNotExpandEnvironmentNames') -split ';' -ne '') | ? {'%OldDLL%' -notin $_.TrimEnd('/').TrimEnd('\')}; $wn = $null -ne ($MPath | ? {$_ -imatch '.*Alchemy.*DLL'})"
 
-if /i "%NewDLL%" == "%OldDLL%" (
+if /i "%~dp0DLL" == "%OldDLL%" (
  choice /m "An identical installation was found. Do you want to unregister Alchemy from this system"
  if ERRORLEVEL 2 Exit 0
  goto Uninstall
