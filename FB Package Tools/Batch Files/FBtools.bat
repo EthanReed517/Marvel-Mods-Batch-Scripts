@@ -309,7 +309,7 @@ REM if exist "%~dp0json2xmlb.exe" set %1="%~dp0json2xmlb.exe" & EXIT /b 0
 :checkPython
 for /f "delims=" %%a in ('where py 2^>nul') do (
  for /f "delims=" %%b in ('where zsnd 2^>nul') do goto setRF
- PATH | find "Programs\Python\Python" >nul && goto instRF
+ for /f "delims=" %%c in ('pip --version 2^>nul') do goto instRF
 )
 EXIT /b 1
 echo Python is not correctly installed. Check the Readme.

@@ -315,7 +315,8 @@ call :platW .vag
 set g=2
 set t=GAMECUBE DXT
 set z=300000
-set PTFMT=X_8
+set PTFMT=TILED_X_8_PSP
+REM to save space use TILED_X_4_PSP
 set ConsGen=PSP
 REM No GlobalColor, Compatible with some Alchemy 5, native files are PSP specific
 EXIT /b
@@ -332,6 +333,7 @@ goto 6Setup
 :PS2Cfg
 set t=%t% DXT
 set PTFMT=RGB_888_24
+REM or X_8 ?
 call :platW .vag
 :6Setup
 set sl=4
@@ -1364,6 +1366,7 @@ goto Wopt
 
 :extract
 set "oj=%outfile%%nameonly%"
+if %recursive%==true if ""=="%outfile%" set "oj=%pathonly%%oj%"
 call :numberedBKP oj
 set "oj=%oj%.json"
 call :numberedBKP oj
@@ -2483,7 +2486,7 @@ if exist "%~dp0json2xmlb.exe" set %1="%~dp0json2xmlb.exe" & EXIT /b 0
 :checkPython
 for /f "delims=" %%a in ('where py 2^>nul') do (
  for /f "delims=" %%b in ('where zsnd 2^>nul') do goto setRF
- PATH | find "Programs\Python\Python" >nul && goto instRF
+ for /f "delims=" %%c in ('pip --version 2^>nul') do goto instRF
 )
 echo Python is not correctly installed. Check the Readme.
 goto Errors

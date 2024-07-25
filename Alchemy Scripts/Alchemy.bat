@@ -1,5 +1,5 @@
 @echo off
-REM chcp 65001 >nul
+REM for /f "tokens=2 delims=:" %%c in ('chcp') do if %%c NEQ 850 chcp 65001 >nul
 
 REM -----------------------------------------------------------------------------
 
@@ -789,7 +789,7 @@ set outanim=%outanim: =_%
 set "oa=%~dp0%outanim%.igb" & call :numberedBKP oa
 set "outpath=%outanim%\"
 if "%pathonly%"=="%~dp0" set outpath=
-if not defined skeleton set "skeleton=%outanim%\%namextns%"
+if not defined skeleton for /f "usebackq delims=" %%p in (`powershell "Set-Location '%~dp0'; $rp = Resolve-Path -relative '%fullpath%'; if ($rp[1] -eq '.') { $rp } else { $rp.Substring(2) }"`) do set "skeleton=%%p"
 CLS
 echo Creating combine list for "%outanim%" . . .
 call :writeTop "%coskin: =_%" >"%AnimProcess%"
