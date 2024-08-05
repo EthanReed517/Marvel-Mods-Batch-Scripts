@@ -2215,8 +2215,8 @@ REM Also converts string numbers to int, but fails with special characters (pars
 echo $ind = 0
 echo [IO.File]::WriteAllLines("%newjson%", (($sf ^| ConvertTo-Json) -split '\r?\n' ^| ForEach-Object {
 echo   if ($_ -match "[}\]]$rQ") {$ind = [Math]::Max($ind - 4, 0)}
-echo   $line = (' ' * $ind) + (([Regex]::Replace($_, "\\u(?<Value>[a-zA-Z0-9]{4})", { param($m) ([char]([int]::Parse($m.Groups['Value'].Value, [System.Globalization.NumberStyles]::HexNumber))).ToString() })).TrimStart() -replace ":\s+$rQ", ': ')
-echo   if ($_ -match "[\{\[]$rQ") {$ind += 4}
+echo   $line = (' ' * $ind) + ($_.TrimStart() -replace ":\s+$rQ", ': ' -replace '\\u0027', "'" -replace '(: )"([0-9]+)"(?!:)', '$1$2')
+echo   if ($_ -match "[\{\[]$rQ") {$ind += 4; if ($_ -match "[}\]]$rQ") {$line = "    $line"}}
 echo   $line
 echo }), (New-Object System.Text.UTF8Encoding $False))
 EXIT /b
