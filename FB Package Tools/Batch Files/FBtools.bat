@@ -278,6 +278,12 @@ EXIT /b 0
 :shared_powerups.xmlb
 set format=%dir%
 EXIT /b 0
+REM cfgBuilder_info makes them shared_powerups
+REM :common_ents.xml
+REM :item_ents.xmlb
+REM :shared_nodes.xmlb
+REM :shared_nodes_combat.xmlb
+REM :aipatterns.xml
 
 :buildCFG
 call :checkCBI

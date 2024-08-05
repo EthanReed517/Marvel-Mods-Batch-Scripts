@@ -370,8 +370,9 @@ if %EditGame%==%1 EXIT /b
 echo No support for %EditGame% on %ForPltfrm%.
 goto Errors
 
-:startZSconvert
 :starteditZSSZSM
+set any=true
+:startZSconvert
 :startextract
 set inext=.zss, .zsm
 goto czs8
@@ -401,6 +402,7 @@ call :checkPlat
 set movewhr=%movewhr:destination=source%
 set askname=update
 set recursive=true
+set any=true
 goto czs
 :startcombine
 set inext=.json
@@ -1655,6 +1657,7 @@ if %ConsGen%==8th EXIT /b
 for %%f in (%zf%) do call echo %%%%f%% | find /i "%ForPltfrm%" >nul && set formatW=%%f&& goto cFmt
 EXIT /b
 :cFmt
+if ""=="%xtnsonly%" EXIT /b 0
 set StT=%xtnsonly:~1%To%xtnsonly:~1%
 if ""=="%formatW%" EXIT /b 0
 set StT=%xtnsonly:~1%To%formatW:~1%
