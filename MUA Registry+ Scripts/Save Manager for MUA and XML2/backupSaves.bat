@@ -33,6 +33,7 @@ set df=%s%%*\
 set kg=%k%%*\
 for /f "tokens=1-4 delims=- " %%g in ("%*") do set mx=%%g& set um=%%h& set al=%%i& set to=%%j
 set gs=%mx:~,1%%um:~,1%%al:~,1%%to%
+if not exist "%sv%" mkdir "%sv%"
 echo %*
 echo.
 if [%o%] NEQ [%o:v=%] goto reset
@@ -71,7 +72,6 @@ regedit /e %rfn% %rk%
 EXIT /b
 :regR
 if %1==d call :Resolution
-if not exist "%sv%" mkdir "%sv%"
 if exist %rfn% %rfn% & copy %rfn% "%sv%"
 EXIT /b
 :regV
