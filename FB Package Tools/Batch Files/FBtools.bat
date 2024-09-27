@@ -181,7 +181,7 @@ if /i "%pathname:~-3%"==".fb" set ext=
 %fb% "%fullpath%" "%pathname%%ext%" || goto Errors
 EXIT /b
 :RFFBD
-%fb% -d "%fullpath%" "%pathname%.json" || goto Errors
+%fb% -d "%fullpath%" "%pathname%.xml" || goto Errors
 EXIT /b
 
 :extractFB

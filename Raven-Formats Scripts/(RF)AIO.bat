@@ -316,7 +316,7 @@ set g=2
 set t=GAMECUBE DXT
 set z=300000
 set PTFMT=TILED_X_8_PSP
-REM to save space use TILED_X_4_PSP
+REM to save space, use TILED_X_4_PSP
 set ConsGen=PSP
 REM No GlobalColor, Compatible with some Alchemy 5, native files are PSP specific
 EXIT /b
@@ -1236,9 +1236,18 @@ call :getSkinInfo
 set "outfile=%infile%"
 set InstType=Mod
 echo "%infile%" | find /i "mannequin" >nul && set InstType=mannequin
-echo %igGTF% | findstr /i "%t%" >nul && set opts=optConv
+REM set format=%PTFMT%
+set opts=
+echo %igGTF% | findstr /i "%t%" >nul && set opts=optConv %format%
+echo %format% | find /i "_X_" >nul && call :CI2
 echo %igGA% | find "1" >nul && goto SE%ConsGen%
 goto SEmain
+:CI2
+if ""=="%opts%" EXIT /b
+set opts=optConv RGBA_8888_32, %opts%
+if "%igGTF:IG_GFX_TEXTURE_FORMAT_=%"=="RGBA_DXT1" EXIT /b
+set opts=optConv RGBA_DXT1, %opts%
+EXIT /b
 :SkinEditFN
 call :filesetup
 if "%1"=="" call :getSkinName
@@ -1404,21 +1413,21 @@ set PF=%PF:360=XENO%
 call :extract
 echo converting . . .
 if %ForPltfrm%==Steam goto ZsToFsb
+set "oldjson=%oj%"
+call :defineJSON
 for /f "delims=" %%i in ('dir /b /s "%oj:~,-5%\*.wav" 2^>nul') do (
  set "fullpath=%%~i"
  call :ZSc2
 )
 call :numberedBKP oj
-set "oldjson=%oj%"
-set "newjson=%oj%"
 set "fullpath=%oj%"
 call :filesetup
 call :PSfl PSconvertZS
 goto combine
 :ZSc2
 call :filesetup
-call :formatW || EXIT /b
 call :srchInfo
+call :cFmt
 call :%StT% || EXIT /b
 EXIT /b
 
@@ -1596,6 +1605,7 @@ goto DspToDsp
 :WavToVag
 REM conversion currently only supports one channel, maybe even the format
 REM May need better error messages
+REM if %ForPltfrm%==PSP set sr=11025 (22050 works as well)
 if %channels% GTR 1 EXIT /b 1
 call :checkTools MFAudio || EXIT /b
 %MFAudio% "%fullpath%" /OF%sr% /OC1 /OTVAGC "%fullpath:~,-3%vag" || EXIT /b
@@ -1657,7 +1667,7 @@ if %ConsGen%==8th EXIT /b
 for %%f in (%zf%) do call echo %%%%f%% | find /i "%ForPltfrm%" >nul && set formatW=%%f&& goto cFmt
 EXIT /b
 :cFmt
-if ""=="%xtnsonly%" EXIT /b 0
+if ""=="%xtnsonly%" EXIT /b 1
 set StT=%xtnsonly:~1%To%xtnsonly:~1%
 if ""=="%formatW%" EXIT /b 0
 set StT=%xtnsonly:~1%To%formatW:~1%
@@ -2351,10 +2361,10 @@ echo storeBoundingVolume = false
 EXIT /b
 
 :optConv
-echo %format% | find /i "DXT" >nul && set "order=DX" || set "order=DEFAULT"
+echo %2 | find /i "DXT" >nul && set "order=DX" || set "order=DEFAULT"
 echo [OPTIMIZATION%1]
 echo name = igConvertImage
-echo format = %igTF%%format%
+echo format = %igTF%%2
 echo sourceFormat = invalid
 echo order = IG_GFX_IMAGE_ORDER_%order%
 echo isExclude = %isExclude%
@@ -2388,7 +2398,6 @@ LAND:LAND
 PAIN:PAIN
 PICKUP:PICKUP
 LIFT:PICKUP
-THROW:THROW
 FLYBEGIN:FLYBEGIN
 FLYEND:FLYEND
 CANTGO:CANTGO
@@ -2404,8 +2413,10 @@ NOWORK:NOWORK
 RESPAFFIRM:RESPAFFIRM
 TAUNTKD:TAUNTKD
 THROWTAUNT:THROWTAUNT
+THROW:THROW
 TOOHEAVY:TOOHEAVY
 VICTORY:VICTORY
+XTREME2:XTREME2
 XTREME:XTREME
 BORED:BORED
 6_STATS:STATS
@@ -2414,7 +2425,6 @@ SIGHT:SIGHT
 STRUGGLE:STRUGGLE
 LOCKED:LOCKED
 CANTTALK:CANTTALK
-XTREME2:XTREME2
 ) do for /f "tokens=1* delims=:" %%a in ("%%s") do echo "%nameonly: =_%" | findstr /bir ^"\^"%%a_*\d*^" >nul && set hn=%%b&& EXIT /b
 REM Power sounds not added:
 REM P1_POWER

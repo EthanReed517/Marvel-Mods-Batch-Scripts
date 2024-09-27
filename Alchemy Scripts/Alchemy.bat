@@ -1371,7 +1371,7 @@ EXIT /b
 echo [OPTIMIZATION%1]
 echo name = igChangeObjectName
 echo objectTypeName = igNamedObject
-echo targetName = ^%targetName%$
+echo targetName = ^^%targetName%$
 echo newName = %newName%
 EXIT /b
 
