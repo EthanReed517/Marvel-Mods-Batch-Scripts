@@ -1236,18 +1236,12 @@ call :getSkinInfo
 set "outfile=%infile%"
 set InstType=Mod
 echo "%infile%" | find /i "mannequin" >nul && set InstType=mannequin
-REM set format=%PTFMT%
+REM set format=%PTFMT%, Note: If necessary, instead of RGBA_5551_16, use RGB_888_24 for _X_ formats (tiled indexed)
 set opts=
 echo %igGTF% | findstr /i "%t%" >nul && set opts=optConv %format%
-echo %format% | find /i "_X_" >nul && call :CI2
+echo %format% | find /i "_X_" >nul && if "" NEQ "%opts%" set opts=optConv RGBA_5551_16, %opts%
 echo %igGA% | find "1" >nul && goto SE%ConsGen%
 goto SEmain
-:CI2
-if ""=="%opts%" EXIT /b
-set opts=optConv RGBA_8888_32, %opts%
-if "%igGTF:IG_GFX_TEXTURE_FORMAT_=%"=="RGBA_DXT1" EXIT /b
-set opts=optConv RGBA_DXT1, %opts%
-EXIT /b
 :SkinEditFN
 call :filesetup
 if "%1"=="" call :getSkinName
