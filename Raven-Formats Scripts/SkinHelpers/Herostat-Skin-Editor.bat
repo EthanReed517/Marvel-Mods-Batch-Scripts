@@ -1599,7 +1599,8 @@ goto DspToDsp
 :WavToVag
 REM conversion currently only supports one channel, maybe even the format
 REM May need better error messages
-REM if %ForPltfrm%==PSP set sr=11025 (22050 works as well)
+REM PSP has size limit, sometimes 22050 works
+if %ForPltfrm%==PSP set sr=11025
 if %channels% GTR 1 EXIT /b 1
 call :checkTools MFAudio || EXIT /b
 %MFAudio% "%fullpath%" /OF%sr% /OC1 /OTVAGC "%fullpath:~,-3%vag" || EXIT /b
