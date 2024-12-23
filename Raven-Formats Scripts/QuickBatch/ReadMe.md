@@ -1,5 +1,5 @@
 ## Installation:
-- Raven Formats (RF) by nikita488: Install [Python 3.8 or newer](https://www.python.org/downloads/), incl. [PATH variable](https://web.archive.org/web/20240428155517/https://cloudacademy.com/wp-content/uploads/2020/01/Python-Windows-installer.png), then enter `pip install raven-formats` in command ([RF](https://pypi.org/project/raven-formats/)).
+- Raven Formats (RF) by nikita488: Install [Python 3.8 or newer](https://www.python.org/downloads/), incl. [PATH variable](https://i.imgur.com/u3yCFxq.png), then enter `pip install raven-formats` in command ([RF](https://pypi.org/project/raven-formats/)).
 - xmlb-compile (XC) by NBA2Kstuff: Install it by moving, copying, or extracting [xmlb-compile.exe](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Raven-Formats%20Scripts/QuickBatch/xmlb-compile.exe) to "C:\Windows".
 
 Portable (no installation required - do this instead):
