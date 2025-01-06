@@ -46,6 +46,8 @@ EXIT /b
 :Alchemy
 echo REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; Optimize animations =ExtractMotionRaven; make HUD heads from images =hud_head_e; same for team logos =logos_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
 echo set operation=%1
+echo REM Is this a simple tool with the same name as operation? (=true or =false) 
+echo set OpIsTool=false
 echo REM Create mip-maps? (=true or =false), useful for lower resolutions only - to ask for each input file, use =ask at the operation settings
 echo set mipmaps=%2
 echo REM Remove optimization sets? (Yes =true; No =false; Remove useful ones as well =all)
@@ -74,6 +76,14 @@ echo set remMipMap=true
 echo set enm=false
 echo REM Remove internal and reference extracted instead? (yes =true, no =false)
 echo set refExtTex=false
+echo.
+echo REM HUD settings:
+echo REM Quality and speed of animated HUDs aka FPS (=10, =16)
+echo set hud_fps=16
+echo REM Play mode of animated HUDs (repeat =0, bounce =2)
+echo set hud_apm=0
+echo REM Are .png files animated aPNG format? (yes =true, no =false)
+echo set hud_apng=false
 echo.
 echo REM image2igb settings:
 echo REM Prompt for conversion? (ask for all exc. dds =true; ask for all exc. png+dds =false; no conversion =never; ask for all + dds =dds)

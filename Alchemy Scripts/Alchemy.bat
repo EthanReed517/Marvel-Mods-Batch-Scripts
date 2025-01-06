@@ -7,6 +7,8 @@ REM Settings:
 
 REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; Optimize animations =ExtractMotionRaven; make HUD heads from images =hud_head_e; same for team logos =logos_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
 set operation=ask
+REM Is this a simple tool with the same name as operation? (=true or =false) 
+set OpIsTool=false
 REM Create mip-maps? (=true or =false), useful for lower resolutions only - to ask for each input file, use =ask at the operation settings
 set mipmaps=false
 REM Remove optimization sets? (Yes =true; No =false; Remove useful ones as well =all)
@@ -35,6 +37,14 @@ set remMipMap=true
 set enm=false
 REM Remove internal and reference extracted instead? (yes =true, no =false)
 set refExtTex=false
+
+REM HUD settings:
+REM Quality and speed of animated HUDs aka FPS (=10, =16)
+set hud_fps=16
+REM Play mode of animated HUDs (repeat =0, bounce =2)
+set hud_apm=0
+REM Are .png files animated aPNG format? (yes =true, no =false)
+set hud_apng=false
 
 REM image2igb settings:
 REM Prompt for conversion? (ask for all exc. dds =true; ask for all exc. png+dds =false; no conversion =never; ask for all + dds =dds)
@@ -145,6 +155,8 @@ set igTF=IG_GFX_TEXTURE_FORMAT_
 call :start%operation% 2>nul || call :sgO
 del "%erl%" "%tem%" %optSetT% "%outfile%"
 
+if /i %OpIsTool%==True call :chkTlMsg %operation%
+
 set askallsw=true
 set askallsz=true
 set isExclude=exclude
@@ -234,7 +246,7 @@ goto sgO
 mkdir "%~dp0animLists" 2>nul
 goto oAnim
 :starthud_head_e
-set inext=.png, .tga, .gif
+set inext=.png, .tga, .gif, .mp4
 goto sgO
 :startlogos_e
 set inext=.tga
@@ -680,6 +692,11 @@ goto runOptsOnI
 set opts=optExtrMotion
 goto runOptsOnI
 
+:igbUncombiner
+REM Not using "%pathonly%", it seems like the unbundler does that already
+%igbUncombiner% "%fullpath%" || goto Errors
+EXIT /b
+
 :previewAnimations
 set va=%va%"%fullpath%" 
 EXIT /b
@@ -909,40 +926,51 @@ if not errorlevel 2 "%of%"
 EXIT /b
 
 :hud_head_e
+call :numberedBKP pathname x /i
+mkdir "%pathname%"
+REM For animated HUD heads, the template is PNG compatible, but gif needs to be converted
+call :hudanim%xtnsonly% && EXIT /b
 REM For 256 MUA icons, the format is DXT, therefore the images extract to TGA only
 if /i "%xtnsonly%"==".tga" call :hudextract tga hud_head_0201 hud_conversation 1 true
 REM For 128 MUA icons, the template is PNG compatible, and extracts to PNG
 if /i "%xtnsonly%"==".png" call :hudextract png hud_head_0000 hud_conversation 5
-REM For animated HUD heads, the template is PNG compatible, but gif needs to be converted
-if /i "%xtnsonly%"==".gif" call :hudextract png hud_head_gif hud_conversation 5 gif
-del "%~dp0hud_conversation*"
 EXIT /b
 
+:hudanim.gif
+for /f %%f in ('"%~dp0res\magick.exe" identify -format "%n\n" "%fullpath%"') do set f=%%f
+"%~dp0res\magick.exe" montage "%fullpath%" -geometry 256x256 "%pathname%\hud_conversation.png"
+call :hudextract png hud_head_a%f%f%hud_fps%fps hud_conversation 5 gif
+EXIT /b 0
+:hudanim.png
+if /i not "%hud_apng%"=="true" EXIT /b 1
+set "psc=$f = (&$ffp '%fullpath%' -count_packets -show_entries stream=r_frame_rate,nb_read_packets -v quiet -of csv='p=0').split(',/'); $fps = $f[0]; $f = $f[-1]; $s = [Math]::Sqrt($f)"
+:hudanim.mp4
+call :checkTools ffprobe
+call :checkTools ffmpeg
+set "ffprobe=%ffprobe:"=%"
+set "ffmpeg=%ffmpeg:"=%"
+if /i "%xtnsonly%"==".mp4" set "psc=$time = [float](&$ffp '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0');$s = [Math]::Round($time + 3.7); $f = $s * $s; $fps = $f / $time + 0.1"
+for /f usebackq %%f in (`powershell "$ffp = '%ffprobe%'; %psc%; $vf = 'fps={0},scale=256:256,tile={1}x{1}' -f $fps, $s; &'%ffmpeg%' -i '%fullpath%' -y -v error -vf $vf -frames:v $f '%pathname%\hud_conversation.png'; $f"`) do set f=%%f
+call :hudextract png hud_head_a%f%f%hud_fps%fps hud_conversation 5 gif
+EXIT /b 0
+
 :hudextract - format (tga or png); IGB template; intern text. name to repl.; target format; has mipmaps (true/false)
-set "sfolder=%nameonly%"
-if "%sfolder%"=="%3" EXIT /b
-set "hudp=%~dp0%sfolder%"
-call :numberedBKP hudp x /i
-mkdir "%hudp%"
-set "infile=%~dp0%2.igb"
-set "outfile=%hudp%\%nameonly%.igb"
-set opts=OptExt %1 true false false
-call :runOpts
-if not "%hudp%"=="%pathname%" xcopy /i /y "%hudp%" "%pathname%" & rmdir /s /q "%hudp%"
+copy "%~dp0res\%2.igb" "%pathname%\%nameonly%.igb"
 set opts=OptExt png false true false,optConv
-if "%5"=="true" set "opts=%opts%,optMipmap" & for %%a in (128:1, 64:2, 32:3, 16:4, 8:5, 4:6, 2:7, 1:8) do for /f "tokens=1-2 delims=:" %%m in ("%%a") do "%~dp0magick.exe" "%fullpath%" -resize %%mx%%m "%pathname%\%3-%%n.%1"
-if "%5"=="gif" ( "%~dp0magick.exe" "%fullpath%" "%pathname%\%3_%%04d.%1"
+if "%5"=="true" set "opts=%opts%,optMipmap" & for %%a in (128:1, 64:2, 32:3, 16:4, 8:5, 4:6, 2:7, 1:8) do for /f "tokens=1-2 delims=:" %%m in ("%%a") do "%~dp0res\magick.exe" "%fullpath%" -resize %%mx%%m "%pathname%\%3-%%n.%1"
+if "%5"=="gif" ( call :isNumber %hud_apm% && if %hud_apm% GTR 0 set opts=%opts%,optAnimPM %hud_apm%
 ) else copy /y "%fullpath%" "%pathname%\%3.%1"
-set sfolder=
 set format=RGBA_DXT%4
 call :writeOS >"%pathname%\%operation:~,-2%_i.ini"
 REM Injecting the images from batch fails. Has to be made manually in Finalizer.
 EXIT /b
 
 :logos_e
+call :numberedBKP pathname x /i
+mkdir "%pathname%"
 if "%namextns%"=="power_ring.tga" EXIT /b
+copy /y "%~dp0res\power_ring.tga" "%pathname%\power_ring.tga"
 call :hudextract tga 0000 team 5
-move /y "%~dp0power_ring.tga" "%pathname%\power_ring.tga"
 EXIT /b
 
 
@@ -1373,6 +1401,7 @@ echo name = igChangeObjectName
 echo objectTypeName = igNamedObject
 echo targetName = ^^%targetName%$
 echo newName = %newName%
+REM targetMeta = igSkin doesn't work
 EXIT /b
 
 :optGGC
@@ -1418,6 +1447,12 @@ echo createDefaultActor = true
 echo defaultSkeleton = 
 echo defaultSkin = 
 echo defaultAnimation = 
+EXIT /b
+
+:optAnimPM
+echo [OPTIMIZATION%1]
+echo name = igChangePlayMode
+echo playMode = %2 
 EXIT /b
 
 :OptRSMUAMat
