@@ -39,6 +39,4 @@ Alchemy Scripts/IGBconverter.bat
 
 # Work files
 Alchemy Scripts/**/*.igb
-!Alchemy Scripts/**/0000.igb
-!Alchemy Scripts/**/hud_head_0000.igb
-!Alchemy Scripts/**/hud_head_0201.igb
+!Alchemy Scripts/hud/res/*
