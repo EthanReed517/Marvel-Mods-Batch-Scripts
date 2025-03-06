@@ -246,7 +246,7 @@ goto sgO
 mkdir "%~dp0animLists" 2>nul
 goto oAnim
 :starthud_head_e
-set inext=.png, .tga, .gif, .mp4
+set inext=.png, .tga, .gif, .mp4, .webm
 goto sgO
 :startlogos_e
 set inext=.tga
@@ -928,39 +928,47 @@ EXIT /b
 :hud_head_e
 call :numberedBKP pathname x /i
 mkdir "%pathname%"
-REM For animated HUD heads, the template is PNG compatible, but gif needs to be converted
-call :hudanim%xtnsonly% && EXIT /b
-REM For 256 MUA icons, the format is DXT, therefore the images extract to TGA only
-if /i "%xtnsonly%"==".tga" call :hudextract tga hud_head_0201 hud_conversation 1 true
-REM For 128 MUA icons, the template is PNG compatible, and extracts to PNG
-if /i "%xtnsonly%"==".png" call :hudextract png hud_head_0000 hud_conversation 5
+set opts=OptExt png false true false,optConv
+set "psc=$time = [float](&$ffp '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0');$s = [Math]::Round($time + 3.7); $f = $s * $s; $fps = $f / $time + 0.1"
+call :hud%xtnsonly%
 EXIT /b
 
-:hudanim.gif
-for /f %%f in ('"%~dp0res\magick.exe" identify -format "%n\n" "%fullpath%"') do set f=%%f
-"%~dp0res\magick.exe" montage "%fullpath%" -geometry 256x256 "%pathname%\hud_conversation.png"
-call :hudextract png hud_head_a%f%f%hud_fps%fps hud_conversation 5 gif
-EXIT /b 0
-:hudanim.png
-if /i not "%hud_apng%"=="true" EXIT /b 1
-set "psc=$f = (&$ffp '%fullpath%' -count_packets -show_entries stream=r_frame_rate,nb_read_packets -v quiet -of csv='p=0').split(',/'); $fps = $f[0]; $f = $f[-1]; $s = [Math]::Sqrt($f)"
-:hudanim.mp4
+:hud.tga
+REM For 256 MUA icons, we use a TGA template and convert it to DXT1
+REM set opts=%opts%,optMipmap
+set w=-write "%pathname%\hud_conversation"
+"%~dp0res\magick.exe" "%fullpath%" -resize 128 %w:~,-1%-1.tga" -resize 64 %w:~,-1%-2.tga" -resize 32 %w:~,-1%-3.tga" -resize 16 %w:~,-1%-4.tga" -resize 8 %w:~,-1%-5.tga" -resize 4 %w:~,-1%-6.tga" -resize 2 %w:~,-1%-7.tga" -resize 1 %w:~7,-1%-8.tga"
+call :hudextract hud_head_0201 1 hud_conversation.tga
+EXIT /b
+:hud.gif
+for /f %%f in ('^""%~dp0res\magick.exe" identify -format %%n\n -ping "%fullpath%"^"') do set f=%%f
+call :SquareRoot %f% s
+set /a f = %s% * %s%
+"%~dp0res\magick.exe" montage "%fullpath%" -coalesce -geometry 256 -gravity center -extent 256x256 -background black -tile %s%x%s% "%pathname%\hud_conversation.png"
+goto hudextanim
+:hud.webm
+set ffcodec=-c:v libvpx-vp9 
+goto hud.mp4
+:hud.png
+REM For 128 MUA icons, the template is PNG compatible
+if /i not "%hud_apng%"=="true" call :hudextract hud_head_0000 5 hud_conversation.png & EXIT /b
+set "psc=$f = (&$ffp '%fullpath%' -count_packets -show_entries stream=r_frame_rate,nb_read_packets -v quiet -of csv='p=0').split(','); $fps = [Math]::Round((Invoke-Expression $f[0])); $f = $f[1]; $s = [Math]::Round([Math]::Sqrt($f))"
+:hud.mp4
 call :checkTools ffprobe
 call :checkTools ffmpeg
 set "ffprobe=%ffprobe:"=%"
 set "ffmpeg=%ffmpeg:"=%"
-if /i "%xtnsonly%"==".mp4" set "psc=$time = [float](&$ffp '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0');$s = [Math]::Round($time + 3.7); $f = $s * $s; $fps = $f / $time + 0.1"
-for /f usebackq %%f in (`powershell "$ffp = '%ffprobe%'; %psc%; $vf = 'fps={0},scale=256:256,tile={1}x{1}' -f $fps, $s; &'%ffmpeg%' -i '%fullpath%' -y -v error -vf $vf -frames:v $f '%pathname%\hud_conversation.png'; $f"`) do set f=%%f
-call :hudextract png hud_head_a%f%f%hud_fps%fps hud_conversation 5 gif
-EXIT /b 0
+for /f usebackq %%f in (`powershell "$ffp = '%ffprobe%'; %psc%; $vf = 'fps={0},scale=256:256,tile={1}x{1}' -f $fps, $s; &'%ffmpeg%' %ffcodec%-i '%fullpath%' -y -v error -metadata:s:v:0 alpha_mode="1" -vf $vf -frames:v $f '%pathname%\hud_conversation.png'; $s * $s"`) do set f=%%f
 
-:hudextract - format (tga or png); IGB template; intern text. name to repl.; target format; has mipmaps (true/false)
-copy "%~dp0res\%2.igb" "%pathname%\%nameonly%.igb"
-set opts=OptExt png false true false,optConv
-if "%5"=="true" set "opts=%opts%,optMipmap" & for %%a in (128:1, 64:2, 32:3, 16:4, 8:5, 4:6, 2:7, 1:8) do for /f "tokens=1-2 delims=:" %%m in ("%%a") do "%~dp0res\magick.exe" "%fullpath%" -resize %%mx%%m "%pathname%\%3-%%n.%1"
-if "%5"=="gif" ( call :isNumber %hud_apm% && if %hud_apm% GTR 0 set opts=%opts%,optAnimPM %hud_apm%
-) else copy /y "%fullpath%" "%pathname%\%3.%1"
-set format=RGBA_DXT%4
+:hudextanim
+call :isNumber %hud_apm% && if %hud_apm% GTR 0 set opts=%opts%,optAnimPM %hud_apm%
+call :hudext hud_head_a%f%f%hud_fps%fps 5
+EXIT /b
+:hudextract - IGB template; target format; int. texture name
+copy /y "%fullpath%" "%pathname%\%3"
+:hudext - IGB template; target format
+copy "%~dp0res\%1.igb" "%pathname%\%nameonly%.igb"
+set format=RGBA_DXT%2
 call :writeOS >"%pathname%\%operation:~,-2%_i.ini"
 REM Injecting the images from batch fails. Has to be made manually in Finalizer.
 EXIT /b
@@ -970,7 +978,7 @@ call :numberedBKP pathname x /i
 mkdir "%pathname%"
 if "%namextns%"=="power_ring.tga" EXIT /b
 copy /y "%~dp0res\power_ring.tga" "%pathname%\power_ring.tga"
-call :hudextract tga 0000 team 5
+call :hudextract 0000 5 team.tga
 EXIT /b
 
 
@@ -1276,6 +1284,14 @@ EXIT /b
 for /f "delims=0123456789" %%i in ("%*") do EXIT /b 1
 EXIT /b 0
 
+:SquareRoot
+set root=1
+:SRLoop
+set /a sqr = %root% * %root%
+if %sqr% GEQ %1 set %2=%root%&& EXIT /b
+set /a root = %root% + 1
+goto SRLoop
+
 :switchBool
 call :switch %1 true false
 EXIT /b
@@ -1399,8 +1415,9 @@ EXIT /b
 echo [OPTIMIZATION%1]
 echo name = igChangeObjectName
 echo objectTypeName = igNamedObject
-echo targetName = ^^%targetName%$
+echo targetName = %targetName%$
 echo newName = %newName%
+REM Unknown how to define beginning of line in Alchemy regex
 REM targetMeta = igSkin doesn't work
 EXIT /b
 

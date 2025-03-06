@@ -1596,13 +1596,29 @@ call :checkTools DSPADPCM || EXIT /b
 del "%cd%\%nameonly%.txt"
 call :ZSnewFormat dsp
 goto DspToDsp
+:WavToXma
+if %channels% GTR 2 EXIT /b 1
+REM Unknown if 4 channels work, but the Xbox versions don't use 4 channels anyway
+call :checkTools xmaencode || EXIT /b
+%xmaencode% "%fullpath%" /T "%fullpath:~,-3%xma"
+call :ZSnewFormat xma
+goto DspToDsp
+:WavToXbadpcm
+EXIT /b 1
+REM Encoding with Zsnd doesn't work at this time
+REM Unknown how many channels are supported, but Xbox versions max. support stereo I think
+call :checkTools xbadpcmencode || EXIT /b
+%xbadpcmencode% "%fullpath%" "%fullpath:~,-3%xbadpcm"
+call :ZSnewFormat xbadpcm
+goto DspToDsp
 :WavToVag
-REM conversion currently only supports one channel, maybe even the format
+REM conversion currently only supports one channel
+REM FPcli supports multiple channels through .mib: https://discord.com/channels/449510825385000960/459862699870781451/817495352759681034
 REM May need better error messages
 REM PSP has size limit, sometimes 22050 works
-if %ForPltfrm%==PSP set sr=11025
 if %channels% GTR 1 EXIT /b 1
 call :checkTools MFAudio || EXIT /b
+if %ForPltfrm%==PSP set sr=11025
 %MFAudio% "%fullpath%" /OF%sr% /OC1 /OTVAGC "%fullpath:~,-3%vag" || EXIT /b
 call :ZSnewFormat vag
 :XbadpcmToXbadpcm
@@ -1647,7 +1663,7 @@ goto platSw%errorlevel%
 :platSw1
 if ""=="%o%" set o=0
 set /a o+=1
-for /f "tokens=%o%" %%o in (".wav .xbadpcm .xma .vag .dsp") do call set formatW=%%%%o%%& goto askPlat
+for /f "tokens=%o% delims=, " %%o in ("%zf%") do call set formatW=%%%%o%%& goto askPlat
 set o=
 goto platSw1
 :platSw2
