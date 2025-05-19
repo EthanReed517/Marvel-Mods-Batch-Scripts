@@ -84,6 +84,8 @@ echo REM Play mode of animated HUDs (repeat =0, bounce =2)
 echo set hud_apm=0
 echo REM Are .png files animated aPNG format? (yes =true, no =false)
 echo set hud_apng=false
+echo REM Define a tile side length: (Auto =[Math]::Round($time + 3.7), min. =4, max. =10)
+echo set tile_size=[Math]::Round($time + 3.7)
 echo.
 echo REM image2igb settings:
 echo REM Prompt for conversion? (ask for all exc. dds =true; ask for all exc. png+dds =false; no conversion =never; ask for all + dds =dds)

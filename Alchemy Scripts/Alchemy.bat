@@ -45,6 +45,8 @@ REM Play mode of animated HUDs (repeat =0, bounce =2)
 set hud_apm=0
 REM Are .png files animated aPNG format? (yes =true, no =false)
 set hud_apng=false
+REM Define a tile side length: (Auto =[Math]::Round($time + 3.7), min. =4, max. =10)
+set tile_size=[Math]::Round($time + 3.7)
 
 REM image2igb settings:
 REM Prompt for conversion? (ask for all exc. dds =true; ask for all exc. png+dds =false; no conversion =never; ask for all + dds =dds)
@@ -697,6 +699,13 @@ REM Not using "%pathonly%", it seems like the unbundler does that already
 %igbUncombiner% "%fullpath%" || goto Errors
 EXIT /b
 
+:mirror_boltons
+set nodeMeta=igGeometry
+findstr "igTransform" <"%fullpath%" >nul 2>nul && set nodeMeta=igTransform
+set "outfile=%pathname%_mirrored%xtnsonly%"
+set opts=optFlip
+goto runOpts
+
 :previewAnimations
 set va=%va%"%fullpath%" 
 EXIT /b
@@ -929,7 +938,7 @@ EXIT /b
 call :numberedBKP pathname x /i
 mkdir "%pathname%"
 set opts=OptExt png false true false,optConv
-set "psc=$time = [float](&$ffp '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0');$s = [Math]::Round($time + 3.7); $f = $s * $s; $fps = $f / $time + 0.1"
+set "psc=$time = [float](&$ffp '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0');$s = %tile_size%; $f = $s * $s; $fps = $f / $time + 0.1"
 call :hud%xtnsonly%
 EXIT /b
 
@@ -1470,6 +1479,18 @@ EXIT /b
 echo [OPTIMIZATION%1]
 echo name = igChangePlayMode
 echo playMode = %2 
+EXIT /b
+
+:optFlip
+call :optTransform %1 "su-1 rz180"
+EXIT /b
+
+:optTransform
+echo [OPTIMIZATION%1]
+echo name = igCreateTransform
+echo nodeMeta = %nodeMeta%
+echo nodeName = 
+echo matrixString = %~2
 EXIT /b
 
 :OptRSMUAMat
