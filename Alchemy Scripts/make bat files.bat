@@ -2,22 +2,26 @@
 
 mkdir AnimationMixing hud image2igb "SkinEdit (internal name renamer)" "Alchemy 5 Truly Portable" 2>nul
 
-set default=false dxt1 false true
+set default=false dxt1 false false true
 (call :writeBAT "Alchemy.bat" Extract %default%)>ext.images.bat
 (call :writeBAT "Alchemy.bat" IGBconverter %default%)>IGBconverter.bat
-(call :writeBAT "Alchemy.bat" image2igb false dds false true)>image2igb\image2igb.bat
-(call :writeBAT "Alchemy.bat" image2igb true dxt1 false true)>image2igb\image2igb-fxtext.bat
-(call :writeBAT "Alchemy.bat" image2igb false RGBA_8888_32 false true)>"image2igb\image2igb-icons,fonts.bat"
-(call :writeBAT "Alchemy.bat" image2igb false fdxt1 MUA true)>image2igb\image2igb-ls.bat
-(call :writeBAT "Alchemy.bat" image2igb false false IHQ true)>image2igb\image2igb-pngicons.bat
+(call :writeBAT "Alchemy.bat" image2igb false dds false false true)>image2igb\image2igb.bat
+(call :writeBAT "Alchemy.bat" image2igb true dxt1 false false true)>image2igb\image2igb-fxtext.bat
+(call :writeBAT "Alchemy.bat" image2igb false RGBA_8888_32 false false true)>"image2igb\image2igb-icons,fonts.bat"
+(call :writeBAT "Alchemy.bat" image2igb false fdxt1 MUA false true)>image2igb\image2igb-ls.bat
+(call :writeBAT "Alchemy.bat" image2igb false false IHQ false true)>image2igb\image2igb-pngicons.bat
+(call :writeBAT "Alchemy.bat" image2igb false TILED_X_8_PSP XML2 true true)>image2igb\image2igb-ls-PSP.bat
 (call :writeBAT "Alchemy.bat" genGColorFix %default%)>genGColorFix.bat
 (call :writeBAT "Alchemy.bat" combineAnimations %default%)>AnimationMixing\_combine.bat
 (call :writeBAT "Alchemy.bat" extractAnimations %default%)>AnimationMixing\_extract.bat
 (call :writeBAT "Alchemy.bat" previewAnimations %default%)>AnimationMixing\previewAnimations.bat
 (call :writeBAT "Alchemy.bat" hud_head_e %default%)>hud\hud_head_e.bat
 (call :writeBAT "Alchemy.bat" logos_e %default%)>hud\logos_e.bat
+(call :writeBAT "Alchemy.bat" stages_e %default%)>hud\stages_e.bat
+REM (call :writeBAT "Alchemy.bat" stages_anim %default%)>hud\m_team_stage_background.bat
+REM (call :writeBAT "Alchemy.bat" stages_anim %default%)>hud\m_team_stage_circle.bat
 (call :writeBAT "Alchemy.bat" SkinEdit %default%)>"SkinEdit (internal name renamer)\SkinEdit-filenameToSkinName.bat"
-(call :writeBAT "Alchemy.bat" SkinEdit false dxt1 false false)>"SkinEdit (internal name renamer)\SkinEdit.bat"
+(call :writeBAT "Alchemy.bat" SkinEdit false dxt1 false false false)>"SkinEdit (internal name renamer)\SkinEdit.bat"
 (call :writeBAT "Alchemy.bat" Maps %default%)>Maps.bat
 (call :writeBAT "Alchemy.bat" fixSkins %default%)>animdb2actor.bat
 (call :writeBAT "Alchemy.bat" ExtractMotionRaven %default%)>ExtractMotion.bat
@@ -44,7 +48,7 @@ PowerShell "gc '%~1' | Select-Object -Skip %l%"
 EXIT /b
 
 :Alchemy
-echo REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; Optimize animations =ExtractMotionRaven; make HUD heads from images =hud_head_e; same for team logos =logos_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
+echo REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; Optimize animations =ExtractMotionRaven; make HUD heads from images =hud_head_e; same for team logos =logos_e; and stages =stages_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
 echo set operation=%1
 echo REM Is this a simple tool with the same name as operation? (=true or =false) 
 echo set OpIsTool=false
@@ -84,8 +88,10 @@ echo REM Play mode of animated HUDs (repeat =0, bounce =2)
 echo set hud_apm=0
 echo REM Are .png files animated aPNG format? (yes =true, no =false)
 echo set hud_apng=false
-echo REM Define a tile side length: (Auto =[Math]::Round($time + 3.7), min. =4, max. =10)
-echo set tile_size=[Math]::Round($time + 3.7)
+echo REM Define a tile side count: (Auto =[Math]::Round($time + 3.7), (4x4 or 16 =4), min. =4, max. =10)
+echo set tile_num=[Math]::Round($time + 3.7)
+echo REM Define a texture quality for animated stages: (0-10; or a full side dimension, e.g. 7200)
+echo set st_animq=
 echo.
 echo REM image2igb settings:
 echo REM Prompt for conversion? (ask for all exc. dds =true; ask for all exc. png+dds =false; no conversion =never; ask for all + dds =dds)
@@ -136,14 +142,14 @@ echo set maxHeight=%4
 echo REM Custom width, to be used with custom height (eg. 64x64 =identical ^& maxHeight=64; 1024x512 =1024 ^& maxHeight=512)
 echo set maxWidth=identical
 echo REM Minification/Magnification method? (linear =true; nearest, recommended =false)
-echo set MagFilter=false
+echo set MagFilter=%5
 echo REM WrapS/T method? (repeat, default =false; clamp =true)
 echo set WrapST=false
 echo.
 echo REM SkinEdit (hex-editing with Alchemy) Settings:
 echo REM Always rename (hex-edit) to the Filename? (yes =true; no =false)
 echo REM The file must already have the correct name.
-echo set SkinEditToFilename=%5
+echo set SkinEditToFilename=%6
 echo.
 echo REM Preview Animations Settings:
 echo REM Enter the full path and name to the skin (rigged IGB model) that you want to use to preview the animations with.

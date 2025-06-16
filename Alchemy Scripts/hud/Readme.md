@@ -59,5 +59,5 @@ Important: Many GIFs don't have full frames (some incomplete images). These don'
 - A size of **256x256** or above is recommended (images are scaled to 256x256 at this time).
 - Follow the [common instructions](https://github.com/EthanReed517/Marvel-Mods-Batch-Scripts/blob/main/Alchemy%20Scripts/hud#common-instructions).
 - There are some options that can be changed in the .bat file with a text editor, to change the result. Set these before step 2:
-  - `set hud_fps=16` (line 41): Change the speed and quality of the result.
-  - `set hud_apm=0` (line 43): Change the play mode, to make it loop or bounce.
+  - `set hud_fps=16` (line 43): Change the speed and quality of the result.
+  - `set hud_apm=0` (line 45): Change the play mode, to make it loop or bounce.

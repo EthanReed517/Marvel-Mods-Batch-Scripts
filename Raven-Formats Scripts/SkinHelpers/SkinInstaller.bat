@@ -314,7 +314,7 @@ EXIT /b
 call :platW .vag
 set g=2
 set t=GAMECUBE DXT
-set z=300000
+set z=150000
 set PTFMT=TILED_X_8_PSP
 REM to save space, use TILED_X_4_PSP
 set ConsGen=PSP

@@ -24,9 +24,11 @@ Alchemy Scripts/AnimationMixing/*
 !Alchemy Scripts/AnimationMixing/_fightstyle_default
 Alchemy Scripts/hud/hud_head_e.bat
 Alchemy Scripts/hud/logos_e.bat
+Alchemy Scripts/hud/stages_e.bat
 Alchemy Scripts/image2igb/image2igb-fxtext.bat
 Alchemy Scripts/image2igb/image2igb-icons,fonts.bat
 Alchemy Scripts/image2igb/image2igb-ls.bat
+Alchemy Scripts/image2igb/image2igb-ls-PSP.bat
 Alchemy Scripts/image2igb/image2igb-pngicons.bat
 Alchemy Scripts/image2igb/image2igb.bat
 Alchemy Scripts/SkinEdit (internal name renamer)/*

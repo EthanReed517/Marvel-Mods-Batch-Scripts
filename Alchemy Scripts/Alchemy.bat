@@ -5,7 +5,7 @@ REM ----------------------------------------------------------------------------
 
 REM Settings:
 
-REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; Optimize animations =ExtractMotionRaven; make HUD heads from images =hud_head_e; same for team logos =logos_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
+REM What operation should be made? (=IGBconverter; extract images =Extract; =image2igb; hex edit skins =SkinEdit; generate GlobalColor (fix black status effect) =genGColorFix; =previewAnimations; =extractAnimations; =combineAnimations; =listAnimations; Optimize animations =ExtractMotionRaven; make HUD heads from images =hud_head_e; same for team logos =logos_e; and stages =stages_e; =convert_to_igGeometryAttr2; Texture Map Editor =Maps; write igSceneInfo =fixSkins; remove igSceneInfo =remInfo; =ask)
 set operation=ask
 REM Is this a simple tool with the same name as operation? (=true or =false) 
 set OpIsTool=false
@@ -45,8 +45,10 @@ REM Play mode of animated HUDs (repeat =0, bounce =2)
 set hud_apm=0
 REM Are .png files animated aPNG format? (yes =true, no =false)
 set hud_apng=false
-REM Define a tile side length: (Auto =[Math]::Round($time + 3.7), min. =4, max. =10)
-set tile_size=[Math]::Round($time + 3.7)
+REM Define a tile side count: (Auto =[Math]::Round($time + 3.7), (4x4 or 16 =4), min. =4, max. =10)
+set tile_num=[Math]::Round($time + 3.7)
+REM Define a texture quality for animated stages: (0-10; or a full side dimension, e.g. 7200)
+set st_animq=
 
 REM image2igb settings:
 REM Prompt for conversion? (ask for all exc. dds =true; ask for all exc. png+dds =false; no conversion =never; ask for all + dds =dds)
@@ -247,6 +249,10 @@ goto sgO
 :startlistAnimations
 mkdir "%~dp0animLists" 2>nul
 goto oAnim
+:startstages_e
+set inext=.png
+goto sgO
+:startstages_anim
 :starthud_head_e
 set inext=.png, .tga, .gif, .mp4, .webm
 goto sgO
@@ -384,28 +390,36 @@ goto combineAnimations
 call :combineAnimationsPost
 set "fullpath=%~dp0%outanim%.igb"
 call :filesetup
-REM Ripper can't rip skins+anims. Combined anims rip better though.
+%actorConverter% "%fullpath%" "%pathname%.%format%"
 
 :IGBconverter
 if %askallsw%==true if /i %format%==ask call :askformat3D
 call :toLower format
-set c=actorConverter
-findstr "igEnbaya" <"%fullpath%" >nul 2>nul && call :AnimConverter || findstr "igAnimationDatabase" <"%fullpath%" >nul 2>nul || call :remInfo
-if not defined %c% call :chkTlMsg %c% x >>"%erl%" || EXIT /b
-call set c=%%%c%%%
+set conv=actorConverter
+findstr "igEnbaya" <"%fullpath%" >nul 2>nul && call :AnimConverter || findstr "igAnimationDatabase" <"%fullpath%" >nul 2>nul || call :fixIGB
+if not defined %conv% call :chkTlMsg %conv% x >>"%erl%" || EXIT /b
+call set c=%%%conv%%%
 %c% "%fullpath%" "%pathname%.%format%"
 if %exttextrs%==true goto Extract
 EXIT /b
 :AnimConverter
-set c=animationConverter
+set conv=animationConverter
 set exttextrs=false
 set format=%format:obj=fbx%
 EXIT /b 0
-:remInfo
-set c=IGBconverter
-findstr "igActorInfo" <"%fullpath%" >nul 2>nul || EXIT /b
-set opts=optCombAnimDB
+:fixIGB
+set conv=IGBconverter
+set opts=OptGeoInfo 0x00000001
+call :runOpts >"%pathname%.txt"
+set opts=
+findstr "invalid" <"%pathname%.txt" >nul 2>nul && set opts=optCGA,optStripTri false true
+findstr "igActorInfo" <"%fullpath%" >nul 2>nul && set opts=optCombAnimDB,%opts%
+if not defined opts EXIT /b
 goto runOptsOnI
+call :runOpts
+set "fullpath=%outfile%"
+call :filesetup
+EXIT /b 0
 
 :askformat3D
 CLS
@@ -429,10 +443,8 @@ if %detectPNG%==true call :fetchFormat & del "%pathname%.txt"
 if %subfolder%==true set "sfolder=%nameonly%" & mkdir "%pathname%"
 if %refExtTex%==true set "outfile=%fullpath%"
 set opts=OptExt %iformat% %refExtTex% false %enm%
+if %remMipMap%==true set opts=optRemMM,%opts%
 call :runOpts
-if %remMipMap%==false EXIT /b
-set "sf=%sfolder%\"
-for %%m in ("%pathonly%%sf%*.tga", "%pathonly%%sf%*.png") do for /l %%a in (1,1,20) do if exist "%%~dpnm-%%a%%~xm" del "%%~dpnm-%%a%%~xm"
 EXIT /b
 
 :fetchFormat
@@ -938,7 +950,7 @@ EXIT /b
 call :numberedBKP pathname x /i
 mkdir "%pathname%"
 set opts=OptExt png false true false,optConv
-set "psc=$time = [float](&$ffp '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0');$s = %tile_size%; $f = $s * $s; $fps = $f / $time + 0.1"
+set "psc=$time = [float](&$ffp '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0');$s = %tile_num%; $f = $s * $s; $fps = $f / $time + 0.1"
 call :hud%xtnsonly%
 EXIT /b
 
@@ -989,6 +1001,41 @@ if "%namextns%"=="power_ring.tga" EXIT /b
 copy /y "%~dp0res\power_ring.tga" "%pathname%\power_ring.tga"
 call :hudextract 0000 5 team.tga
 EXIT /b
+
+:stages_e
+call :numberedBKP pathname x /i
+mkdir "%pathname%"
+set opts=OptExt png false true false,optConv
+copy /y "%pathonly%\m_team_stage_circle_rows.png" "%pathname%\m_team_stage_circle_rows.png"
+call :hudextract m_team_stage 1 m_team_stage_background.png
+EXIT /b
+
+:stages_anim
+if not defined st_animq call :stages_animq
+if %st_animq% GTR 12 (set tsl=%st_animq%) else (
+  set tsl=16
+  for /l %%a in (1, 1, %st_animq%) do call set /a tsl *= 2
+)
+call :checkTools ffprobe
+call :checkTools ffmpeg
+set "ffprobe=%ffprobe:"=%"
+set "ffmpeg=%ffmpeg:"=%"
+set "stage_igb=%~dp0m_team_stage.igb"
+call :numberedBKP stage_igb /i
+copy "%~dp0res\m_team_stage.igb" "%stage_igb%"
+if "%~n0"=="m_team_stage_circle" call :stages_anim_create %~n0 64 1
+if "%~n0"=="m_team_stage_background" call :stages_anim_create %~n0 50 2
+EXIT /b
+:stages_animq
+CLS
+set /p st_animq=Enter a quality for the animated texture (0 to 10): || goto stages_animq
+if %st_animq% LSS 0  goto stages_animq
+if %st_animq% GTR 10 goto stages_animq
+EXIT /b
+:stages_anim_create texture_name frames ratio.w
+powershell "$culture = [System.Globalization.CultureInfo]::CreateSpecificCulture('en-US'); $culture.NumberFormat.NumberDecimalSeparator = '.'; [System.Threading.Thread]::CurrentThread.CurrentCulture = $culture; $time = [float](&'%ffprobe%' '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0'); $f = %2; $s = [int]([Math]::Sqrt($f * %3)); if ($s %% %3 -ne 0) { $s += 1 }; $fps = $f / $time + 0.1; $vf = 'fps={0},scale={1}:{2},tile={3}x{4},scale={5}:{5}' -f $fps, (%tsl% / ($s / %3)), (%tsl% / $s), ($s / %3), $s, %tsl%; &'%ffmpeg%' %ffcodec%-i '%fullpath%' -y -v error -metadata:s:v:0 alpha_mode='1' -vf $vf -frames:v $f '%~dp0%~1.png'"
+EXIT /b
+REM vflip,
 
 
 :Maps
@@ -1320,14 +1367,15 @@ call :writeOS >%optSet%
 EXIT /b
 :writeOS
 set c=0
-for %%o in (%opts: =s%) do set /a c+=1
+for %%o in (%opts: =_%) do set /a c+=1
 if %c%==0 EXIT /b 1
 call :OptHead %c%
 for /l %%i in (1,1,%c%) do call :writeOpts %%i
 EXIT /b
 :writeOpts
 set i=%1
-for /f "tokens=%i% delims=," %%o in ("%opts%") do for /f "tokens=1*" %%a in ("%%o") do call :%%a %1 %%b
+echo [OPTIMIZATION%1]
+for /f "tokens=%i% delims=," %%o in ("%opts%") do for /f "tokens=1*" %%a in ("%%o") do call :%%a %%b
 EXIT /b
 :runOptsOnI
 set "outfile=%infile%"
@@ -1347,18 +1395,16 @@ echo hierarchyCheck = true
 EXIT /b
 
 :OptExt
-echo [OPTIMIZATION%1]
 echo name = igImageExternal
-echo forceExternalUsage = %3
-echo forceInternalImage = %4
-echo extension = %2
+echo forceExternalUsage = %2
+echo forceInternalImage = %3
+echo extension = %1
 echo imageSubDirectory = %sfolder%
-echo enummerateSameNamedImages = %5
+echo enummerateSameNamedImages = %4
 EXIT /b
 
 :optConv
 echo %format% | find /i "DXT" >nul && set "order=DX" || set "order=DEFAULT"
-echo [OPTIMIZATION%1]
 echo name = igConvertImage
 echo format = %igTF%%format%
 echo sourceFormat = invalid
@@ -1369,7 +1415,6 @@ echo imageListFilename = %convertlist%
 EXIT /b
 
 :optRes
-echo [OPTIMIZATION%1]
 echo name = igResizeImage
 echo widthFactor = -1
 echo heightFactor = -1
@@ -1388,7 +1433,6 @@ REM Other filters are between 4 and 6 (most between 4 and 1).
 EXIT /b
 
 :optMipmap
-echo [OPTIMIZATION%1]
 echo name = igUseMipmap
 echo filterType = 6
 echo mipmapTaggedOnly = false
@@ -1399,29 +1443,29 @@ echo minSize = 1
 echo imageListFilename = 
 EXIT /b
 
+:optRemMM
+echo name = igRemoveMipMaps
+EXIT /b
+
 :OptGeoInfo
-echo [OPTIMIZATION%1]
 echo name = igStatisticsGeometry
 goto OptInfo
 :OptTexInfo
-echo [OPTIMIZATION%1]
 echo name = igStatisticsTexture
 echo useFullPath = false
 :OptInfo
 echo separatorString = ^|
 echo columnMaxWidth = -1
-echo showColumnsMask = %2
+echo showColumnsMask = %1
 echo sortColumn = -1
 EXIT /b
 
 :OptSkinStats
-echo [OPTIMIZATION%1]
 echo name = igStatisticsSkin
-call :OptInfo %1 0x00000006
+call :OptInfo 0x00000006
 EXIT /b
 
 :OptRen
-echo [OPTIMIZATION%1]
 echo name = igChangeObjectName
 echo objectTypeName = igNamedObject
 echo targetName = %targetName%$
@@ -1431,24 +1475,20 @@ REM targetMeta = igSkin doesn't work
 EXIT /b
 
 :optGGC
-echo [OPTIMIZATION%1]
 echo name = igGenerateGlobalColor
 EXIT /b
 
 :optCGA
-echo [OPTIMIZATION%1]
 echo name = igConvertGeometryAttr
 echo accessMode = 3
 echo storeBoundingVolume = false
 EXIT /b
 
 :optExtrMotion
-echo [OPTIMIZATION%1]
 echo name = ExtractMotionRaven
 EXIT /b
 
 :optAnimExt
-echo [OPTIMIZATION%1]
 echo name = igEnbayaCompressAnimations
 echo quantizationError = 0.0001
 echo sampleRate = -1
@@ -1461,7 +1501,6 @@ echo sortColumn = -1
 EXIT /b
 
 :optCombAnimDB
-echo [OPTIMIZATION%1]
 echo name = igCombineAnimDatabases
 echo contextFileListString = 
 echo includedSkeletonListString = .*
@@ -1476,25 +1515,31 @@ echo defaultAnimation =
 EXIT /b
 
 :optAnimPM
-echo [OPTIMIZATION%1]
 echo name = igChangePlayMode
-echo playMode = %2 
+echo playMode = %1 
 EXIT /b
 
 :optFlip
-call :optTransform %1 "su-1 rz180"
+call :optTransform "su-1 rz180"
 EXIT /b
 
 :optTransform
-echo [OPTIMIZATION%1]
 echo name = igCreateTransform
 echo nodeMeta = %nodeMeta%
 echo nodeName = 
-echo matrixString = %~2
+echo matrixString = %~1
+EXIT /b
+
+:optStripTri
+echo name = igStripTriangles
+echo minNumberOfTriangle = 5
+echo stitch = false
+echo strip = %1
+echo index = %2
+echo compactGeometry = false
 EXIT /b
 
 :OptRSMUAMat
-echo [OPTIMIZATION%1]
 echo name = igRavenSetupMUAMaterial
 echo diffuseMapName = %intTex:&=^&%
 echo normalMap = %Normal:&=^&%
