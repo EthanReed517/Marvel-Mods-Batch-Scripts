@@ -1118,10 +1118,9 @@ call set options=%%to:~,%dc%%%
 call :mapsD
 :mapsWO
 set oc=0
-for %%d in (%done%) do call :cRSMMo %%d
+for %%d in (%done%) do call :mapsR %%d && call :mapsWTO OptRSMUAMat
 call :chkConvert
-if %mipmaps%==true set /a oc+=1
-if %mipmaps%==true call :optMipmap %oc% >>%optSetT%
+if %mipmaps%==true call :mapsWTO optMipmap
 (call :OptHead %oc% & type %optSetT%) >%optSet%
 del "%pathname%.txt"
 :addNewTextures
@@ -1144,10 +1143,9 @@ set any=0
 set tx=%*
 for /f "tokens=1* delims== " %%s in ('findstr /bi "%tx:~4%" ^<%optSetT%') do if "%%~t" NEQ "" call :chkFrmt %%~xt %1 && echo %%~nxt>>"%convertlist%" && set /a any+=1
 if %any%==0 EXIT /b
-set /a oc+=1
 set isExclude=include
 set format=RGBA_DXT%2
-call :optConv %oc% >>%optSetT%
+call :mapsWTO optConv
 EXIT /b
 :chkFrmt
 if /i "%1"==".dds" EXIT /b 1
@@ -1287,10 +1285,10 @@ for /f "usebackq %skip% delims=" %%a in ("%tem%") do (
 )
 EXIT /b
 
-:cRSMMo
-call :mapsR %1
+:mapsWTO
 set /a oc+=1
-call :OptRSMUAMat %oc% >>%optSetT% 2>nul
+echo [OPTIMIZATION%oc%]>>%optSetT%
+call :%1 >>%optSetT% 2>nul
 EXIT /b
 
 
