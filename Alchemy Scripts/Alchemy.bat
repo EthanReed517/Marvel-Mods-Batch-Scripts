@@ -1134,14 +1134,14 @@ choice /m "Save the optimization set as well"
 if not errorlevel 2 copy %optSet% "%outfile:~,-4%.ini"
 goto Optimizer
 :chkConvert
-call :chkC N 5 normal
-call :chkC T %ConvertDDSf:false=1% specular reflection emissive
+call :chkC N 5 Normal
+call :chkC T %ConvertDDSf:false=1% Specular Environment Emissive
 EXIT /b
 :chkC
 set "convertlist=%tem:~,-4%%1.txt"
 set any=0
 set tx=%*
-for /f "tokens=1* delims== " %%s in ('findstr /bi "%tx:~4%" ^<%optSetT%') do if "%%~t" NEQ "" call :chkFrmt %%~xt %1 && echo %%~nxt>>"%convertlist%" && set /a any+=1
+for %%d in (%done%) do for %%m in (%tx:~4%) do if defined %%m%%d call :chkCmap %1 %%m%%d
 if %any%==0 EXIT /b
 set isExclude=include
 set format=RGBA_DXT%2
@@ -1152,6 +1152,10 @@ if /i "%1"==".dds" EXIT /b 1
 if %2==N EXIT /b 0
 if /i "%1"==".png" if %ConvertDDSf%==false EXIT /b 1
 EXIT /b 0
+:chkCmap
+call set txc="%%%2%%" 
+for %%t in (%txc%) do call :chkFrmt %%~xt %1 && echo %%~nxt>>"%convertlist%" && set /a any+=1
+EXIT /b
 
 :mapsD
 set dc=0

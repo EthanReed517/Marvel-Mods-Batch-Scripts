@@ -146,6 +146,12 @@ set inext=.fb
 EXIT /b
 :startbuildFBnew
 :startbuildFB
+REM create the enter.vbs script. This will automatically hit enter when compiling
+set "enter_script=%temp%\enter.vbs"
+if not exist "%enter_script%" (
+ echo Set WshShell = WScript.CreateObject^("WScript.Shell"^)
+ echo WshShell.SendKeys "{ENTER}"
+)>"%enter_script%"
 call :checkToolsE fbBuilder
 :startupdateCFG
 set inext=.cfg
@@ -213,13 +219,8 @@ choice /m "Did you add new files, in addition to the ones that extracted from '%
 if not errorlevel 2 call :updateCFG
 :buildFB
 if defined fb goto RFFB
-REM create the enter.vbs script. This will automatically hit enter when compiling
-(
- echo Set WshShell = WScript.CreateObject^("WScript.Shell"^)
- echo WshShell.SendKeys "{ENTER}"
-)>"%temp%\enter.vbs"
 %fixcurrd%
-wscript "%temp%\enter.vbs"
+wscript "%enter_script%"
 echo %namextns% | %fbBuilder%
 move /y "%fullpath%.fb" "%pathname%"
 %recallcd%
@@ -236,8 +237,8 @@ call set "fi=%%fi:%pathonly%=%%"
 set "fe=%fi:\=/%%1"
 find /i "%fe%" "%fullpath%" >nul && EXIT /b
 for /f "tokens=1,2 delims=\" %%d in ("%fi%") do if "%%d"=="data" (set dir=%%e) else set dir=%%d
-set e=%1
 set r=xml eng fre ger ita spa rus pol
+set e=%1
 echo %1|findstr /ile ".%r: = .% .%r: =b .%b" >nul && set e=.xmlb
 call :%dir%%e% %2 && goto toCFG
 if /i "%e%"==".xmlb" set format=xml_resident & goto toCFG
