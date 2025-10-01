@@ -152,6 +152,7 @@ set inext=.igb
 if ""=="%temp%" set "temp=%~dp0"
 set optSet="%temp%\%operation%.ini"
 set optSetT="%temp%\%operation%T.ini"
+set optOut="%temp%\optOut.txt"
 set "tem=%temp%\%operation%.txt"
 set "erl=%~dp0error.log"
 set "outfile=%temp%\temp.igb"
@@ -395,12 +396,14 @@ call :filesetup
 :IGBconverter
 if %askallsw%==true if /i %format%==ask call :askformat3D
 call :toLower format
+set "convOut=%pathname%.%format%"
 set conv=actorConverter
-findstr "igEnbaya" <"%fullpath%" >nul 2>nul && call :AnimConverter || findstr "igAnimationDatabase" <"%fullpath%" >nul 2>nul || call :fixIGB
+findstr "igEnbaya" <"%fullpath%" >nul 2>nul && call :AnimConverter || findstr "igAnimationDatabase" <"%fullpath%" >nul 2>nul || set conv=IGBconverter
+if %exttextrs%==true call :Extract
+call :fixIGB
 if not defined %conv% call :chkTlMsg %conv% x >>"%erl%" || EXIT /b
 call set c=%%%conv%%%
-%c% "%fullpath%" "%pathname%.%format%"
-if %exttextrs%==true goto Extract
+%c% "%fullpath%" "%convOut%"
 EXIT /b
 :AnimConverter
 set conv=animationConverter
@@ -408,14 +411,15 @@ set exttextrs=false
 set format=%format:obj=fbx%
 EXIT /b 0
 :fixIGB
-set conv=IGBconverter
+if "%conv%"=="animationConverter" EXIT /b 0
 set opts=OptGeoInfo 0x00000001
-call :runOpts >"%pathname%.txt"
+call :runOpts >%optOut%
 set opts=
-findstr "invalid" <"%pathname%.txt" >nul 2>nul && set opts=optCGA,optStripTri false true
-findstr "igActorInfo" <"%fullpath%" >nul 2>nul && set opts=optCombAnimDB,%opts%
+findstr "invalid" <%optOut% >nul 2>nul && set opts=optCGA,optStripTri false true
+if "%conv%"=="IGBconverter" findstr "igActorInfo" <"%fullpath%" >nul 2>nul && set opts=optCombAnimDB,%opts%
 if not defined opts EXIT /b
-goto runOptsOnI
+if "%conv%"=="actorConverter" call :writeOS >%optSetT% && set opts=optActorSkins
+REM goto runOptsOnI
 call :runOpts
 set "fullpath=%outfile%"
 call :filesetup
@@ -439,7 +443,7 @@ IF ERRORLEVEL 1 set "format=fbx" & EXIT /b
 :Extract
 set iformat=tga
 set sfolder=
-if %detectPNG%==true call :fetchFormat & del "%pathname%.txt"
+if %detectPNG%==true call :fetchFormat
 if %subfolder%==true set "sfolder=%nameonly%" & mkdir "%pathname%"
 if %refExtTex%==true set "outfile=%fullpath%"
 set opts=OptExt %iformat% %refExtTex% false %enm%
@@ -450,7 +454,7 @@ EXIT /b
 :fetchFormat
 call :fetchTexInfo
 set iformat=png
-for /f "delims=" %%a in ('findstr "%igTF%" ^<"%pathname%.txt"') do (
+for /f "delims=" %%a in ('findstr "%igTF%" ^<%optOut%') do (
  echo "%%a" | find "%igTF%RGBA_8888_32">nul && EXIT /b
  echo "%%a" | find "%igTF%X">nul && EXIT /b
  set iformat=tga
@@ -467,14 +471,14 @@ call :fTi 0x00000011
 EXIT /b
 :fTi
 set opts=OptTexInfo %1
-call :runOpts >"%pathname%.txt"
+call :runOpts >%optOut%
 EXIT /b
 
 :fetchTextures
 call :fetchTexInfo
 set count=0
 echo Textures found in "%namextns%":
-for /f "delims=|" %%a in ('findstr "%igTF%" ^<"%pathname%.txt"') do (
+for /f "delims=|" %%a in ('findstr "%igTF%" ^<%optOut%') do (
  echo  %%a
  call :remSpacesLT %%a
  set /a count+=1
@@ -772,13 +776,12 @@ echo create_animation_database				%nameonly: =_%
 call :%1Load
 :IntAnimations
 call :EnbCompr
-call :Optimizer >"%pathname%.txt"
-for /f tokens^=2^ delims^=^" %%a in ('findstr /b "Skipping" ^<"%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
-del "%pathname%.txt"
+call :Optimizer >%optOut%
+for /f tokens^=2^ delims^=^" %%a in ('findstr /b "Skipping" ^<%optOut%') do set "animname=%%a" & call :checkAnimations %1
 EXIT /b
 REM use this if animations are not found:
-REM for /f tokens^=2^ delims^=^" %%a in ('findstr /lc:"Skipping igAnimation" "%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
-REM for /f %%a in ('findstr /lc:"true  " /c:"false  " "%pathname%.txt"') do set "animname=%%a" & call :checkAnimations %1
+REM for /f tokens^=2^ delims^=^" %%a in ('findstr /lc:"Skipping igAnimation" %optOut%') do set "animname=%%a" & call :checkAnimations %1
+REM for /f %%a in ('findstr /lc:"true  " /c:"false  " %optOut%') do set "animname=%%a" & call :checkAnimations %1
 :checkAnimations
 echo "%animname%" | find "uniformly constructed of igTransformSequences" >nul && echo An animation could not be processed, because it has no name>>"%erl%" && EXIT /b
 if not "%animname:&=%"=="%animname%" echo "%animname%" could not be processed, because it contains "&">>"%erl%" & EXIT /b
@@ -1111,7 +1114,7 @@ REM Write internal texture info to "%tem%" and call the dialogue
 set "subf=%pathonly%" & if %SubfoldAuto%==true set subf=
 del "%tem%" "%tem:~,-4%T.txt" "%tem:~,-4%N.txt" %optSetT% 2>nul
 call :fTi 0x00000111
-for /f "tokens=1,3 delims=|" %%a in ('findstr "%igTF%" ^<"%pathname%.txt"') do set mi=%%b & call :filterDiff %%a
+for /f "tokens=1,3 delims=|" %%a in ('findstr "%igTF%" ^<%optOut%') do set mi=%%b & call :filterDiff %%a
 if %dc%==1 call :MapSelect 0 & goto mapsWO
 set to=0123456789
 call set options=%%to:~,%dc%%%
@@ -1122,7 +1125,6 @@ for %%d in (%done%) do call :mapsR %%d && call :mapsWTO OptRSMUAMat
 call :chkConvert
 if %mipmaps%==true call :mapsWTO optMipmap
 (call :OptHead %oc% & type %optSetT%) >%optSet%
-del "%pathname%.txt"
 :addNewTextures
 set outfile=
 call :MTitle
@@ -1395,6 +1397,7 @@ echo [OPTIMIZE]
 echo optimizationCount = %1
 echo hierarchyCheck = true
 EXIT /b
+REM file names have to be echoed to sets, can cause errors on certain paths
 
 :OptExt
 echo name = igImageExternal
@@ -1541,6 +1544,12 @@ echo index = %2
 echo compactGeometry = false
 EXIT /b
 
+:optActorSkins
+echo name = igOptimizeActorSkinsInScenes
+echo fileName = %optSetT:"=%
+echo applySkinLocal = false
+EXIT /b
+
 :OptRSMUAMat
 echo name = igRavenSetupMUAMaterial
 echo diffuseMapName = %intTex:&=^&%
@@ -1675,7 +1684,7 @@ if exist "%erl%" (
 )
 pause
 :cleanup
-del "%tem%" "%temp%\temp.igb" "%tem:~,-4%N.txt" "%tem:~,-4%T.txt"
+del "%tem%" "%temp%\temp.igb" "%tem:~,-4%N.txt" "%tem:~,-4%T.txt" %optOut%
 if %delOptSets%==false EXIT
 del %optSet% %optSetT%
 if %delOptSets%==true EXIT
