@@ -49,6 +49,11 @@ REM Define a tile side count: (Auto =[Math]::Round($time + 3.7), (4x4 or 16 =4),
 set tile_num=[Math]::Round($time + 3.7)
 REM Define a texture quality for animated stages: (0-10; or a full side dimension, e.g. 7200)
 set st_animq=
+REM For which platform? (MUA for PC =PC; for PS2 =PS2; for PSP =PSP; for original Xbox =Xbox; XML2 for PC =XML2; XML2 for GameCube =GC; MUA for Wii =Wii; MUA for Xbox360 =360; MUA for PS3 =PS3; MUA RE for PC =Steam; MUA RE for Xbox One =X1; MUA RE for PS4 =PS4)
+set ForPltfrm=PC
+REM ImageMagick colourswap command: (leave empty for no swapping)
+set colourswap=-separate -swap 0,2 -combine 
+if "%ForPltfrm%" == "XML2" set colourswap=
 
 REM image2igb settings:
 REM Prompt for conversion? (ask for all exc. dds =true; ask for all exc. png+dds =false; no conversion =never; ask for all + dds =dds)
@@ -253,10 +258,15 @@ goto oAnim
 :startstages_e
 set inext=.png
 goto sgO
+:startCSP_XML2
 :startstages_anim
 :starthud_head_e
 set inext=.png, .tga, .gif, .mp4, .webm
-goto sgO
+echo PC 360 PS3 Steam X1 PS4 | find /i "%ForPltfrm%">nul && goto sgO
+set inext=.dds, .png, .tga, .jpg, .bmp, .igt
+if exist "%~dp0NRskinner.exe" EXIT /b 0
+echo The specified platform %ForPltfrm%, requires NRskinner/PS2skinner for hud_heads.
+goto Errors
 :startlogos_e
 set inext=.tga
 goto sgO
@@ -741,7 +751,7 @@ copy "%~dp0animLists\*txt" "%~dp0allAnims.txt" /b
 rmdir /s /q "%~dp0animLists"
 EXIT /b
 REM This code was used to compare powerstyle animations to cap's fightstyle_default.igb from the OCP1.3 (fightstyle animations only), and if the fighmoves are not covered by the powerstyle (powerstyle was checked separately), they are checked in the listed animations, and put to the a new list, if missing.
-for %%p in ("%~dp0ps_*.xml") do for /f "usebackq delims=" %%l in (`Powershell "$a = '%~dp0allAnims.txt'; [xml]$x = gc -raw '%%~p'; (@{anim='attack_light1';name='attacklight1'},@{anim='attack_light2';name='attacklight2'},@{anim='attack_light3';name='attacklight3'},@{anim='attack_stun2';name='attackstun_finish'},@{anim='attack_heavy1';name='attackheavy1'},@{anim='attack_knockback1';name='attack_knockback_charge'},@{anim='attack_knockback2';name='attackknockback2'} | ? {$x.powerstyle.fightmove.name -NotContains $_.name}).anim | ? {$a -NotContains $_}"`) do echo %%l>>"%~dp0missingFSDanims.txt"
+for %%p in ("%~dp0ps_*.xml") do for /f "usebackq delims=" %%l in (`PowerShell "$a = '%~dp0allAnims.txt'; [xml]$x = gc -raw '%%~p'; (@{anim='attack_light1';name='attacklight1'},@{anim='attack_light2';name='attacklight2'},@{anim='attack_light3';name='attacklight3'},@{anim='attack_stun2';name='attackstun_finish'},@{anim='attack_heavy1';name='attackheavy1'},@{anim='attack_knockback1';name='attack_knockback_charge'},@{anim='attack_knockback2';name='attackknockback2'} | ? {$x.powerstyle.fightmove.name -NotContains $_.name}).anim | ? {$a -NotContains $_}"`) do echo %%l>>"%~dp0missingFSDanims.txt"
 
 :extractAnimations
 set "AnimProcess=%pathonly%extract-%nameonly%.txt"
@@ -830,7 +840,7 @@ set outanim=%outanim: =_%
 set "oa=%~dp0%outanim%.igb" & call :numberedBKP oa
 set "outpath=%outanim%\"
 if "%pathonly%"=="%~dp0" set outpath=
-if not defined skeleton for /f "usebackq delims=" %%p in (`powershell "Set-Location '%~dp0'; $rp = Resolve-Path -relative '%fullpath%'; if ($rp[1] -eq '.') { $rp } else { $rp.Substring(2) }"`) do set "skeleton=%%p"
+if not defined skeleton for /f "usebackq delims=" %%p in (`PowerShell "Set-Location '%~dp0'; $rp = Resolve-Path -relative '%fullpath%'; if ($rp[1] -eq '.') { $rp } else { $rp.Substring(2) }"`) do set "skeleton=%%p"
 CLS
 echo Creating combine list for "%outanim%" . . .
 call :writeTop "%coskin: =_%" >"%AnimProcess%"
@@ -950,11 +960,29 @@ if not errorlevel 2 "%of%"
 EXIT /b
 
 :hud_head_e
+REM PSP?, Wii?
+echo PC 360 PS3 Steam X1 PS4 | find /i "%ForPltfrm%">nul || goto hud_head_PS2skinner
 call :numberedBKP pathname x /i
 mkdir "%pathname%"
 set opts=OptExt png false true false,optConv
 set "psc=$time = [float](&$ffp '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0');$s = %tile_num%; $f = $s * $s; $fps = $f / $time + 0.1"
 call :hud%xtnsonly%
+EXIT /b
+
+:hud_head_PS2skinner
+call :PS2skinner hud_head_11101_DXT1
+EXIT /b
+
+:PS2skinner template_name
+REM Only DDS at this time, and only square
+set "PScmd=$im = '%~dp0res\magick.exe'; $i = '%fullpath%'; $d = $env:TEMP + '\%operation%.dds'; $w, $h = (&$im identify -ping -format '%%w %%h' $i).split(); $s = [math]::Min([math]::Pow(2, [math]::Floor([math]::Log([math]::Min($w, $h), 2))), 256).ToString(); &$im $i -resize ($s + 'x' + $s) -flip %colourswap% $d; $s"
+for /f %%s in ('PowerShell "%PScmd%"') do set template=%1_%%s.igb
+cd /d "%~dp0"
+if not exist %template% copy res\%template% %template%
+NRskinner %template% "%temp%\%operation%.dds"
+set "outfile=%pathname%.igb"
+call :numberedBKP outfile
+move "%~dp0%template%" "%outfile%"
 EXIT /b
 
 :hud.tga
@@ -982,7 +1010,7 @@ call :checkTools ffprobe
 call :checkTools ffmpeg
 set "ffprobe=%ffprobe:"=%"
 set "ffmpeg=%ffmpeg:"=%"
-for /f usebackq %%f in (`powershell "$ffp = '%ffprobe%'; %psc%; $vf = 'fps={0},scale=256:256,tile={1}x{1}' -f $fps, $s; &'%ffmpeg%' %ffcodec%-i '%fullpath%' -y -v error -metadata:s:v:0 alpha_mode="1" -vf $vf -frames:v $f '%pathname%\hud_conversation.png'; $s * $s"`) do set f=%%f
+for /f usebackq %%f in (`PowerShell "$ffp = '%ffprobe%'; %psc%; $vf = 'fps={0},scale=256:256,tile={1}x{1}' -f $fps, $s; &'%ffmpeg%' %ffcodec%-i '%fullpath%' -y -v error -metadata:s:v:0 alpha_mode="1" -vf $vf -frames:v $f '%pathname%\hud_conversation.png'; $s * $s"`) do set f=%%f
 
 :hudextanim
 call :isNumber %hud_apm% && if %hud_apm% GTR 0 set opts=%opts%,optAnimPM %hud_apm%
@@ -1036,9 +1064,13 @@ if %st_animq% LSS 0  goto stages_animq
 if %st_animq% GTR 10 goto stages_animq
 EXIT /b
 :stages_anim_create texture_name frames ratio.w
-powershell "$culture = [System.Globalization.CultureInfo]::CreateSpecificCulture('en-US'); $culture.NumberFormat.NumberDecimalSeparator = '.'; [System.Threading.Thread]::CurrentThread.CurrentCulture = $culture; $time = [float](&'%ffprobe%' '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0'); $f = %2; $s = [int]([Math]::Sqrt($f * %3)); if ($s %% %3 -ne 0) { $s += 1 }; $fps = $f / $time + 0.1; $vf = 'fps={0},scale={1}:{2},tile={3}x{4},scale={5}:{5}' -f $fps, (%tsl% / ($s / %3)), (%tsl% / $s), ($s / %3), $s, %tsl%; &'%ffmpeg%' %ffcodec%-i '%fullpath%' -y -v error -metadata:s:v:0 alpha_mode='1' -vf $vf -frames:v $f '%~dp0%~1.png'"
+PowerShell "$culture = [System.Globalization.CultureInfo]::CreateSpecificCulture('en-US'); $culture.NumberFormat.NumberDecimalSeparator = '.'; [System.Threading.Thread]::CurrentThread.CurrentCulture = $culture; $time = [float](&'%ffprobe%' '%fullpath%' -show_entries format=duration -v quiet -of csv='p=0'); $f = %2; $s = [int]([Math]::Sqrt($f * %3)); if ($s %% %3 -ne 0) { $s += 1 }; $fps = $f / $time + 0.1; $vf = 'fps={0},scale={1}:{2},tile={3}x{4},scale={5}:{5}' -f $fps, (%tsl% / ($s / %3)), (%tsl% / $s), ($s / %3), $s, %tsl%; &'%ffmpeg%' %ffcodec%-i '%fullpath%' -y -v error -metadata:s:v:0 alpha_mode='1' -vf $vf -frames:v $f '%~dp0%~1.png'"
 EXIT /b
 REM vflip,
+
+:CSP_XML2
+call :PS2skinner CSP_11101_DXT1
+EXIT /b
 
 
 :Maps

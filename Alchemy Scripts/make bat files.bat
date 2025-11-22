@@ -92,6 +92,11 @@ echo REM Define a tile side count: (Auto =[Math]::Round($time + 3.7), (4x4 or 16
 echo set tile_num=[Math]::Round($time + 3.7)
 echo REM Define a texture quality for animated stages: (0-10; or a full side dimension, e.g. 7200)
 echo set st_animq=
+echo REM For which platform? (MUA for PC =PC; for PS2 =PS2; for PSP =PSP; for original Xbox =Xbox; XML2 for PC =XML2; XML2 for GameCube =GC; MUA for Wii =Wii; MUA for Xbox360 =360; MUA for PS3 =PS3; MUA RE for PC =Steam; MUA RE for Xbox One =X1; MUA RE for PS4 =PS4)
+echo set ForPltfrm=PC
+echo REM ImageMagick colourswap command: (leave empty for no swapping)
+echo set colourswap=-separate -swap 0,2 -combine 
+echo if "%%ForPltfrm%%" == "XML2" set colourswap=
 echo.
 echo REM image2igb settings:
 echo REM Prompt for conversion? (ask for all exc. dds =true; ask for all exc. png+dds =false; no conversion =never; ask for all + dds =dds)

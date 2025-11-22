@@ -26,7 +26,7 @@ To Combine:
      (When you rename, be sure it's accounted for in the data\shared_anims.engb*. For example, by default there's no power_5_loop.)
   3 Run the "_combine.bat" file and enter the name of the your custom animation set.**
   3 Alternatively, instead of copying individual animation files, drag & drop them onto the "_combine.bat" file.
-  3 Alternatively, drag & drop one or multiple folders onto the "_extract.bat" file for batch processing.
+  3 Alternatively, drag & drop one or multiple folders onto the "_combine.bat" file for batch processing.
 
 
 
