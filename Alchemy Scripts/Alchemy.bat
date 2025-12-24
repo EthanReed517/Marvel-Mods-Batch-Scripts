@@ -135,6 +135,8 @@ REM Extract skin? (Yes =true; Skin only =only; No =false)
 set exskin=false
 REM Combine skin? (Yes =true; Specific skin IGB, eg. =subfolder\skin.igb; No =false)
 set coskin=false
+REM Enbaya compress animations after combining them (works only with Alchemy 5) (Yes =true; No =false)
+set comprs=false
 REM Use better scene construction load_actor_database (often fails)? (Yes =true; No =false)
 set actor+=true
 REM Experimental: Use source skin name? (Yes =true; No =false)
@@ -291,7 +293,7 @@ if exist %animationProducer% goto oAnim
 echo "%IG_ROOT%\bin\animationProducer.exe" or %animationProducer% must exist. Please check your Alchemy 5 installation.
 goto Errors
 :oAnim
-set opts=optAnimExt
+set opts=optAnimKF,optAnimEnbaya
 call :writeOptSet
 goto sgO
 :startpreviewAnimations
@@ -785,17 +787,11 @@ EXIT /b
 echo create_animation_database				%nameonly: =_%
 call :%1Load
 :IntAnimations
-call :EnbCompr
-call :Optimizer >%optOut%
-for /f tokens^=2^ delims^=^" %%a in ('findstr /b "Skipping" ^<%optOut%') do set "animname=%%a" & call :checkAnimations %1
+call :PrintAnim 2>%optOut% 1>nul
+for /f "tokens=1,* delims== " %%a in ('findstr /bl "Animation[" ^<%optOut%') do set "animname=%%b" & call :checkAnimations %1
 EXIT /b
-REM use this if animations are not found:
-REM for /f tokens^=2^ delims^=^" %%a in ('findstr /lc:"Skipping igAnimation" %optOut%') do set "animname=%%a" & call :checkAnimations %1
-REM for /f %%a in ('findstr /lc:"true  " /c:"false  " %optOut%') do set "animname=%%a" & call :checkAnimations %1
 :checkAnimations
-echo "%animname%" | find "uniformly constructed of igTransformSequences" >nul && echo An animation could not be processed, because it has no name>>"%erl%" && EXIT /b
-if not "%animname:&=%"=="%animname%" echo "%animname%" could not be processed, because it contains "&">>"%erl%" & EXIT /b
-if not "%animname: =%" == "%animname%" echo "%animname%" could not be processed, because it contains spaces>>"%erl%" & EXIT /b
+for /f "tokens=2 delims=& " %%a in ("%animname%") do echo "%animname%" could not be processed, because it contains "&" and/or spaces.>>"%erl%" & EXIT /b
 if %extall%==false findstr /i "\<%animname%\>" <"%~dp0_animations.ini" >nul || EXIT /b
 goto %1Files
 :extrFiles
@@ -863,14 +859,18 @@ call :numberedBKP AP
 copy "%fullpath%" "%AP%"
 EXIT /b
 :anameFiles
-if %extall%==false call :EnbCompr & call :animNames %animname% || choice /m "'%animname%' is not in shared_anims. Continue"
+if %extall%==false call :animNames %animname% || choice /m "'%animname%' is not in shared_anims. Continue"
 if ERRORLEVEL 2 EXIT /b
 for %%i in ("%coskin%") do if not "%%~ni"=="false" if "%nameonly%" == "%%~ni" EXIT /b
 call :extrFiles >>"%AnimProcess%"
 EXIT /b
 :combineAnimationsPost
 call :animCombine >>"%AnimProcess%"
-goto animationProducer
+if %comprs%==false goto animationProducer
+call :animationProducer
+set "infile=%oa%"
+set "outfile=%oa%"
+goto Optimizer
 :combineAnimAllTxt
 call :txtChck || EXIT /b
 call :animationProducer
@@ -907,17 +907,20 @@ EXIT /b
 REM if defined save <<<< Working, but it seems like animation database is better.
 if %actor+%==true goto skinCombine
 echo save_external_animation_database		%outanim%.igb
-Exit /b
+EXIT /b
 :skinCombine
 REM create_actor is not required but it enables preview. Fails sometimes w/ and sometimes w/o.
 echo create_actor							%outanim%
 echo save_actor_database						%outanim%.igb
-Exit /b
+EXIT /b
 
-:EnbCompr
-set "outfile=%fullpath%"
-call :Optimizer >nul
-set "outfile=%temp%\temp.igb"
+:PrintAnim
+(
+ echo load_animation_database				%nameonly: =_%.igb
+ echo print_animation_database				%nameonly: =_%.igb
+) > "%temp%\%nameonly%_anims.txt"
+set "AnimProcess=%temp%\%nameonly%_anims.txt" & call :animationProducer & set "AnimProcess=%AnimProcess%"
+del "%temp%\%nameonly%_anims.txt"
 EXIT /b
 
 :checktxt
@@ -1525,7 +1528,7 @@ EXIT /b
 echo name = ExtractMotionRaven
 EXIT /b
 
-:optAnimExt
+:optAnimEnbaya
 echo name = igEnbayaCompressAnimations
 echo quantizationError = 0.0001
 echo sampleRate = -1
@@ -1535,6 +1538,15 @@ echo ignoreBones = Motion
 echo specialCaseIniFilename = 
 echo separator = :
 echo sortColumn = -1
+EXIT /b
+
+:optAnimKF
+echo name = igOptimizeActorKeyframes
+echo maximumTranslation = 0.00001
+echo maximumAngleChange = 0.0000001
+echo maximumScaleChange = 0.001
+echo convertZeroBaseKeyframeTime = true
+echo removeScaleChannel = true
 EXIT /b
 
 :optCombAnimDB
