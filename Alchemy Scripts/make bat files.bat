@@ -178,7 +178,7 @@ echo REM Extract skin? (Yes =true; Skin only =only; No =false)
 echo set exskin=false
 echo REM Combine skin? (Yes =true; Specific skin IGB, eg. =subfolder\skin.igb; No =false)
 echo set coskin=false
-echo REM Enbaya compress animations before combining them (works only with Alchemy 5) (Yes =true; No =false)
+echo REM Enbaya compress animations after combining them (works only with Alchemy 5) (Yes =true; No =false)
 echo set comprs=true
 echo REM Use better scene construction load_actor_database (often fails)? (Yes =true; No =false)
 echo set actor+=false

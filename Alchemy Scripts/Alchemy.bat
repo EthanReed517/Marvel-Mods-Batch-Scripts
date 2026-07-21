@@ -1177,8 +1177,7 @@ EXIT /b
 :chkC
 set "convertlist=%tem:~,-4%%1.txt"
 set any=0
-set tx=%*
-for %%d in (%done%) do for %%m in (%tx:~4%) do if defined %%m%%d call :chkCmap %1 %%m%%d
+for %%d in (%done%) do for %%m in (%3 %4 %5) do if defined %%m%sv%%%d call :chkCmap %1 %%m%sv%%%d
 if %any%==0 EXIT /b
 set isExclude=include
 set format=RGBA_DXT%2

@@ -1614,13 +1614,15 @@ call :ZSnewFormat xbadpcm
 goto DspToDsp
 :WavToVag
 REM conversion currently only supports one channel
-REM FPcli supports multiple channels through .mib: https://discord.com/channels/449510825385000960/459862699870781451/817495352759681034
+REM FPcli supports multiple channels through .mib: https://discord.com/channels/449510825385000960/459862699870781451/817495352759681034 (but can't convert sr, output sr is always input sr)
+REM only sets sr, doesn't convert: %wav2vag% "%fullpath%" "%fullpath:~,-3%vag" -freq=%srout%
 REM May need better error messages
-REM PSP has size limit, sometimes 22050 works
+REM PSP has size limit, usually 16000 works, sometimes 22050 works
+if %ForPltfrm%==PSP set srout=11025
+if defined srout set of=/OF%srout%
 if %channels% GTR 1 EXIT /b 1
 call :checkTools MFAudio || EXIT /b
-if %ForPltfrm%==PSP set sr=11025
-%MFAudio% "%fullpath%" /OF%sr% /OC1 /OTVAGC "%fullpath:~,-3%vag" || EXIT /b
+%MFAudio% "%fullpath%" %of% /OC1 /OTVAGC "%fullpath:~,-3%vag" || EXIT /b
 call :ZSnewFormat vag
 :XbadpcmToXbadpcm
 :XmaToXma
@@ -2080,9 +2082,11 @@ EXIT /b
 :PSconvertZS
 set fmtc=
 if %format% GTR -1 set fmtc=@{n="format";e={%format%}}, 
+set src=sample_rate
+if defined srout set src=@{n="sample_rate";e={%srout%}}
 echo $sf = gc -raw "%oldjson%" ^| ConvertFrom-Json
 echo $sf.platform = "%PF%"
-echo $sf.samples = $sf.samples ^| %% { $f=$_.file; $_ ^| select @{n="file";e={$f.substring(0, $f.length -3) + "%StT:*To=%".ToLower()}}, %fmtc%sample_rate }
+echo $sf.samples = $sf.samples ^| %% { $f=$_.file; $_ ^| select @{n="file";e={$f.substring(0, $f.length -3) + "%StT:*To=%".ToLower()}}, %fmtc%%src% }
 goto PSWJNC
 REM bad formatting, currently.
 :PSconvZStoFSB
