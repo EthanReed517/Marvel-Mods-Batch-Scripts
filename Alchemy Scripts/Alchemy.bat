@@ -410,7 +410,7 @@ if %askallsw%==true if /i %format%==ask call :askformat3D
 call :toLower format
 set "convOut=%pathname%.%format%"
 set conv=actorConverter
-findstr "igEnbaya" <"%fullpath%" >nul 2>nul && call :AnimConverter || findstr "igAnimationDatabase" <"%fullpath%" >nul 2>nul || set conv=IGBconverter
+findstr "igEnbaya igTransformSequence1_5" <"%fullpath%" >nul 2>nul && call :AnimConverter || findstr "igAnimationDatabase" <"%fullpath%" >nul 2>nul || set conv=IGBconverter
 if %exttextrs%==true call :Extract
 call :fixIGB
 if not defined %conv% call :chkTlMsg %conv% x >>"%erl%" || EXIT /b
