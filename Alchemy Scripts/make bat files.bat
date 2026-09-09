@@ -35,7 +35,7 @@ goto eof
 for /f "skip=2 delims=[]" %%l in ('find /n "automatic settings" "%~1"') do set l=%%l
 set /a l-=2
 echo @echo off
-echo REM chcp 65001 ^>nul
+echo REM for /f "tokens=2 delims=:" %%%%c in ('chcp') do if %%%%c NEQ 850 chcp 65001 ^>nul
 echo.
 echo REM -----------------------------------------------------------------------------
 echo.

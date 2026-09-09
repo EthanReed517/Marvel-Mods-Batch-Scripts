@@ -757,7 +757,7 @@ for %%p in ("%~dp0ps_*.xml") do for /f "usebackq delims=" %%l in (`PowerShell "$
 
 :extractAnimations
 set "AnimProcess=%pathonly%extract-%nameonly%.txt"
-call :checktxt extract || EXIT /b
+call :checktxt%xtnsonly% extract || EXIT /b
 set "outpath=%~dp0%nameonly: =_%"
 set "infile=%outpath%.igb"
 set deli=
@@ -812,9 +812,11 @@ echo save_actor_database						%nameonly: =_%\skin.igb
 EXIT /b
 :extractAnimAllTxt
 call :txtChck || EXIT /b
-for /f "tokens=1*" %%a in ('findstr /bi "save" ^<"%fullpath%"') do mkdir "%%~dpb"
+cd /d "%~dp0"
+for /f "tokens=1*" %%a in ('findstr /bi "save" ^<"%AnimProcess%"') do set "outpath=%%~dpb" && mkdir "%%~dpb" 2>nul
 set "srcf=%pathonly%%nameonly:~8%.igb"
-for /f "skip=2 tokens=1*" %%a in ('find "load_actor" "%fullpath%"') do set "srca=%~dp0%%b" & call :eAAT
+if /i "%xtnsonly%"==".igb" set "srcf=%fullpath%"
+for /f "skip=2 tokens=1*" %%a in ('find "load_actor" "%AnimProcess%"') do set "srca=%~dp0%%b" & call :eAAT
 EXIT /b 1
 :eAAT
 if not "%srcf%"=="%srca%" call :numberedBKP srca
@@ -824,7 +826,7 @@ move "%srca%" "%srcf%"
 EXIT /b
 
 :combineAnimations
-call :checktxt combine || EXIT /b
+call :checktxt%xtnsonly% combine || EXIT /b
 if "%skeleton%"=="%namextns%" EXIT /b
 if defined outanim goto combineAnimationFiles
 set "AnimProcess=%~dp0combine.txt"
@@ -923,25 +925,24 @@ set "AnimProcess=%temp%\%nameonly%_anims.txt" & call :animationProducer & set "A
 del "%temp%\%nameonly%_anims.txt"
 EXIT /b
 
-:checktxt
-set x=1
-if /i "%xtnsonly%"==".igb" set x=0
-if %nevtxt%==true EXIT /b %x%
-if not exist "%pathonly%%1*.txt" set t=%1
-if not defined t goto asktxt
-if %x%%1==0extract if exist "%AnimProcess%" goto %1AnimAllTxt
-if %x%==0 EXIT /b 0
+:checktxt.txt
+if %nevtxt%==true EXIT /b 1
 set "AnimProcess=%fullpath%"
 echo "%namextns%"|findstr /bei "\"%1.*\.txt\"" >nul && goto %1AnimAllTxt
 EXIT /b 1
+:checktxt.igb
+if %nevtxt%==true EXIT /b 0
+if %1==extract if exist "%AnimProcess%" goto %1AnimAllTxt
+for %%t in ("%pathonly%%1*.txt") do set "AnimProcess=%%~t" && goto asktxt
+EXIT /b 0
 :asktxt
-if /i "%xtnsonly%" NEQ ".txt" choice /m "Do you want to use the existing %1 database (%1.txt)"
-if ERRORLEVEL 2 set nevtxt=true
+if defined t goto %1AnimAllTxt
+choice /m "Do you want to use the existing %1 database (%1.txt)"
+if ERRORLEVEL 2 set nevtxt=true&& EXIT /b 0
 set t=%1
-goto checktxt
+goto %1AnimAllTxt
 :txtChck
-set /p ck=<"%fullpath%"
-echo %ck%|find "create_animation_database" || EXIT /b
+find "create_animation_database" "%AnimProcess%" || EXIT /b
 EXIT /b 0
 
 :animationProducer
